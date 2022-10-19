@@ -25,6 +25,7 @@ def main():
         type=str,
         required=True
     )
+    args = parser.parse_args()
     while True:
         netplanFileName = "99-mcAI.yaml"
         if not os.path.exists(os.path.join("/etc/netplan", netplanFileName)):
@@ -37,9 +38,9 @@ def main():
             ethernets:
                 %s:
                     addresses: [\"%s\"]
-    """ % (parser.interface, parser.ip)
+    """ % (args.interface, args.ip)
     subprocess.run('echo "%s" | sudo tee /etc/netplan/%s' % (netplanText, netplanFileName), shell=True)
-    subprocess.run("bash modules/%s/setup.sh %s" % (parser.type, parser.interface), shell=True)
+    subprocess.run("bash modules/%s/setup.sh %s" % (args.type, args.interface), shell=True)
 
 if __name__ == "__main__":
     main()
