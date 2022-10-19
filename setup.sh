@@ -7,4 +7,4 @@ else
     cd ..
 fi
 cd mcAI
-python install.py $@
+python3 install.py $@
