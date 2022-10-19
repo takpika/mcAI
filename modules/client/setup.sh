@@ -11,7 +11,7 @@ mkdir -p ~/.config/autostart
 fi
 tee ~/.config/autostart/setup.desktop << EOF
 [Desktop Entry]
-Exec=gnome-terminal -- bash -c "bash /home/$USERNAME/setup.sh;bash"
+Exec=gnome-terminal -- bash -c "bash /home/$USERNAME/mcAI/modules/client/setup.sh $1;bash"
 Type=Application
 EOF
 if [ -e /etc/gdm3/custom.conf ]; then
