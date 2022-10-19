@@ -17,7 +17,13 @@ cp -r modules/learn/* ~/
 cp scripts/chars.json ~/
 cp -r mcai/ ~/
 tee ~/startmcai.sh << EOF
-git pull https://github.com/takpika/mcAI.git
+if [ ! -d mcAI ]; then
+    git clone https://github.com/takpika/mcAI.git
+else
+    cd mcAI
+    git pull
+    cd ..
+fi
 cp -r modules/mcAI/learn/* ~/
 cp mcAI/scripts/chars.json ~/
 cp -r mcAI/mcai/ ~/

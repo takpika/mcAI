@@ -23,7 +23,13 @@ fi
 cp modules/server/* ~/
 cp -r mcai/ ~/
 tee ~/startmcai.sh << EOF
-git pull https://github.com/takpika/mcAI.git
+if [ ! -d mcAI ]; then
+    git clone https://github.com/takpika/mcAI.git
+else
+    cd mcAI
+    git pull
+    cd ..
+fi
 cp mcAI/modules/server/* ~/
 cp -r mcAI/mcai/ ~/
 python ~/main.py -i $1

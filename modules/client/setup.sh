@@ -54,7 +54,13 @@ cp scripts/chars.json ~/
 cp -r mcai/ ~/
 rm -rf ~/.config/autostart/setup.desktop
 tee ~/startmcai.sh << EOF
-git pull https://github.com/takpika/mcAI.git
+if [ ! -d mcAI ]; then
+    git clone https://github.com/takpika/mcAI.git
+else
+    cd mcAI
+    git pull
+    cd ..
+fi
 cp mcAI/modules/client/options.txt ~/.minecraft/
 cp -r mcAI/modules/client/* ~/
 cp mcAI/scripts/chars.json ~/
