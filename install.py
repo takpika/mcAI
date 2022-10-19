@@ -41,6 +41,7 @@ def main():
                 addresses: [\\\"%s\\\"]
     """ % (args.interface, args.ip)
     subprocess.run('echo "%s" | sudo tee /etc/netplan/%s' % (netplanText, netplanFileName), shell=True, stdout=devnull)
+    subprocess.run('sudo netplan apply', shell=True)
     subprocess.run("bash modules/%s/setup.sh %s" % (args.type, args.interface), shell=True)
 
 if __name__ == "__main__":
