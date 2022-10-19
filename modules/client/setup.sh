@@ -4,6 +4,7 @@ bash scripts/change_host.sh client
 bash scripts/change_dns.sh 8.8.8.8
 set -e
 if [ ! -e ~/.config/autostart/setup.desktop ]; then
+CURRENT_DIR=`pwd`
 sudo apt update
 sudo apt install gnome-session gnome-terminal gnome-tweaks -y
 if [ ! -d ~/.config/autostart ]; then
@@ -11,7 +12,7 @@ mkdir -p ~/.config/autostart
 fi
 tee ~/.config/autostart/setup.desktop << EOF
 [Desktop Entry]
-Exec=gnome-terminal -- bash -c "bash /home/$USERNAME/mcAI/modules/client/setup.sh $1;bash"
+Exec=gnome-terminal -- bash -c "cd $CURRENT_DIR; bash $CURRENT_DIR/modules/client/setup.sh $1;bash"
 Type=Application
 EOF
 if [ -e /etc/gdm3/custom.conf ]; then
