@@ -1,0 +1,11 @@
+tensorflow
+pyautogui
+numpy
+matplotlib
+pillow
+portablemc-forge
+pynput
+screeninfo
+pyscreenshot
+psutil
+opencv-python
