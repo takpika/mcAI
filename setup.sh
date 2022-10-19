@@ -1,7 +1,7 @@
 #!/bin/bash
 if [ ! -d mcAI ]; then
     git clone https://github.com/takpika/mcAI.git
-else;
+else
     git pull https://github.com/takpika/mcAI.git
 fi
 cd mcAI
