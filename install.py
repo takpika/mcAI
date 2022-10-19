@@ -32,14 +32,15 @@ def main():
             break
         netplanId = random.randint(0, 99)
         netplanFileName = str(netplanId).zfill(2)
+    devnull = open("/dev/null", "wb")
     netplanText = """
     network:
         version: 2
-            ethernets:
-                %s:
-                    addresses: [\"%s\"]
+        ethernets:
+            %s:
+                addresses: [\\\"%s\\\"]
     """ % (args.interface, args.ip)
-    subprocess.run('echo "%s" | sudo tee /etc/netplan/%s' % (netplanText, netplanFileName), shell=True)
+    subprocess.run('echo "%s" | sudo tee /etc/netplan/%s' % (netplanText, netplanFileName), shell=True, stdout=devnull)
     subprocess.run("bash modules/%s/setup.sh %s" % (args.type, args.interface), shell=True)
 
 if __name__ == "__main__":
