@@ -1,5 +1,6 @@
 #!/bin/bash
 USERNAME=`whoami`
+CURRENT_DIR=`pwd`
 bash scripts/change_host.sh learn
 bash scripts/change_dns.sh 8.8.8.8
 set -e
@@ -17,6 +18,7 @@ cp -r modules/learn/* ~/
 cp scripts/chars.json ~/
 cp -r mcai/ ~/
 tee ~/startmcai.sh << EOF
+cd $CURRENT_DIR
 if [ ! -d mcAI ]; then
     git clone https://github.com/takpika/mcAI.git
 else

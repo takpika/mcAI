@@ -1,10 +1,10 @@
 #!/bin/bash
 USERNAME=`whoami`
+CURRENT_DIR=`pwd`
 bash scripts/change_host.sh client
 bash scripts/change_dns.sh 8.8.8.8
 set -e
 if [ ! -e ~/.config/autostart/setup.desktop ]; then
-CURRENT_DIR=`pwd`
 sudo apt update
 sudo apt install gnome-session gnome-terminal gnome-tweaks -y
 if [ ! -d ~/.config/autostart ]; then
@@ -55,6 +55,7 @@ cp scripts/chars.json ~/
 cp -r mcai/ ~/
 rm -rf ~/.config/autostart/setup.desktop
 tee ~/startmcai.sh << EOF
+cd $CURRENT_DIR
 if [ ! -d mcAI ]; then
     git clone https://github.com/takpika/mcAI.git
 else

@@ -1,4 +1,5 @@
 #!/bin/bash
+CURRENT_DIR=`pwd`
 bash scripts/change_host.sh server
 bash scripts/change_dns.sh 8.8.8.8
 set -e
@@ -23,6 +24,7 @@ fi
 cp modules/server/* ~/
 cp -r mcai/ ~/
 tee ~/startmcai.sh << EOF
+cd $CURRENT_DIR
 if [ ! -d mcAI ]; then
     git clone https://github.com/takpika/mcAI.git
 else
