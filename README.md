@@ -22,6 +22,7 @@ Minecraftという仮想世界の中でAIを野放しにして、人の手を一
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/takpika/mcAI/main/setup.sh)" -t <YOUR_SERVER_TYPE> -i <NIC_INTERFACE> -p <IP_ADDRESS/MASK>
 ```
   - **必要に応じてコマンドの一部を書き換えてください。**
+
 | 書き換える部分 | 説明 | 入力例 |
 | ---- | ---- | ---- |
 | <YOUR_SERVER_TYPE> | サーバーの種類 | {`central`, `client`, `learn`, `server`} |
