@@ -41,7 +41,7 @@ def main():
     """ % (args.interface, args.ip)
     netplanFileName = "99-mcAI.yaml"
     if os.path.exists(os.path.join("/etc/netplan", netplanFileName)):
-        subprocess.run("sudo rm \"%s\"", shell=True)
+        subprocess.run("sudo rm \"%s\"" % (os.path.join("/etc/netplan", netplanFileName)), shell=True)
     subprocess.run('echo "%s" | sudo tee /etc/netplan/%s' % (netplanText, netplanFileName), shell=True, stdout=devnull)
     subprocess.run('sudo netplan apply', shell=True)
     subprocess.run("bash modules/%s/setup.sh %s %d" % (args.type, args.interface, args.number), shell=True)
