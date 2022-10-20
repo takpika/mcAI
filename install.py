@@ -31,12 +31,6 @@ def main():
         default=0
     )
     args = parser.parse_args()
-    while True:
-        netplanFileName = "99-mcAI.yaml"
-        if not os.path.exists(os.path.join("/etc/netplan", netplanFileName)):
-            break
-        netplanId = random.randint(0, 99)
-        netplanFileName = str(netplanId).zfill(2)
     devnull = open("/dev/null", "wb")
     netplanText = """
     network:
@@ -45,6 +39,9 @@ def main():
             %s:
                 addresses: [\\\"%s\\\"]
     """ % (args.interface, args.ip)
+    netplanFileName = "99-mcAI.yaml"
+    if os.path.exists(os.path.join("/etc/netplan", netplanFileName)):
+        subprocess.run("sudo rm \"%s\"", shell=True)
     subprocess.run('echo "%s" | sudo tee /etc/netplan/%s' % (netplanText, netplanFileName), shell=True, stdout=devnull)
     subprocess.run('sudo netplan apply', shell=True)
     subprocess.run("bash modules/%s/setup.sh %s %d" % (args.type, args.interface, args.number), shell=True)
