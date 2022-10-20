@@ -1,5 +1,6 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
+USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 bash scripts/change_host.sh server
 bash scripts/change_dns.sh 8.8.8.8
