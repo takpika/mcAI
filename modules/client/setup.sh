@@ -48,7 +48,7 @@ sudo pip install -r modules/client/requirements.txt
 if [ ! -d ~/.minecraft/mods ]; then
 mkdir -p ~/.minecraft/mods
 fi
-curl -o ~/.minecraft/mods/OptiFine_1.18.1_HD_U_H4.jar https://optifine.net/downloadx?f=OptiFine_1.18.1_HD_U_H6.jar&x=f711731a24bd378191826cc4762e313f
+curl -o ~/.minecraft/mods/OptiFine_1.18.1_HD_U_H4.jar `python scripts/download_optifine.py`
 bash modules/client/build_mod.sh
 mv ~/*.jar ~/.minecraft/mods
 cp modules/client/options.txt ~/.minecraft/
