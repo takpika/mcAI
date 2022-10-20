@@ -2,7 +2,8 @@
 export DEBIAN_FRONTEND=noninteractive
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
-bash scripts/change_host.sh client
+ID=`printf "%02d" $2`
+bash scripts/change_host.sh client${ID}
 bash scripts/change_dns.sh 8.8.8.8
 set -e
 if [ ! -e ~/.config/autostart/setup.desktop ]; then

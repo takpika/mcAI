@@ -25,6 +25,11 @@ def main():
         type=str,
         required=True
     )
+    parser.add_argument('-n', '--number',
+        help='Server Number (Client Only)',
+        type=int,
+        default=0
+    )
     args = parser.parse_args()
     while True:
         netplanFileName = "99-mcAI.yaml"
@@ -42,7 +47,7 @@ def main():
     """ % (args.interface, args.ip)
     subprocess.run('echo "%s" | sudo tee /etc/netplan/%s' % (netplanText, netplanFileName), shell=True, stdout=devnull)
     subprocess.run('sudo netplan apply', shell=True)
-    subprocess.run("bash modules/%s/setup.sh %s" % (args.type, args.interface), shell=True)
+    subprocess.run("bash modules/%s/setup.sh %s" % (args.type, args.interface, args.number), shell=True)
 
 if __name__ == "__main__":
     main()
