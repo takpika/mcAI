@@ -9,3 +9,4 @@ screeninfo
 pyscreenshot
 psutil
 opencv-python
+BeautifulSoup4
