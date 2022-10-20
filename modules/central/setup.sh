@@ -7,7 +7,7 @@ set -e
 sudo apt update
 sudo apt install python3 python3-pip python-is-python3 watchdog -y
 tee ~/startmcai.sh << EOF
-cd $CURRENT_DIR
+cd $CURRENT_DIR/..
 if [ ! -d mcAI ]; then
     git clone https://github.com/takpika/mcAI.git
 else

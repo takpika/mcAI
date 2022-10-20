@@ -24,7 +24,7 @@ fi
 cp modules/server/* ~/
 cp -r mcai/ ~/
 tee ~/startmcai.sh << EOF
-cd $CURRENT_DIR
+cd $CURRENT_DIR/..
 if [ ! -d mcAI ]; then
     git clone https://github.com/takpika/mcAI.git
 else
