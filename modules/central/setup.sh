@@ -1,4 +1,5 @@
 #!/bin/bash
+export DEBIAN_FRONTEND=noninteractive
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 bash scripts/change_host.sh central
