@@ -2,6 +2,7 @@
 export DEBIAN_FRONTEND=noninteractive
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
+PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
 ID=`printf "%02d" $2`
 bash scripts/change_host.sh client${ID}
 bash scripts/change_dns.sh 8.8.8.8
@@ -14,7 +15,7 @@ mkdir -p ~/.config/autostart
 fi
 tee ~/.config/autostart/setup.desktop << EOF
 [Desktop Entry]
-Exec=gnome-terminal -- bash -c "cd $CURRENT_DIR; bash $CURRENT_DIR/modules/client/setup.sh $1;bash"
+Exec=gnome-terminal -- bash -c "cd $PARENT_DIR; git clone https://github.com/takpika/mcAI; cd mcAI; bash $CURRENT_DIR/modules/client/setup.sh $1;bash"
 Type=Application
 EOF
 if [ -e /etc/gdm3/custom.conf ]; then
