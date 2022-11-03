@@ -4,10 +4,10 @@ USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
 ID=`printf "%02d" $2`
-bash scripts/change_host.sh client${ID}
-bash scripts/change_dns.sh 8.8.8.8
 set -e
 if [ ! -e ~/.config/autostart/setup.desktop ]; then
+bash scripts/change_host.sh client${ID}
+bash scripts/change_dns.sh 8.8.8.8
 sudo apt update
 sudo apt install gnome-session gnome-terminal gnome-tweaks -y
 if [ ! -d ~/.config/autostart ]; then
