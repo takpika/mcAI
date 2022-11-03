@@ -95,4 +95,4 @@ while requests.get("http://%s:%d/check?type=%s&ip=%s" % (CENTRAL_IP, 8000, SERV_
         logger.error("Register Failed")
         exit(4)
 
-subprocess.run(["/usr/bin/screen", "-Dm", "-S", "minecraft", "/home/%s/run.sh" % (os.getlogin())])
+subprocess.run(["/usr/bin/screen", "-Dm", "-S", "minecraft", "run.sh"])
