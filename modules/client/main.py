@@ -256,7 +256,7 @@ def convBit(value):
 def send_learnData(hash_id):
     global learn_data
     if hash_id in learn_data:
-        if len(learn_data[hash_id]) >= 3:
+        if len(learn_data[hash_id]) > 0:
             headers = {
                 'content-type': 'video/mp4',
                 'id': hash_id
