@@ -276,7 +276,8 @@ def check():
         CHECK_PROCESSING = False
     learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
     learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
-    if len(learn_ids) >= 10 and not training:
+    learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in set(learn_list_ids)]
+    if sum(learn_counts) >= 5000 and not training:
         training = True
         if os.path.exists("model.h5"):
             model.model.load_weights("model.h5")
