@@ -27,7 +27,7 @@ else
     git pull
     cd ..
 fi
-cp -r modules/mcAI/learn/* ~/
+cp -r mcAI/modules/learn/* ~/
 cp mcAI/scripts/chars.json ~/
 cp -r mcAI/mcai/ ~/
 python ~/main.py -i $1
