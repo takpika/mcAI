@@ -334,13 +334,16 @@ def check():
                             _, frame = video.read()
                             frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
                         except:
-                            continue
+                            break
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
                         for u in l_data[i*1000+x]:
                             f.append(u.copy())
                         learn_data.append(f)
                     x, y = convertData()
-                    model.model.fit(x, y, epochs=1, batch_size=10)
+                    try:
+                        model.model.fit(x, y, epochs=1, batch_size=10)
+                    except:
+                        logger.error("Training failure, skipped...")
                     now_count += 1
                     logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
             os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
