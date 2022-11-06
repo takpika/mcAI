@@ -280,12 +280,13 @@ def check():
         learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
         learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
         CHECK_FIRSTRUN = False
-        logger.debug("check done")
+        logger.debug("Check done, current total frames: %d" % (sum(learn_counts)))
         CHECK_PROCESSING = False
     if CHECK_FIRSTRUN:
         learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
         learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
         learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
+        logger.debug("First Run, current total frames: %d" % (sum(learn_counts)))
         CHECK_FIRSTRUN = False
     if sum(learn_counts) >= 1000 and not training:
         training = True
