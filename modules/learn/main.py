@@ -255,7 +255,7 @@ def check():
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
     if len(ids) >= 10 and not CHECK_PROCESSING:
         CHECK_PROCESSING = True
-        counts = [len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) for id in ids if len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) > 0]
+        counts = [len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) for id in ids if len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) >= 2]
         if len(counts) > 0:
             for id in ids:
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
@@ -272,9 +272,6 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                     pickle.dump(c_data, f)
                 os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
-        else:
-            os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-            os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
         logger.debug("check done")
         CHECK_PROCESSING = False
     learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
