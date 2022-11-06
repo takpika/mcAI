@@ -18,6 +18,8 @@ logger.addHandler(logger_handler)
 
 SERV_TYPE = "learn"
 
+CHECK_FIRSTRUN = True
+
 parser = argparse.ArgumentParser(
     prog='server.py',
     description='mcAI Learning Agent',
@@ -253,6 +255,7 @@ def check():
     global CHECK_PROCESSING
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
+    learn_counts = [0]
     if len(ids) >= 10 and not CHECK_PROCESSING:
         CHECK_PROCESSING = True
         counts = [len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) for id in ids if len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) >= 2]
@@ -272,11 +275,17 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                     pickle.dump(c_data, f)
                 os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
+        learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
+        learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
+        learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
+        CHECK_FIRSTRUN = False
         logger.debug("check done")
         CHECK_PROCESSING = False
-    learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
-    learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
-    learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in set(learn_list_ids)]
+    if CHECK_FIRSTRUN:
+        learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
+        learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
+        learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
+        CHECK_FIRSTRUN = False
     if sum(learn_counts) >= 1000 and not training:
         training = True
         if os.path.exists("model.h5"):
