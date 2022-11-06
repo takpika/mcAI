@@ -330,8 +330,11 @@ def check():
                     learn_data = []
                     for x in range(c):
                         f = []
-                        _, frame = video.read()
-                        frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
+                        try:
+                            _, frame = video.read()
+                            frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
+                        except:
+                            continue
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
                         for u in l_data[i*1000+x]:
                             f.append(u.copy())
