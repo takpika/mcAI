@@ -269,9 +269,6 @@ def check():
                 c_data = []
                 for d in data["data"]:
                     daf = conv_data(d)
-                    if len(data["data"]) < (sum(counts) / len(counts)):
-                        for v in range(8):
-                            daf[6+v] = daf[6+v] * -1 + 1
                     c_data.append(daf)
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                     pickle.dump(c_data, f)
@@ -295,32 +292,13 @@ def check():
         logger.info("Start Learning")
         total_count = 0
         now_count = 0
-        mx_i, mx, mn_i, mn = "", 0, "", 9999999
-        for id in learn_ids:
-            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
-                l_data = pickle.load(f)
-            count = len(l_data)
-            if mx <= count:
-                mx = count
-                mx_i = id
-            if mn >= count:
-                mn = count
-                mn_i = id
-        for id in learn_ids:
-            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
-                l_data = pickle.load(f)
-            count = len(l_data)
+        mx, mn = max(learn_counts), min(learn_counts)
+        for count in learn_counts:
             a, b = int(count / 1000), count % 1000
             if b > 0:
                 a += 1
-            cs = 1
-            if mn_i == id:
-                cs = int(mx/mn)+1
-            total_count += a * cs
+            total_count += a
         for id in learn_ids:
-            cs = 1
-            if mn_i == id:
-                cs = int(mx/mn)+1
             with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                 l_data = pickle.load(f)
             count = len(l_data)
@@ -329,32 +307,34 @@ def check():
             all_count = a
             if b > 0:
                 all_count += 1
-            for _ in range(cs):
-                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                for i in range(all_count):
-                    if i != a:
-                        c = 1000
-                    else:
-                        c = b
-                    learn_data = []
-                    for x in range(c):
-                        f = []
-                        try:
-                            _, frame = video.read()
-                            frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
-                        except:
-                            break
-                        f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
-                        for u in l_data[i*1000+x]:
-                            f.append(u.copy())
-                        learn_data.append(f)
-                    x, y = convertData()
+            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            for i in range(all_count):
+                c = b
+                if i != a:
+                    c = 1000
+                learn_data = []
+                for x in range(c):
+                    f = []
                     try:
-                        model.model.fit(x, y, epochs=1, batch_size=10)
+                        _, frame = video.read()
+                        frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
                     except:
-                        logger.error("Training failure, skipped...")
-                    now_count += 1
-                    logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
+                        break
+                    f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
+                    for u in l_data[i*1000+x]:
+                        f_ctrl = u.copy()
+                        if count <= mx / 2:
+                            for v in range(8):
+                                f_ctrl[6+v] = f_ctrl[6+v] * -1 + 1
+                        f.append(f_ctrl)
+                    learn_data.append(f)
+                x, y = convertData()
+                try:
+                    model.model.fit(x, y, epochs=1, batch_size=10)
+                except:
+                    logger.error("Training failure, skipped...")
+                now_count += 1
+                logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
             os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
             os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         logger.info("Finish Learning")
