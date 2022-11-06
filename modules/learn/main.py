@@ -253,6 +253,7 @@ def check():
     global learn_data
     global data
     global CHECK_PROCESSING
+    global CHECK_FIRSTRUN
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
     learn_counts = [0]
