@@ -97,7 +97,8 @@ class Handler(BaseHTTPRequestHandler):
                             "data_folder": config["files"]["data_folder"],
                             "char_file": config["files"]["char_file"],
                             "version": config["version"],
-                            "resolution": config["resolution"]
+                            "resolution": config["resolution"],
+                            "epochs": config["epochs"]
                         }
                     }
                 else:

@@ -119,6 +119,8 @@ if not os.path.exists(DATA_FOLDER):
 WIDTH = config["resolution"]["x"]
 HEIGHT = config["resolution"]["y"]
 
+EPOCHS = config["epochs"]
+
 with open(config["char_file"], "r") as f:
     chars = json.loads(f.read())
 
@@ -300,47 +302,50 @@ def check():
             if b > 0:
                 a += 1
             total_count += a
-        for id in learn_ids:
-            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
-                l_data = pickle.load(f)
-            count = len(l_data)
-            point = (count - ave) / max_dis
-            a, b = int(count / 1000), count % 1000
-            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-            all_count = a
-            if b > 0:
-                all_count += 1
-            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            for i in range(all_count):
-                c = b
-                if i != a:
-                    c = 1000
-                learn_data = []
-                for x in range(c):
-                    f = []
+        total_count *= EPOCHS
+        for epoch in range(EPOCHS):
+            for id in learn_ids:
+                with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
+                    l_data = pickle.load(f)
+                count = len(l_data)
+                point = (count - ave) / max_dis
+                a, b = int(count / 1000), count % 1000
+                video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+                all_count = a
+                if b > 0:
+                    all_count += 1
+                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                for i in range(all_count):
+                    c = b
+                    if i != a:
+                        c = 1000
+                    learn_data = []
+                    for x in range(c):
+                        f = []
+                        try:
+                            _, frame = video.read()
+                            frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
+                        except:
+                            break
+                        f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
+                        f_ctrls = l_data[i*1000+x]
+                        for v in range(8):
+                            f_ctrls[6+v] = f_ctrls[6+v] * point
+                            if point < 0:
+                                f_ctrls[6+v] = f_ctrls[6+v] + 1
+                        for f_ctrl in f_ctrls:
+                            f.append(f_ctrl)
+                        learn_data.append(f)
+                    x, y = convertData()
                     try:
-                        _, frame = video.read()
-                        frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
+                        model.model.fit(x, y, epochs=1, batch_size=10)
                     except:
-                        break
-                    f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
-                    f_ctrls = l_data[i*1000+x]
-                    for v in range(8):
-                        f_ctrls[6+v] = f_ctrls[6+v] * point
-                        if point < 0:
-                            f_ctrls[6+v] = f_ctrls[6+v] + 1
-                    for f_ctrl in f_ctrls:
-                        f.append(f_ctrl)
-                    learn_data.append(f)
-                x, y = convertData()
-                try:
-                    model.model.fit(x, y, epochs=1, batch_size=10)
-                except:
-                    logger.error("Training failure, skipped...")
-                now_count += 1
-                logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
-            os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-            os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
+                        logger.error("Training failure, skipped...")
+                    now_count += 1
+                    logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
+                if epoch >= EPOCHS-1:
+                    os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+                    os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         logger.info("Finish Learning")
         model.model.save("model.h5")
         with open("version", "w") as f:

@@ -16,6 +16,7 @@
     "frame_record_limit": 1000,
     "port": 8000,
     "version": "1.18.1",
+    "epochs": 5,
     "threshold": {
         "distance": 10.0,
         "direction": 30.0
