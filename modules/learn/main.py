@@ -321,10 +321,11 @@ def check():
                     except:
                         break
                     f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
-                    f_ctrl = l_data[i*1000+x]
+                    f_ctrls = l_data[i*1000+x]
                     if count <= mx / 2:
                         for v in range(8):
-                            f_ctrl[6+v] = f_ctrl[6+v] * -1 + 1
+                            f_ctrls[6+v] = f_ctrls[6+v] * -1 + 1
+                    for f_ctrl in f_ctrls:
                         f.append(f_ctrl)
                     learn_data.append(f)
                 x, y = convertData()
