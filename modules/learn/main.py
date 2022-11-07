@@ -322,6 +322,7 @@ def check():
                         break
                     f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
                     for u in l_data[i*1000+x]:
+                        logger.debug(u)
                         f_ctrl = u.copy()
                         if count <= mx / 2:
                             for v in range(8):
