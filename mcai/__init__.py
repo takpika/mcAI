@@ -6,6 +6,7 @@ from tensorflow.keras.backend import clear_session
 import numpy as np
 from random import random
 import os
+from . import image
 
 class mcAI():
     def __init__(self, WIDTH, HEIGHT, CHARS_COUNT, logger):
@@ -14,6 +15,7 @@ class mcAI():
         self.HEIGHT = HEIGHT
         self.CHARS_COUNT = CHARS_COUNT
         self.logger = logger
+        self.encoder = image.ImageEncoder()
         self.make_model()
 
     def clearSession(self):
@@ -66,7 +68,7 @@ class mcAI():
         return Model([inp], out)
 
     def build_hidden(self):
-        video = self.build_videoEncoder()
+        video = self.encoder.model
         mem = self.memEncoder()
         chat = self.chatEncoder()
         seed = Input(shape=(100))

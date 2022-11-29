@@ -111,10 +111,13 @@ for key in config.keys():
 
 SAVE_FOLDER = config["save_folder"]
 DATA_FOLDER = config["data_folder"]
+VIDEO_FOLDER = config["video_folder"]
 if not os.path.exists(SAVE_FOLDER):
     os.makedirs(SAVE_FOLDER)
 if not os.path.exists(DATA_FOLDER):
     os.makedirs(DATA_FOLDER)
+if not os.path.exists(VIDEO_FOLDER):
+    os.makedirs(VIDEO_FOLDER)
 
 WIDTH = config["resolution"]["x"]
 HEIGHT = config["resolution"]["y"]
@@ -129,6 +132,7 @@ CHARS_COUNT = len(chars["chars"])
 data = []
 learn_data = []
 training = False
+compresser = mcai.image.ImageCompresser()
 model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
 
 def limit(i):
@@ -256,6 +260,7 @@ def check():
     global data
     global CHECK_PROCESSING
     global CHECK_FIRSTRUN
+    global model, compresser
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
     learn_counts = [0]
@@ -265,6 +270,7 @@ def check():
         if len(counts) > 0:
             for id in ids:
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+                shutil.copy(os.path.join(DATA_FOLDER, "%s.mp4" % (id)), os.path.join(VIDEO_FOLDER, "%s.mp4" % (id)))
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.json" % (id)), os.path.join(DATA_FOLDER, "%s.json" % (id)))
                 with open(os.path.join(DATA_FOLDER, "%s.json" % (id)), "r") as f:
                     data = json.loads(f.read())
@@ -289,9 +295,33 @@ def check():
         CHECK_FIRSTRUN = False
     if sum(learn_counts) >= 1000 and not training:
         training = True
-        if os.path.exists("model.h5"):
-            model.model.load_weights("model.h5")
+        #if os.path.exists("model.h5"):
+        #    model.model.load_weights("model.h5")
         logger.info("Start Learning")
+        logger.debug("Start: Compress Learning [Alpha]")
+        compresser = mcai.image.ImageCompresser()
+        video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
+        for epoch in range(EPOCHS):
+            i = 0
+            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+            frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
+            while True:
+                ret, frame = video.read()
+                if not ret:
+                    video.close()
+                    if i < len(video_ids) - 1:
+                        i += 1
+                        video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+                    else:
+                        compresser.model.train_on_batch(frames/255, frames/255, verbose=0)
+                        break
+                frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
+                frames = np.append(frames, np.array(frame).astype("uint8").reshape((1,256,256,3)), axis=0)
+                if frames.shape[0] >= 1000:
+                    compresser.model.train_on_batch(frames/255, frames/255, verbose=0)
+                    frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
+        compresser.encoder.model.save("encoder.h5")
+        logger.debug("End: Compress Learning [Alpha]")
         total_count = 0
         now_count = 0
         mx, mn = max(learn_counts), min(learn_counts)
@@ -303,6 +333,8 @@ def check():
                 a += 1
             total_count += a
         total_count *= EPOCHS
+        model = mcai.mcAI()
+        model.encoder.model.load_weights("encoder.h5")
         for epoch in range(EPOCHS):
             for id in learn_ids:
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
