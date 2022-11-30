@@ -33,7 +33,7 @@ def get_players():
     global clients
     clientsCopy = clients.copy()
     players = {}
-    for client in clientsCopy.keys:
+    for client in clientsCopy:
         try:
             data = json.loads(requests.get("http://%s:8000/" % (clientsCopy[client]["ip"])).text)
             if "playing":
