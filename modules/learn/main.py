@@ -375,7 +375,7 @@ def check():
                         learn_data.append(f)
                     x, y = convertData()
                     try:
-                        model.model.train_on_batch(x, y)
+                        model.model.fit(x, y, epochs=1, batch_size=10)
                     except:
                         logger.error("Training failure, skipped...")
                     now_count += 1
