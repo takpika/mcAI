@@ -2,7 +2,7 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Dense, Input, Conv2D, MaxPooling2D, BatchNormalization, UpSampling2D
 import numpy as np
 
-class ImageCompresser():
+class ImageVAE():
     def __init__(self):
         self.encoder = ImageEncoder()
         self.decoder = ImageDecoder()

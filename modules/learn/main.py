@@ -132,7 +132,7 @@ CHARS_COUNT = len(chars["chars"])
 data = []
 learn_data = []
 training = False
-compresser = mcai.image.ImageCompresser()
+vae = mcai.image.ImageVAE()
 model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
 
 def limit(i):
@@ -260,7 +260,7 @@ def check():
     global data
     global CHECK_PROCESSING
     global CHECK_FIRSTRUN
-    global model, compresser
+    global model, vae
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
     learn_counts = [0]
@@ -299,7 +299,7 @@ def check():
         #    model.model.load_weights("model.h5")
         logger.info("Start Learning")
         logger.debug("Start: Compress Learning [Alpha]")
-        compresser = mcai.image.ImageCompresser()
+        vae = mcai.image.ImageVAE()
         video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
         for epoch in range(EPOCHS):
             i = 0
@@ -313,14 +313,14 @@ def check():
                         i += 1
                         video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
                     else:
-                        compresser.model.train_on_batch(frames/255, frames/255, verbose=0)
+                        vae.model.train_on_batch(frames/255, frames/255, verbose=0)
                         break
                 frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
                 frames = np.append(frames, np.array(frame).astype("uint8").reshape((1,256,256,3)), axis=0)
                 if frames.shape[0] >= 1000:
-                    compresser.model.train_on_batch(frames/255, frames/255, verbose=0)
+                    vae.model.train_on_batch(frames/255, frames/255, verbose=0)
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
-        compresser.encoder.model.save("encoder.h5")
+        vae.encoder.model.save("encoder.h5")
         logger.debug("End: Compress Learning [Alpha]")
         total_count = 0
         now_count = 0
@@ -370,7 +370,7 @@ def check():
                         learn_data.append(f)
                     x, y = convertData()
                     try:
-                        model.model.fit(x, y, epochs=1, batch_size=10)
+                        model.model.train_on_batch(x, y, verbose=0)
                     except:
                         logger.error("Training failure, skipped...")
                     now_count += 1
