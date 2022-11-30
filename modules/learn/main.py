@@ -308,7 +308,7 @@ def check():
             while True:
                 ret, frame = video.read()
                 if not ret:
-                    video.close()
+                    video.release()
                     if i < len(video_ids) - 1:
                         i += 1
                         video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
