@@ -322,7 +322,7 @@ def check():
                 except:
                     logger.warning("Frame Skipped")
                     logger.warning(frame)
-                if frames.shape[0] >= 1000:
+                if frames.shape[0] >= 100:
                     vae.model.train_on_batch(frames/255, frames/255)
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
         vae.encoder.model.save("encoder.h5")
