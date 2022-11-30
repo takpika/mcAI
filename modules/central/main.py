@@ -95,6 +95,7 @@ class Handler(BaseHTTPRequestHandler):
                             "port": config["port"],
                             "save_folder": config["files"]["save_folder"],
                             "data_folder": config["files"]["data_folder"],
+                            "video_folder": config["files"]["video_folder"],
                             "char_file": config["files"]["char_file"],
                             "version": config["version"],
                             "resolution": config["resolution"],
