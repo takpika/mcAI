@@ -11,7 +11,7 @@ logger_formatter = Formatter(fmt='%(asctime)-15s [%(name)s] %(message)s')
 logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
-clients = []
+clients = {}
 mc_server = None
 learn_server = None
 
@@ -32,20 +32,20 @@ with open(config["files"]["name_file"].replace("__WORKDIR__", os.getcwd()), "r")
 def get_players():
     global clients
     clientsCopy = clients.copy()
-    players = []
-    for i in range(len(clients)):
+    players = {}
+    for client in clientsCopy.keys:
         try:
-            data = json.loads(requests.get("http://%s:8000/" % (clientsCopy[i]["ip"])).text)
+            data = json.loads(requests.get("http://%s:8000/" % (clientsCopy[client]["ip"])).text)
             if "playing":
-                players.append({
-                    "name": data["player"]["name"],
+                players[data["player"]["name"]] = {
+                    "name": clientsCopy[client]["name"],
                     "pos": data["player"]["pos"],
                     "dir": data["player"]["direction"]
-                })
+                }
                 continue
         except:
             pass
-        clients.remove(clientsCopy[i])
+        clients.pop(client)
     return players
 
 class Handler(BaseHTTPRequestHandler):
@@ -114,29 +114,25 @@ class Handler(BaseHTTPRequestHandler):
                     "msg": "type is required"
                 }
         elif path == "/chat":
-            name = query["name"][0]
+            hostname = query["hostname"][0]
             players = get_players()
-            p_names = [p["name"] for p in players]
-            if name in p_names:
-                for i in players:
-                    if i["name"] == name:
-                        player_pos = i["pos"]
-                        player_dir = i["dir"]
-                        break
+            if hostname in players:
+                player_pos = players[hostname]["pos"]
+                player_dir = players[hostname]["dir"]
                 dis_ok = []
                 for p in players:
-                    if p["name"] != name:
-                        dis_x = p["pos"]["x"] - player_pos["x"]
-                        dis_y = p["pos"]["y"] - player_pos["y"]
-                        dis_z = p["pos"]["z"] - player_pos["z"]
+                    if p != hostname:
+                        dis_x = players[p]["pos"]["x"] - player_pos["x"]
+                        dis_y = players[p]["pos"]["y"] - player_pos["y"]
+                        dis_z = players[p]["pos"]["z"] - player_pos["z"]
                         dis = (dis_x ** 2 + dis_y ** 2 + dis_z ** 2) ** 0.5
                         if dis <= config["threshold"]["distance"]:
                             dis_ok.append(p)
                 talkable = []
                 dir_dis = []
                 for p in dis_ok:
-                    dis_x = p["pos"]["x"] - player_pos["x"]
-                    dis_z = p["pos"]["z"] - player_pos["z"]
+                    dis_x = players[p]["pos"]["x"] - player_pos["x"]
+                    dis_z = players[p]["pos"]["z"] - player_pos["z"]
                     y_degree = 0
                     if dis_x == 0:
                         if dis_z >= 0:
@@ -165,7 +161,7 @@ class Handler(BaseHTTPRequestHandler):
                         elif tmp_z >= 0 and tmp_x >= 0:
                             y_degree = degree + 270
                     dis_xz = (dis_x ** 2 + dis_z ** 2) ** 0.5
-                    dis_y = p["pos"]["y"] - player_pos["y"]
+                    dis_y = players[p]["pos"]["y"] - player_pos["y"]
                     tmp_y = dis_y
                     if tmp_y < 0:
                         tmp_y = -tmp_y
@@ -207,7 +203,7 @@ class Handler(BaseHTTPRequestHandler):
                             response = {
                                 'status': 'ok',
                                 'info': {
-                                    'name': talkable[i]['name']
+                                    'name': talkable[i]
                                 }
                             }
                             break
@@ -218,22 +214,60 @@ class Handler(BaseHTTPRequestHandler):
                     'msg': 'unknown name. please register'
                 }
         elif path == "/name":
-            players = get_players()
-            p_names = [p["name"] for p in players]
-            while True:
-                if len(names) < 1:
-                    with open(config["files"]["name_file"].replace("__WORKDIR__", os.getcwd()), "r") as f:
-                        names = f.read().splitlines()
-                name = random.sample(names, 1)[0]
-                if not name in p_names:
-                    break
-            status_code = 200
-            response = {
-                'status': 'ok',
-                'info': {
-                    'name': name
+            if "hostname" in query:
+                if query["hostname"][0] in clients:
+                    players = get_players()
+                    p_names = [players[p]["name"] for p in players]
+                    while True:
+                        if len(names) < 1:
+                            with open(config["files"]["name_file"].replace("__WORKDIR__", os.getcwd()), "r") as f:
+                                names = f.read().splitlines()
+                        name = random.sample(names, 1)[0]
+                        if not name in p_names:
+                            break
+                    clients[query["hostname"][0]] = name
+                    status_code = 200
+                    response = {
+                        'status': 'ok',
+                        'info': {
+                            'name': name
+                        }
+                    }
+                else:
+                    status_code = 400
+                    response = {
+                        'status': 'ng',
+                        'msg': 'plz register first'
+                    }
+            else:
+                status_code = 400
+                response = {
+                    'status': 'ng',
+                    'msg': 'missing parm hostname'
                 }
-            }
+        elif path == "/hostname":
+            if "hostname" in query:
+                hostname = query["hostname"][0]
+                if hostname in clients:
+                    status_code = 200
+                    response = {
+                        'status': 'ok',
+                        'info': {
+                            'name': clients[hostname]["name"]
+                        }
+                    }
+                else:
+                    status_code = 404
+                    response = {
+                        'status': 'ng',
+                        'msg': 'not found'
+                    }
+            else:
+                status_code = 400
+                response = {
+                    'status': 'ng',
+                    'msg': 'missing parm hostname'
+                }
         elif path == "/id":
             seed = str(random.random())
             status_code = 200
@@ -254,7 +288,7 @@ class Handler(BaseHTTPRequestHandler):
                 }
                 if query['type'][0] == 'client':
                     for c in clients:
-                        if c['ip'] == query["ip"][0]:
+                        if clients[c]['ip'] == query["ip"][0]:
                             status_code = 200
                             response['info']['result'] = True
                 elif query['type'][0] == 'learn':
@@ -322,9 +356,17 @@ class Handler(BaseHTTPRequestHandler):
                     data = requestBody["info"]
                     pc_type = data["type"]
                     if pc_type == "client":
-                        clients.append({
-                            "ip": data["ip"]
-                        })
+                        if not "hostname" in data:
+                            status_code = 400
+                            response = {
+                                "status": "ng",
+                                "msg": "missing parm hostname"
+                            }
+                        else:
+                            clients[data["hostname"]] = {
+                                "ip": data["ip"],
+                                "name": ""
+                            }
                     elif pc_type == "learn":
                         learn_server = {
                             "ip": data["ip"]

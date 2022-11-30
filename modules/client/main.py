@@ -15,6 +15,7 @@ logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
 SERV_TYPE = "client"
+HOSTNAME = os.uname()[1]
 
 parser = argparse.ArgumentParser(
     prog='server.py',
@@ -97,7 +98,8 @@ def register():
         "type": "register",
         "info": {
             "type": SERV_TYPE.lower(),
-            "ip": ip
+            "ip": ip,
+            "hostname": HOSTNAME
         }
     }
     trys = 0
@@ -138,6 +140,7 @@ VERSION = 0
 AI_USING = False
 DOWNLOAD_LOCK = False
 AI_UPDATE_LOCK = False
+FORCE_QUIT = False
 
 vfp = os.path.join(WORK_DIR, "version")
 if os.path.exists(vfp):
@@ -338,7 +341,7 @@ def download_update():
             logger.error("AI Update Failed")
 
 def get_available_chat_name(name):
-    res = requests.get("http://%s:%d/chat?name=%s" % (CENTRAL_IP, 8000, name))
+    res = requests.get("http://%s:%d/chat?hostname=%s" % (CENTRAL_IP, 8000, HOSTNAME))
     if res.status_code != 200:
         return ""
     else:
@@ -354,7 +357,12 @@ def send_chat_function(name, message):
         send_chat(op_name, urllib.parse.quote(message))
 
 def get_newName():
-    return json.loads(requests.get("http://%s:%d/name" % (CENTRAL_IP, PORT)).text)["info"]["name"]
+    while True:
+        res = json.loads(requests.get("http://%s:%d/name?hostname=%s" % (CENTRAL_IP, PORT, HOSTNAME)).text)
+        if res == 'ok':
+            break
+        register()
+    return res["info"]["name"]
 
 def end_session(hash_id):
     global model
@@ -363,7 +371,16 @@ def end_session(hash_id):
     clear_all()
     stop_recording(hash_id)
 
+def hostname2name(hostname):
+    data = json.loads(requests.get('http://%s:%d/hostname?hostname=%s' % (CENTRAL_IP, PORT, hostname)).text)
+    if data['status'] == 'ok':
+        if data['info']['name'] != '':
+            return data['info']['name']
+    return "Dummy"
+
 def force_quit():
+    global FORCE_QUIT
+    FORCE_QUIT = True
     try:
         while True:
             res = requests.get("http://localhost:%d/?close=true" % (PORT))
@@ -389,17 +406,7 @@ if __name__ == "__main__":
         mouse.click(mbt.left)
 
         while True:
-            send_message_data = ""
-            random_threthold = random.random()
-            hash_id = start_recording()
-            subprocess.run(["xinput", "disable", "10"])
-            name = get_newName()
-            mem = np.random.random((2**8, 8))
-            if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
-                model.model.load_weights(os.path.join(WORK_DIR, "model.h5"))
-            played = False
-
-            subprocess.Popen(["portablemc", "start", "-u", name, "forge:%s" % (config["version"]), "--resol", "%dx%d" % (WIDTH, HEIGHT), "-s", SERVER])
+            subprocess.Popen(["portablemc", "start", "-u", HOSTNAME, "forge:%s" % (config["version"]), "--resol", "%dx%d" % (WIDTH, HEIGHT), "-s", SERVER])
 
             while True:
                 try:
@@ -410,212 +417,223 @@ if __name__ == "__main__":
                     continue
             mc_start_time = time()
             mon = {'top': int(screen.height/2-HEIGHT/2), 'left': int(screen.width/2-WIDTH/2), 'width': WIDTH, 'height': HEIGHT}
-            x, y = 0, 0
-            mes_id = 0
-            last = time()
-            messages = []
-            mem_reg, mem_reg2 = 0x0, 0x0
-            char_at = 0
-            hp = 0.0
-            edit_char = ""
-            inscreen = False
-            before_key = [False for _ in KEYS]
+            FORCE_QUIT = False
             while True:
-                url = "http://localhost:%d/" % (PORT)
-                send_data = {}
-                if (x != 0 and not inscreen):
-                    send_data["x"] = float(x)
-                if (y != 0 and not inscreen):
-                    send_data["y"] = float(y)
-                if (mes_id > 0):
-                    send_data["checked"] = mes_id
+                get_newName()
+                if FORCE_QUIT:
+                    break
+                send_message_data = ""
+                random_threthold = random.random()
+                hash_id = start_recording()
+                mem = np.random.random((2**8, 8))
+                if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
+                    model.model.load_weights(os.path.join(WORK_DIR, "model.h5"))
+                played = False
+                x, y = 0, 0
                 mes_id = 0
-                failure = 0
+                last = time()
+                messages = []
+                mem_reg, mem_reg2 = 0x0, 0x0
+                char_at = 0
+                hp = 0.0
+                edit_char = ""
+                inscreen = False
+                before_key = [False for _ in KEYS]
                 while True:
-                    try:
-                        if (len(list(send_data.keys())) > 0):
-                            data = json.loads(requests.get("%s?%s" % (url, urllib.parse.urlencode(send_data))).text)
-                        else:
-                            data = json.loads(requests.get(url).text)
-                        break
-                    except:
-                        failure += 1
-                    if failure >= 10:
-                        logger.error("Connection Error")
-                        end_session(hash_id)
-                        subprocess.run(["killall", "-9", "java"])
-                        exit(10)
-                if data["playing"]:
-                    played = True
-                    img = sct.grab(mon)
-                    image = Image.frombytes('RGB', (img.width, img.height), img.rgb)
-                    if data["player"]["death"]:
-                        logger.info("Dead")
-                        end_session(hash_id)
-                        while True:
-                            data = json.loads(requests.get(url).text)
-                            if data["playing"]:
-                                if data["player"]["death"]:
-                                    pyautogui.keyDown("tab")
-                                    sleep(0.2)
-                                    pyautogui.keyUp("tab")
-                                    sleep(0.2)
-                                    pyautogui.keyDown("enter")
-                                    sleep(0.2)
-                                    pyautogui.keyUp("enter")
-                                    continue
-                            sleep(0.1)
+                    url = "http://localhost:%d/" % (PORT)
+                    send_data = {}
+                    if (x != 0 and not inscreen):
+                        send_data["x"] = float(x)
+                    if (y != 0 and not inscreen):
+                        send_data["y"] = float(y)
+                    if (mes_id > 0):
+                        send_data["checked"] = mes_id
+                    mes_id = 0
+                    failure = 0
+                    while True:
+                        try:
+                            if (len(list(send_data.keys())) > 0):
+                                data = json.loads(requests.get("%s?%s" % (url, urllib.parse.urlencode(send_data))).text)
+                            else:
+                                data = json.loads(requests.get(url).text)
                             break
-                        force_quit()
-                        break
-                    if data["player"]["screen"]: # ポーズ画面と死亡画面のみAIに見せずに特別処理
-                        if data["player"]["screeninfo"]["pause"]:
-                            logger.info("Pause")
-                            pyautogui.keyDown("esc")
-                            sleep(0.2)
-                            pyautogui.keyUp("esc")
-                            continue
-                        inscreen = True
-                        mouse.move(int(x), int(y))
-                        check_mousecursor()
-                        image = drawPointer(image)
-                        if data["player"]["screeninfo"]["edit"]:
-                            send_message_data = ""
-                            char_k = None
-                            if edit_char == "\n":
-                                char_k = "enter"
-                            elif edit_char == "\t":
-                                char_k = "esc"
-                            elif edit_char == "NONE":
-                                char_k = None
-                            elif edit_char == "DEL":
-                                char_k = "backspace"
-                            else:
-                                char_k = edit_char
-                            if char_k != None:
-                                pyautogui.keyDown(char_k)
+                        except:
+                            failure += 1
+                        if failure >= 10:
+                            logger.error("Connection Error")
+                            end_session(hash_id)
+                            subprocess.run(["killall", "-9", "java"])
+                            exit(10)
+                    if data["playing"]:
+                        played = True
+                        img = sct.grab(mon)
+                        image = Image.frombytes('RGB', (img.width, img.height), img.rgb)
+                        if data["player"]["death"]:
+                            logger.info("Dead")
+                            end_session(hash_id)
+                            while True:
+                                data = json.loads(requests.get(url).text)
+                                if data["playing"]:
+                                    if data["player"]["death"]:
+                                        pyautogui.keyDown("tab")
+                                        sleep(0.2)
+                                        pyautogui.keyUp("tab")
+                                        sleep(0.2)
+                                        pyautogui.keyDown("enter")
+                                        sleep(0.2)
+                                        pyautogui.keyUp("enter")
+                                        continue
                                 sleep(0.1)
-                                pyautogui.keyUp(char_k)
-                    else:
-                        inscreen = False
-                    x_img = np.array(image).reshape((1, HEIGHT, WIDTH, 3)) / 255
-                    x_reg = np.array([getBit(mem_reg, i) for i in range(7,-1,-1)])
-                    x_mem = mem[mem_reg]
-                    x_reg2 = np.array([getBit(mem_reg2, i) for i in range(7,-1,-1)])
-                    x_mem2 = mem[mem_reg2]
-                    if len(messages) > 0:
-                        x_name = conv_name(messages[0]["author"])
-                        x_mes = conv_char(messages[0]["message"][char_at])
-                        char_at += 1
-                        if char_at >= len(messages[0]["message"]):
-                            char_at = 0
-                            messages.pop(0)
-                    else:
-                        x_name = conv_name("")
-                        x_mes = conv_char("\t")
-                    while AI_UPDATE_LOCK:
-                        sleep(1)
-                        logger.info("Updating AI...")
-                    AI_USING = True
-                    ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
-                        x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
-                    ))
-                    ai_k += (np.random.random(ai_k.shape) * 2 - 1) * random_threthold
-                    for i in ai_m:
-                        i += (np.random.random(i.shape) * 2 - 1) * random_threthold
-                    for i in ai_mem:
-                        i += (np.random.random(i.shape) * 2 - 1) * random_threthold
-                    ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * random_threthold
-                    AI_USING = False
-                    keys_str = "\r\033[37m"
-                    for i in range(len(KEYS)):
-                        res = ai_k[0][i] >= 0.5
-                        if before_key[i] != res:
-                            handle_keyboard(KEYS[i], ai_k[0][i] >= 0.5)
-                        before_key[i] = res
-                        if ai_k[0][i] >= 0.5:
-                            keys_str += '\033[42m'
-                        else:
-                            keys_str += '\033[40m'
-                        keys_str += KEYS[i][0].upper()
-                    keys_str += '\033[0m'
-                    print(keys_str, end='')
-                    x = (min(ai_m[0][0][0], 1.0) - 0.5) * 20
-                    y = (min(ai_m[0][0][1], 1.0) - 0.5) * 20
-                    handle_mouse("left", ai_m[1][0][0] >= 0.5)
-                    handle_mouse("right", ai_m[1][0][1] >= 0.5)
-                    save_reg = convBit(ai_mem[0][0])
-                    mem[save_reg] = ai_mem[1][0]
-                    mem_reg = convBit(ai_mem[2][0])
-                    mem_reg2 = convBit(ai_mem[3][0])
-                    mes_char = bin_to_char(ai_chat[0])
-                    if mes_char != "\n" or mes_char != "NONE" and not data["player"]["screen"]:
-                        if mes_char == "DEL":
-                            if len(send_message_data) > 1:
-                                send_message_data = send_message_data[:-1]
-                            else:
+                                break
+                            break
+                        if data["player"]["screen"]: # ポーズ画面と死亡画面のみAIに見せずに特別処理
+                            if data["player"]["screeninfo"]["pause"]:
+                                logger.info("Pause")
+                                pyautogui.keyDown("esc")
+                                sleep(0.2)
+                                pyautogui.keyUp("esc")
+                                continue
+                            inscreen = True
+                            mouse.move(int(x), int(y))
+                            check_mousecursor()
+                            image = drawPointer(image)
+                            if data["player"]["screeninfo"]["edit"]:
                                 send_message_data = ""
-                        elif mes_char == "\t":
-                            threading.Thread(target=send_chat_function, args=(data["player"]["name"], send_message_data)).start()
-                            send_message_data = ""
+                                char_k = None
+                                if edit_char == "\n":
+                                    char_k = "enter"
+                                elif edit_char == "\t":
+                                    char_k = "esc"
+                                elif edit_char == "NONE":
+                                    char_k = None
+                                elif edit_char == "DEL":
+                                    char_k = "backspace"
+                                else:
+                                    char_k = edit_char
+                                if char_k != None:
+                                    pyautogui.keyDown(char_k)
+                                    sleep(0.1)
+                                    pyautogui.keyUp(char_k)
                         else:
-                            send_message_data += mes_char
-                    elif data["player"]["screen"]:
-                        if data["player"]["screeninfo"]["edit"]:
-                            edit_char = mes_char
-                    if len(send_message_data) > CHARS_LIMIT:
-                        send_message_data = send_message_data[:CHARS_LIMIT]
-                    if random.random() < 0.1:
-                        frame = cv2.cvtColor((x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8"), cv2.COLOR_RGB2BGR)
-                        video.write(frame)
-                        this_frame = {
-                            "input": {
-                                "mem": {
-                                    "reg": convBit(x_reg),
-                                    "data": x_mem.tolist(),
-                                    "reg2": convBit(x_reg2),
-                                    "data2": x_mem2.tolist()
-                                },
-                                "chat": {
-                                    "name": bin_to_name(x_name),
-                                    "message": bin_to_char(x_mes)
+                            inscreen = False
+                        x_img = np.array(image).reshape((1, HEIGHT, WIDTH, 3)) / 255
+                        x_reg = np.array([getBit(mem_reg, i) for i in range(7,-1,-1)])
+                        x_mem = mem[mem_reg]
+                        x_reg2 = np.array([getBit(mem_reg2, i) for i in range(7,-1,-1)])
+                        x_mem2 = mem[mem_reg2]
+                        if len(messages) > 0:
+                            x_name = conv_name(hostname2name(messages[0]["author"]))
+                            x_mes = conv_char(messages[0]["message"][char_at])
+                            char_at += 1
+                            if char_at >= len(messages[0]["message"]):
+                                char_at = 0
+                                messages.pop(0)
+                        else:
+                            x_name = conv_name("")
+                            x_mes = conv_char("\t")
+                        while AI_UPDATE_LOCK:
+                            sleep(1)
+                            logger.info("Updating AI...")
+                        AI_USING = True
+                        ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
+                            x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
+                        ))
+                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * random_threthold
+                        for i in ai_m:
+                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold
+                        for i in ai_mem:
+                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold
+                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * random_threthold
+                        AI_USING = False
+                        keys_str = "\r\033[37m"
+                        for i in range(len(KEYS)):
+                            res = ai_k[0][i] >= 0.5
+                            if before_key[i] != res:
+                                handle_keyboard(KEYS[i], ai_k[0][i] >= 0.5)
+                            before_key[i] = res
+                            if ai_k[0][i] >= 0.5:
+                                keys_str += '\033[42m'
+                            else:
+                                keys_str += '\033[40m'
+                            keys_str += KEYS[i][0].upper()
+                        keys_str += '\033[0m'
+                        print(keys_str, end='')
+                        x = (min(ai_m[0][0][0], 1.0) - 0.5) * 20
+                        y = (min(ai_m[0][0][1], 1.0) - 0.5) * 20
+                        handle_mouse("left", ai_m[1][0][0] >= 0.5)
+                        handle_mouse("right", ai_m[1][0][1] >= 0.5)
+                        save_reg = convBit(ai_mem[0][0])
+                        mem[save_reg] = ai_mem[1][0]
+                        mem_reg = convBit(ai_mem[2][0])
+                        mem_reg2 = convBit(ai_mem[3][0])
+                        mes_char = bin_to_char(ai_chat[0])
+                        if mes_char != "\n" or mes_char != "NONE" and not data["player"]["screen"]:
+                            if mes_char == "DEL":
+                                if len(send_message_data) > 1:
+                                    send_message_data = send_message_data[:-1]
+                                else:
+                                    send_message_data = ""
+                            elif mes_char == "\t":
+                                threading.Thread(target=send_chat_function, args=(data["player"]["name"], send_message_data)).start()
+                                send_message_data = ""
+                            else:
+                                send_message_data += mes_char
+                        elif data["player"]["screen"]:
+                            if data["player"]["screeninfo"]["edit"]:
+                                edit_char = mes_char
+                        if len(send_message_data) > CHARS_LIMIT:
+                            send_message_data = send_message_data[:CHARS_LIMIT]
+                        if random.random() < 0.1:
+                            frame = cv2.cvtColor((x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8"), cv2.COLOR_RGB2BGR)
+                            video.write(frame)
+                            this_frame = {
+                                "input": {
+                                    "mem": {
+                                        "reg": convBit(x_reg),
+                                        "data": x_mem.tolist(),
+                                        "reg2": convBit(x_reg2),
+                                        "data2": x_mem2.tolist()
+                                    },
+                                    "chat": {
+                                        "name": bin_to_name(x_name),
+                                        "message": bin_to_char(x_mes)
+                                    }
+                                }, 
+                                "output": {
+                                    "keyboard": ai_k[0].tolist(),
+                                    "mouse": {
+                                        "dir": ai_m[0][0].tolist(),
+                                        "button": ai_m[1][0].tolist()
+                                    } ,
+                                    "mem": {
+                                        "save": convBit(ai_mem[0][0]),
+                                        "mem": ai_mem[1][0].tolist(),
+                                        "reg": convBit(ai_mem[2][0]),
+                                        "reg2": convBit(ai_mem[3][0])
+                                    },
+                                    "chat": bin_to_char(ai_chat[0])
                                 }
-                            }, 
-                            "output": {
-                                "keyboard": ai_k[0].tolist(),
-                                "mouse": {
-                                    "dir": ai_m[0][0].tolist(),
-                                    "button": ai_m[1][0].tolist()
-                                } ,
-                                "mem": {
-                                    "save": convBit(ai_mem[0][0]),
-                                    "mem": ai_mem[1][0].tolist(),
-                                    "reg": convBit(ai_mem[2][0]),
-                                    "reg2": convBit(ai_mem[3][0])
-                                },
-                                "chat": bin_to_char(ai_chat[0])
                             }
-                        }
-                        learn_data[hash_id].append(this_frame)
-                    if len(learn_data[hash_id]) > FRAME_LIMIT:
-                        stop_recording(hash_id)
-                        hash_id = start_recording()
-                else:
-                    if played:
-                        logger.warning("Logged out. Auto restart...")
-                        end_session(hash_id)
-                        force_quit()
-                        break
-                    elif time() - mc_start_time > 300:
-                        logger.warning("Maybe disconnected. Auto restart...")
-                        end_session(hash_id)
-                        force_quit()
-                        break
-                if len(data["message"]) > 0:
-                    messages.append(data["message"][0])
-                    logger.info("A message from " + data["message"][0]["author"] + " : " + data["message"][0]["message"])
-                    mes_id = int(data["message"][0]["id"])
-                threading.Thread(target=register).start()
+                            learn_data[hash_id].append(this_frame)
+                        if len(learn_data[hash_id]) > FRAME_LIMIT:
+                            stop_recording(hash_id)
+                            hash_id = start_recording()
+                    else:
+                        if played:
+                            logger.warning("Logged out. Auto restart...")
+                            end_session(hash_id)
+                            force_quit()
+                            break
+                        elif time() - mc_start_time > 300:
+                            logger.warning("Maybe disconnected. Auto restart...")
+                            end_session(hash_id)
+                            force_quit()
+                            break
+                    if len(data["message"]) > 0:
+                        messages.append(data["message"][0])
+                        logger.info("A message from " + data["message"][0]["author"] + " : " + data["message"][0]["message"])
+                        mes_id = int(data["message"][0]["id"])
+                    threading.Thread(target=register).start()
     finally:
         end_session(hash_id)
         subprocess.Popen(["gnome-terminal", "--", "bash", "/home/taku/startmcai.sh"])
