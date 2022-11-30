@@ -288,6 +288,7 @@ class Handler(BaseHTTPRequestHandler):
                     }
                 }
                 if query['type'][0] == 'client':
+                    logger.info(clients, query)
                     for c in clients:
                         if clients[c]['ip'] == query["ip"][0]:
                             status_code = 200
