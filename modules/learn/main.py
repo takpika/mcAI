@@ -315,8 +315,12 @@ def check():
                     else:
                         vae.model.train_on_batch(frames/255, frames/255, verbose=0)
                         break
-                frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
-                frames = np.append(frames, np.array(frame).astype("uint8").reshape((1,256,256,3)), axis=0)
+                try:
+                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
+                    frames = np.append(frames, np.array(frame).astype("uint8").reshape((1,256,256,3)), axis=0)
+                except:
+                    logger.warning("Frame Skipped")
+                    logger.warning(frame)
                 if frames.shape[0] >= 1000:
                     vae.model.train_on_batch(frames/255, frames/255, verbose=0)
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
