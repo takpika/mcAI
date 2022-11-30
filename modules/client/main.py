@@ -359,7 +359,7 @@ def send_chat_function(name, message):
 def get_newName():
     while True:
         res = json.loads(requests.get("http://%s:%d/name?hostname=%s" % (CENTRAL_IP, PORT, HOSTNAME)).text)
-        if res == 'ok':
+        if res['status'] == 'ok':
             break
         register()
     return res["info"]["name"]
@@ -418,6 +418,7 @@ if __name__ == "__main__":
             mc_start_time = time()
             mon = {'top': int(screen.height/2-HEIGHT/2), 'left': int(screen.width/2-WIDTH/2), 'width': WIDTH, 'height': HEIGHT}
             FORCE_QUIT = False
+            played = False
             while True:
                 get_newName()
                 if FORCE_QUIT:
@@ -428,7 +429,6 @@ if __name__ == "__main__":
                 mem = np.random.random((2**8, 8))
                 if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
                     model.model.load_weights(os.path.join(WORK_DIR, "model.h5"))
-                played = False
                 x, y = 0, 0
                 mes_id = 0
                 last = time()
