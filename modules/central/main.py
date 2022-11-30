@@ -228,7 +228,7 @@ class Handler(BaseHTTPRequestHandler):
                         if not name in p_names:
                             break
                     if not query["hostname"][0] in clients:
-                        clients[query["hostname"][0]]["name"] = client_data
+                        clients[query["hostname"][0]] = client_data
                     clients[query["hostname"][0]]["name"] = name
                     status_code = 200
                     response = {
