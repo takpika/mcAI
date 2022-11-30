@@ -324,7 +324,7 @@ def check():
                     logger.warning(frame)
                 if frames.shape[0] >= 10:
                     loss = vae.model.train_on_batch(frames/255, frames/255)
-                    logger.debug("VAE Loss: " + str(loss))
+                    logger.debug("VAE Loss: %.6f" % (loss))
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
         vae.encoder.model.save("encoder.h5")
         logger.debug("End: VAE Learning [Alpha]")
