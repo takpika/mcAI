@@ -217,6 +217,7 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/name":
             if "hostname" in query:
                 if query["hostname"][0] in clients:
+                    client_data = clients[query["hostname"][0]]
                     players = get_players()
                     p_names = [players[p]["name"] for p in players]
                     while True:
@@ -226,6 +227,8 @@ class Handler(BaseHTTPRequestHandler):
                         name = random.sample(names, 1)[0]
                         if not name in p_names:
                             break
+                    if not query["hostname"][0] in clients:
+                        clients[query["hostname"][0]]["name"] = client_data
                     clients[query["hostname"][0]]["name"] = name
                     status_code = 200
                     response = {
