@@ -307,7 +307,7 @@ def check():
             frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
             while True:
                 ret, frame = video.read()
-                if not ret or frame == None:
+                if not ret:
                     video.release()
                     if i < len(video_ids) - 1:
                         i += 1
