@@ -333,7 +333,7 @@ def check():
         ave, pow_ave = sum(learn_counts) / len(learn_counts), sum([count ** 2 for count in learn_counts]) / len(learn_counts)
         max_dis = mx - ave
         for count in learn_counts:
-            a, b = int(count / 1000), count % 1000
+            a, b = int(count / 10), count % 10
             if b > 0:
                 a += 1
             total_count += a
@@ -346,7 +346,7 @@ def check():
                     l_data = pickle.load(f)
                 count = len(l_data)
                 point = (count - ave) / max_dis
-                a, b = int(count / 1000), count % 1000
+                a, b = int(count / 10), count % 10
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 all_count = a
                 if b > 0:
@@ -355,7 +355,7 @@ def check():
                 for i in range(all_count):
                     c = b
                     if i != a:
-                        c = 1000
+                        c = 10
                     learn_data = []
                     for x in range(c):
                         f = []
@@ -365,7 +365,7 @@ def check():
                         except:
                             break
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
-                        f_ctrls = l_data[i*1000+x]
+                        f_ctrls = l_data[i*10+x]
                         for v in range(8):
                             f_ctrls[6+v] = f_ctrls[6+v] * point
                             if point < 0:
@@ -375,11 +375,12 @@ def check():
                         learn_data.append(f)
                     x, y = convertData()
                     try:
-                        model.model.fit(x, y, epochs=1, batch_size=10)
+                        model.model.train_on_batch(x, y)
                     except:
                         logger.error("Training failure, skipped...")
                     now_count += 1
-                    logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
+                    if now_count % 10 == 0:
+                        logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
                 if epoch >= EPOCHS-1:
                     os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                     os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
