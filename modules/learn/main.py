@@ -298,7 +298,7 @@ def check():
         #if os.path.exists("model.h5"):
         #    model.model.load_weights("model.h5")
         logger.info("Start Learning")
-        logger.debug("Start: Compress Learning [Alpha]")
+        logger.debug("Start: VAE Learning [Alpha]")
         vae = mcai.image.ImageVAE()
         video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
         for epoch in range(EPOCHS):
@@ -314,7 +314,7 @@ def check():
                         video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
                         continue
                     else:
-                        vae.model.train_on_batch(frames/255, frames/255, verbose=0)
+                        vae.model.train_on_batch(frames/255, frames/255)
                         break
                 try:
                     frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
@@ -323,10 +323,10 @@ def check():
                     logger.warning("Frame Skipped")
                     logger.warning(frame)
                 if frames.shape[0] >= 1000:
-                    vae.model.train_on_batch(frames/255, frames/255, verbose=0)
+                    vae.model.train_on_batch(frames/255, frames/255)
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
         vae.encoder.model.save("encoder.h5")
-        logger.debug("End: Compress Learning [Alpha]")
+        logger.debug("End: VAE Learning [Alpha]")
         total_count = 0
         now_count = 0
         mx, mn = max(learn_counts), min(learn_counts)
@@ -375,7 +375,7 @@ def check():
                         learn_data.append(f)
                     x, y = convertData()
                     try:
-                        model.model.train_on_batch(x, y, verbose=0)
+                        model.model.train_on_batch(x, y)
                     except:
                         logger.error("Training failure, skipped...")
                     now_count += 1
