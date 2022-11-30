@@ -226,7 +226,7 @@ class Handler(BaseHTTPRequestHandler):
                         name = random.sample(names, 1)[0]
                         if not name in p_names:
                             break
-                    clients[query["hostname"][0]] = name
+                    clients[query["hostname"][0]]["name"] = name
                     status_code = 200
                     response = {
                         'status': 'ok',
@@ -288,7 +288,6 @@ class Handler(BaseHTTPRequestHandler):
                     }
                 }
                 if query['type'][0] == 'client':
-                    logger.info(clients, query)
                     for c in clients:
                         if clients[c]['ip'] == query["ip"][0]:
                             status_code = 200
