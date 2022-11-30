@@ -16,6 +16,7 @@ class mcAI():
         self.CHARS_COUNT = CHARS_COUNT
         self.logger = logger
         self.encoder = image.ImageEncoder()
+        self.encoder.model.trainable = False
         self.make_model()
 
     def clearSession(self):
