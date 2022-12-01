@@ -339,7 +339,7 @@ def check():
                 a += 1
             total_count += a
         total_count *= EPOCHS
-        model = mcai.mcAI()
+        model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
         model.encoder.model.load_weights("encoder.h5")
         for epoch in range(EPOCHS):
             for id in learn_ids:
