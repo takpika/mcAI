@@ -253,6 +253,7 @@ def convBit(value):
     return np.array([getBit(value, i) for i in range(7, -1, -1)])
 
 CHECK_PROCESSING = False
+MODEL_WRITING = False
 
 def check():
     global training
@@ -260,6 +261,7 @@ def check():
     global data
     global CHECK_PROCESSING
     global CHECK_FIRSTRUN
+    global MODEL_WRITING
     global model, vae
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
@@ -386,7 +388,9 @@ def check():
                     os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                     os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         logger.info("Finish Learning")
+        MODEL_WRITING = True
         model.model.save("model.h5")
+        MODEL_WRITING = False
         with open("version", "w") as f:
             f.write(str(int(datetime.now().timestamp())))
         training = False
@@ -420,7 +424,7 @@ class Handler(BaseHTTPRequestHandler):
             responseBody = json.dumps(response)
             self.wfile.write(responseBody.encode('utf-8'))
         else:
-            if training:
+            if MODEL_WRITING:
                 response = {
                     'status': 'ng', 
                     'error': 'training'
