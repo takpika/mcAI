@@ -18,8 +18,6 @@ logger.addHandler(logger_handler)
 
 SERV_TYPE = "learn"
 
-CHECK_FIRSTRUN = True
-
 parser = argparse.ArgumentParser(
     prog='server.py',
     description='mcAI Learning Agent',
@@ -254,14 +252,11 @@ def convBit(value):
 
 CHECK_PROCESSING = False
 MODEL_WRITING = False
+CHECK_FIRSTRUN = True
 
 def check():
-    global training
-    global learn_data
-    global data
-    global CHECK_PROCESSING
-    global CHECK_FIRSTRUN
-    global MODEL_WRITING
+    global training, learn_data, data
+    global CHECK_PROCESSING, CHECK_FIRSTRUN, MODEL_WRITING
     global model, vae
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]

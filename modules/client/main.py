@@ -273,6 +273,7 @@ def send_learnData(hash_id):
             }
             requests.post("http://%s:%d/" % (L_SERVER, PORT), json=sendData, headers=headers)
         os.remove(os.path.join(WORK_DIR, "%s.mp4" % (hash_id)))
+        subprocess.run(["rm", "%s/*.mp4" % (WORK_DIR)])
     learn_data.clear()
 
 def start_recording():
@@ -335,6 +336,8 @@ def download_update():
         except:
             if os.path.exists("model.h5"):
                 subprocess.run(["rm", "model.h5"])
+            if os.path.exists("version"):
+                subprocess.run(["rm", "version"])
             AI_UPDATE_LOCK = False
             VERSION = 0
             DOWNLOAD_LOCK = False
