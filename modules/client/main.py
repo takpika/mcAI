@@ -54,7 +54,7 @@ def check_registered():
     global CHECKING_REGISTER
     global CHECK_COUNT
     if not CHECKING_REGISTER and CHECK_COUNT % 10 == 0:
-        result = requests.get("http://%s:%d/check?type=%s&ip=%s" % (CENTRAL_IP, 8000, SERV_TYPE, ip)).status_code == 200
+        result = requests.get("http://%s:%d/check?type=%s" % (CENTRAL_IP, 8000, SERV_TYPE)).status_code == 200
     else:
         result = True
     CHECK_COUNT += 1

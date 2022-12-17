@@ -56,7 +56,7 @@ send_data = {
 }
 trys = 0
 
-while requests.get("http://%s:%d/check?type=%s&ip=%s" % (CENTRAL_IP, 8000, SERV_TYPE, ip)).status_code != 200:
+while requests.get("http://%s:%d/check?type=%s" % (CENTRAL_IP, 8000, SERV_TYPE)).status_code != 200:
     requests.post("http://%s:%d/" % (CENTRAL_IP, 8000), json=send_data)
     trys += 1
     if trys > 10:

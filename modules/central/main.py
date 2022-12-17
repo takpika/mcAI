@@ -86,6 +86,7 @@ class Handler(BaseHTTPRequestHandler):
         path = parse_data.path
         query = urllib.parse.parse_qs(parse_data.query)
         status_code = 400
+        ip_addr = self.client_address[0]
         if path == "/config":
             if "type" in query:
                 pc_type = query["type"][0].lower()
@@ -309,7 +310,7 @@ class Handler(BaseHTTPRequestHandler):
                 }
             }
         elif path == "/check":
-            if "type" in query and "ip" in query:
+            if "type" in query:
                 status_code = 404
                 response = {
                     'status': 'ok',
@@ -319,17 +320,17 @@ class Handler(BaseHTTPRequestHandler):
                 }
                 if query['type'][0] == 'client':
                     for c in clients:
-                        if clients[c]['ip'] == query["ip"][0]:
+                        if clients[c]['ip'] == ip_addr:
                             status_code = 200
                             response['info']['result'] = True
                 elif query['type'][0] == 'learn':
                     if learn_server != None:
-                        if learn_server["ip"] == query['ip'][0]:
+                        if learn_server["ip"] == ip_addr:
                             status_code = 200
                             response['info']['result'] = True
                 elif query['type'][0] == 'minecraft':
                     if mc_server != None:
-                        if mc_server['ip'] == query['ip'][0]:
+                        if mc_server['ip'] == ip_addr:
                             status_code = 200
                             response['info']['result'] = True
                 else:
