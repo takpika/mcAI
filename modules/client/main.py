@@ -39,6 +39,7 @@ def search_central():
                     break
             except:
                 pass
+    sock.close()
     
 search_central()
 

@@ -70,9 +70,8 @@ def udpServer():
                         "type": "central"
                     }
                 }
-                sendSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 for i in range(10):
-                    sendSock.sendto(json.dumps(reply).encode("utf-8"), (address[0], 9999))
+                    sock.sendto(json.dumps(reply).encode("utf-8"), (address[0], 9999))
                     sleep(0.1)
 
 class Handler(BaseHTTPRequestHandler):
