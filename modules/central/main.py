@@ -381,6 +381,7 @@ class Handler(BaseHTTPRequestHandler):
                 type = requestBody["type"]
                 if type == "register":
                     status_code = 200
+                    ip_addr = self.client_address[0]
                     response = {
                         "status": "ok"
                     }
@@ -395,16 +396,16 @@ class Handler(BaseHTTPRequestHandler):
                             }
                         else:
                             clients[data["hostname"]] = {
-                                "ip": data["ip"],
+                                "ip": ip_addr,
                                 "name": ""
                             }
                     elif pc_type == "learn":
                         learn_server = {
-                            "ip": data["ip"]
+                            "ip": ip_addr
                         }
                     elif pc_type == "minecraft":
                         mc_server = {
-                            "ip": data["ip"]
+                            "ip": ip_addr
                         }
                     else:
                         response = {

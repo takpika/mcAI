@@ -67,7 +67,6 @@ def register():
         "type": "register",
         "info": {
             "type": SERV_TYPE.lower(),
-            "ip": ip,
             "hostname": HOSTNAME
         }
     }

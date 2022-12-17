@@ -51,8 +51,7 @@ logger.info("Central Server IP: " + CENTRAL_IP)
 send_data = {
     "type": "register",
     "info": {
-        "type": SERV_TYPE.lower(),
-        "ip": ip
+        "type": SERV_TYPE.lower()
     }
 }
 trys = 0
