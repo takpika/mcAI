@@ -59,6 +59,7 @@ def udpServer():
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     while True:
         data, address = sock.recvfrom(1024)
+        logger.debug("Received multicast from %s" % (address[0]))
         data = json.loads(data.decode("utf-8"))
         sleep(0.1)
         if "type" in data:
