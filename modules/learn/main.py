@@ -41,6 +41,8 @@ def search_central():
             except:
                 pass
 
+search_central()
+
 if CENTRAL_IP == None:
     logger.error("Central Server not found")
     exit(3)

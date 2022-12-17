@@ -40,6 +40,8 @@ def search_central():
                     break
             except:
                 pass
+    
+search_central()
 
 if CENTRAL_IP == None:
     logger.error("Central Server not found")
