@@ -1,8 +1,9 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
-import json, requests, argparse, os, urllib.parse, hashlib
+import json, requests, argparse, os, urllib.parse, hashlib, threading, socket
 import math, random
 from logging import getLogger, DEBUG, StreamHandler, Formatter
+from time import sleep
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -47,6 +48,28 @@ def get_players():
             pass
         clients.pop(client)
     return players
+
+def udpServer():
+    multicast_group = "224.1.1.1"
+    multicast_port = 9999
+    server_address = ("", multicast_port)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(server_address)
+    mreq = socket.inet_aton(multicast_group) + socket.inet_aton("0.0.0.0")
+    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+    while True:
+        data, address = sock.recvfrom(1024)
+        data = json.loads(data.decode("utf-8"))
+        sleep(0.1)
+        if "type" in data:
+            if data["type"] == "hello":
+                reply = {
+                    "status": "ok",
+                    "info": {
+                        "type": "central"
+                    }
+                }
+                sock.sendto(json.dumps(reply).encode("utf-8"), (address[0], 9999))
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -411,5 +434,8 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 if __name__ == '__main__':
+    udpThread = threading.Thread(target=udpServer)
+    udpThread.daemon = True
+    udpThread.start()
     server = ThreadedHTTPServer(("0.0.0.0", 8000), Handler)
     server.serve_forever()
