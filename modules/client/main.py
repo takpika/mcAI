@@ -26,13 +26,14 @@ def search_central():
         "type": "hello"
     }
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(("0.0.0.0", 9999))
-    sock.timeout = 1
     for _ in range(10):
         sock.sendto(json.dumps(sendData).encode("utf-8"), ("224.1.1.1", 9999))
+        recvSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        recvSock.bind(("", 9999))
+        recvSock.settimeout(1)
         for _ in range(10):
             try:
-                data, addr = sock.recvfrom(1024)
+                data, addr = recvSock.recvfrom(1024)
                 data = json.loads(data.decode("utf-8"))
                 if data["type"] == "hello" and data["info"]["type"] == "central":
                     CENTRAL_IP = addr[0]
