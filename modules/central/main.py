@@ -61,7 +61,7 @@ def udpServer():
         data, address = sock.recvfrom(1024)
         logger.debug("Received multicast from %s" % (address[0]))
         data = json.loads(data.decode("utf-8"))
-        sleep(1)
+        sleep(0.5)
         if "type" in data:
             if data["type"] == "hello":
                 reply = {
