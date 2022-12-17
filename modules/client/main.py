@@ -38,7 +38,7 @@ def search_central():
                     CENTRAL_IP = addr[0]
                     break
             except:
-                pass
+                logger.error("time out")
     
 search_central()
 
