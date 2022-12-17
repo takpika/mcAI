@@ -26,7 +26,7 @@ def search_central():
         "type": "hello"
     }
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind("0.0.0.0", 9999)
+    sock.bind(("0.0.0.0", 9999))
     sock.timeout = 1
     for _ in range(10):
         sock.sendto(json.dumps(sendData).encode("utf-8"), ("224.1.1.1", 9999))
