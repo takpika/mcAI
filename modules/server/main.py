@@ -35,7 +35,7 @@ def search_central():
             try:
                 data, addr = sock.recvfrom(1024)
                 data = json.loads(data.decode("utf-8"))
-                if data["type"] == "hello" and data["info"]["type"] == "central":
+                if data["status"] == "ok" and data["info"]["type"] == "central":
                     CENTRAL_IP = addr[0]
                     break
             except:
