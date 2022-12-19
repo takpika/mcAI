@@ -84,18 +84,26 @@ EOF
 if [ "$PID1" = "systemd" ]; then
 sudo tee /etc/systemd/system/xinitlauncher.service << EOF
 [Unit]
-Description=xinit launcher
-Wants=network-online.target
-After=network-online.target
+Description=X11 session for $USERNAME
+After=graphical.target systemd-user-sessions.service network-online.target
 
 [Service]
-ExecStart=/usr/bin/xinit
-Restart=always
 User=$USERNAME
-Type=simple
+WorkingDirectory=~
+PAMName=login
+Environment=XDG_SESSION_TYPE=x11
+TTYPath=/dev/tty8
+StandardInput=tty
+UnsetEnvironment=TERM
+UtmpIdentifier=tty8
+UtmpMode=user
+StandardOutput=journal
+ExecStartPre=/usr/bin/chvt 8
+ExecStart=/usr/bin/startx -- vt8 -keeptty -verbose 3 -logfile /dev/null
+Restart=always
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical.target
 EOF
 
 sudo tee /etc/systemd/system/mc_watchdog.service << EOF
