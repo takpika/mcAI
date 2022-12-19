@@ -13,7 +13,7 @@ bash scripts/change_host.sh central
 bash scripts/change_dns.sh 8.8.8.8
 set -e
 sudo apt update
-sudo apt install python3 python3-pip python-is-python3 watchdog -y
+DEBIAN_FRONTEND=noninteractive sudo apt install python3 python3-pip python-is-python3 watchdog -y
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
 if [ ! -d mcAI ]; then

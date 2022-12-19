@@ -1,5 +1,4 @@
 #!/bin/bash
-export DEBIAN_FRONTEND=noninteractive
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
@@ -18,7 +17,7 @@ bash scripts/change_host.sh client${ID}
 bash scripts/change_dns.sh 8.8.8.8
 fi
 sudo apt update
-sudo apt install xserver-xorg xserver-xorg-video-dummy openbox xserver-xorg-xinit -y
+DEBIAN_FRONTEND=noninteractive sudo apt install xserver-xorg xserver-xorg-video-dummy openbox xserver-xorg-xinit -y
 sudo tee /usr/share/X11/xorg.conf.d/99-headless.conf << EOF
 Section "Monitor"
     Identifier "dummy_monitor"
@@ -48,7 +47,7 @@ fi
 
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 sudo apt update
-sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip python3-tk python3-dev scrot git cifs-utils xinput inetutils-ping psmisc watchdog libgl1-mesa-dev -y
+DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip python3-tk python3-dev scrot git cifs-utils xinput inetutils-ping psmisc watchdog libgl1-mesa-dev -y
 tee -a ~/.bashrc << EOF
 export PATH="~/.local/bin:\$PATH"
 EOF

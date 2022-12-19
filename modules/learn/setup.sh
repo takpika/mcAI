@@ -13,7 +13,7 @@ bash scripts/change_host.sh learn
 bash scripts/change_dns.sh 8.8.8.8
 set -e
 sudo apt update
-sudo apt install python3 python-is-python3 python3-pip python3-dev git cifs-utils inetutils-ping watchdog libgl1-mesa-dev -y
+DEBIAN_FRONTEND=noninteractive sudo apt install python3 python-is-python3 python3-pip python3-dev git cifs-utils inetutils-ping watchdog libgl1-mesa-dev -y
 tee -a ~/.bashrc << EOF
 export PATH="~/.local/bin:\$PATH"
 EOF
