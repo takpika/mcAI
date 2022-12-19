@@ -2,6 +2,13 @@
 export DEBIAN_FRONTEND=noninteractive
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
+PID1=`ps -p 1 -o comm=`
+if [ "$PID1" = "systemd" ]; then
+    echo "Normal Environment, Running Systemd"
+else
+    echo "Maybe Docker, Chroot or something, Not running Systemd"
+fi
+
 bash scripts/change_host.sh server
 bash scripts/change_dns.sh 8.8.8.8
 set -e
@@ -40,6 +47,7 @@ cp mcAI/modules/server/* ~/
 cp -r mcAI/mcai/ ~/
 python ~/main.py -i $1
 EOF
+if [ "$PID1" = "systemd" ]; then
 sudo tee /etc/systemd/system/minecraft.service << EOF
 [Unit]
 Description=Minecraft Server for AI
@@ -57,3 +65,11 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 sudo systemctl enable --now minecraft
+else
+sudo tee /init << EOF
+#!/bin/bash
+cd /home/$USERNAME
+sudo -u $USERNAME bash /home/$USERNAME/startmcai.sh
+EOF
+sudo chmod +x /init
+fi

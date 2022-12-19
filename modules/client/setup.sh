@@ -4,41 +4,47 @@ USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
 ID=`printf "%02d" $2`
+PID1=`ps -p 1 -o comm=`
+if [ "$PID1" = "systemd" ]; then
+    echo "Normal Environment, Running Systemd"
+else
+    echo "Maybe Docker, Chroot or something, Not running Systemd"
+fi
 set -e
-if [ ! -e ~/.config/autostart/setup.desktop ]; then
+
+if [ ! -e ~/.xinitrc ]; then
 bash scripts/change_host.sh client${ID}
 bash scripts/change_dns.sh 8.8.8.8
 sudo apt update
-sudo apt install gnome-session gnome-terminal gnome-tweaks -y
-if [ ! -d ~/.config/autostart ]; then
-mkdir -p ~/.config/autostart
-fi
-tee ~/.config/autostart/setup.desktop << EOF
-[Desktop Entry]
-Exec=gnome-terminal -- bash -c "cd $CURRENT_DIR; bash $CURRENT_DIR/modules/client/setup.sh $1;bash"
-Type=Application
+sudo apt install xserver-xorg xserver-xorg-video-dummy openbox xserver-xorg-xinit -y
+sudo tee /usr/share/X11/xorg.conf.d/99-headless.conf << EOF
+Section "Monitor"
+    Identifier "dummy_monitor"
+    DisplaySize 1024 768
+EndSection
+
+Section "Device"
+    Identifier "dummy_card"
+    VideoRam 256000
+    Driver "dummy"
+EndSection
+
+Section "Screen"
+    Identifier "dummy_screen"
+    Device "dummy_card"
+    Monitor "dummy_monitor"
+    SubSection "Display"
+    EndSubSection
+EndSection
 EOF
-if [ -e /etc/gdm3/custom.conf ]; then
-sudo sed -i -e "s/\#WaylandEnable/WaylandEnable/g" /etc/gdm3/custom.conf
-sudo sed -i -e "s/\#  AutomaticLoginEnable/AutomaticLoginEnable/g" /etc/gdm3/custom.conf
-sudo sed -i -e "s/\#  AutomaticLogin = user1/AutomaticLogin = $USERNAME/g" /etc/gdm3/custom.conf
-else
-if [ ! -d /etc/gdm3 ]; then
-sudo mkdir -p /etc/gdm3
-fi
-sudo tee /etc/gdm3/custom.conf << EOF
-[daemon]
-WaylandEnable=true
-AutomaticLoginEnable=true
-AutomaticLogin=$USERNAME
+tee - ~/.xinitrc << EOF
+export PATH="~/.local/bin:\$PATH"
+bash /home/$USERNAME/startmcai.sh &
+exec openbox-session
 EOF
 fi
-sudo reboot
-fi
+
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
-gsettings set org.gnome.desktop.session idle-delay 0
-gsettings set org.gnome.desktop.interface enable-animations false
-gsettings set org.gnome.desktop.notifications show-banners false
 sudo apt update
 sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip python3-tk python3-dev scrot git cifs-utils xinput inetutils-ping psmisc watchdog libgl1-mesa-dev -y
 tee -a ~/.bashrc << EOF
@@ -57,6 +63,7 @@ cp -r modules/client/* ~/
 cp scripts/chars.json ~/
 cp -r mcai/ ~/
 rm -rf ~/.config/autostart/setup.desktop
+
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
 if [ ! -d mcAI ]; then
@@ -72,11 +79,24 @@ cp mcAI/scripts/chars.json ~/
 cp -r mcAI/mcai/ ~/
 python ~/main.py -i $1
 EOF
-tee ~/.config/autostart/minecraft.desktop << EOF
-[Desktop Entry]
-Exec=gnome-terminal -- bash /home/$USERNAME/startmcai.sh
-Type=Application
+
+if [ "$PID1" = "systemd" ]; then
+sudo tee /etc/systemd/system/xinitlauncher.service << EOF
+[Unit]
+Description=xinit launcher
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/xinit
+Restart=always
+User=$USERNAME
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
 EOF
+
 sudo tee /etc/systemd/system/mc_watchdog.service << EOF
 [Unit]
 Description=Minecraft Watchdog
@@ -88,6 +108,7 @@ ExecStart=/bin/bash -c "if (! ps ax | grep main.py | grep -q -v grep); then rebo
 [Install]
 WantedBy=multi-user.target
 EOF
+
 sudo tee /etc/systemd/system/mc_watchdog.timer << EOF
 [Unit]
 Description=Minecraft Watchdog Timer
@@ -100,6 +121,15 @@ Unit=mc_watchdog.service
 [Install]
 WantedBy=multi-user.target
 EOF
+
 sudo systemctl daemon-reload
-sudo systemctl enable mc_watchdog.timer
+sudo systemctl enable mc_watchdog.timer xinitlauncher.service
 sudo reboot
+else
+sudo tee /init << EOF
+#!/bin/bash
+cd /home/$USERNAME
+sudo -u $USERNAME /usr/bin/xinit
+EOF
+sudo chmod +x /init
+fi
