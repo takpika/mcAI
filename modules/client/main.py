@@ -65,6 +65,7 @@ def check_registered():
     return result
 
 def register():
+    global LAST_CHECK
     if LAST_CHECK == int(time()):
         return
     LAST_CHECK = int(time())
