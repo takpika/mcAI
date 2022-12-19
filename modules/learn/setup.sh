@@ -47,8 +47,8 @@ After=network.target network-online.target
 
 [Service]
 Type=simple
-ExecStart=bash /home/$USERNAME/startmcai.sh
-WorkingDirectory=/home/$USERNAME
+ExecStart=bash $HOME/startmcai.sh
+WorkingDirectory=$HOME
 User=$USERNAME
 Restart=Always
 RestartSec=5
@@ -60,8 +60,8 @@ sudo systemctl enable --now minecraft
 else
 sudo tee /init << EOF
 #!/bin/bash
-cd /home/$USERNAME
-sudo -u $USERNAME bash /home/$USERNAME/startmcai.sh
+cd $HOME
+sudo -u $USERNAME bash $HOME/startmcai.sh
 EOF
 sudo chmod +x /init
 fi

@@ -44,7 +44,7 @@ EOF
 fi
 tee - ~/.xinitrc << EOF
 export PATH="~/.local/bin:\$PATH"
-bash /home/$USERNAME/startmcai.sh &
+bash $HOME/startmcai.sh &
 exec openbox-session
 EOF
 fi
@@ -141,7 +141,7 @@ sudo reboot
 else
 sudo tee /init << EOF
 #!/bin/bash
-cd /home/$USERNAME
+cd $HOME
 sudo -u $USERNAME /usr/bin/xinit
 EOF
 sudo chmod +x /init
