@@ -17,7 +17,7 @@ bash scripts/change_host.sh client${ID}
 bash scripts/change_dns.sh 8.8.8.8
 fi
 sudo apt update
-DEBIAN_FRONTEND=noninteractive sudo apt install xserver-xorg xserver-xorg-video-dummy openbox xserver-xorg-xinit -y
+DEBIAN_FRONTEND=noninteractive sudo apt install xserver-xorg xserver-xorg-video-dummy openbox xinit -y
 sudo tee /usr/share/X11/xorg.conf.d/99-headless.conf << EOF
 Section "Monitor"
     Identifier "dummy_monitor"
