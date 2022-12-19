@@ -13,8 +13,10 @@ fi
 set -e
 
 if [ ! -e ~/.xinitrc ]; then
+if [ "$PID1" = "systemd" ]; then
 bash scripts/change_host.sh client${ID}
 bash scripts/change_dns.sh 8.8.8.8
+fi
 sudo apt update
 sudo apt install xserver-xorg xserver-xorg-video-dummy openbox xserver-xorg-xinit -y
 sudo tee /usr/share/X11/xorg.conf.d/99-headless.conf << EOF
