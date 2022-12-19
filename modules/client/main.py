@@ -50,6 +50,7 @@ logger.info("Central Server IP: " + CENTRAL_IP)
 
 CHECKING_REGISTER = False
 CHECK_COUNT = 0
+LAST_CHECK = 0
 
 def check_registered():
     global CHECKING_REGISTER
@@ -64,6 +65,9 @@ def check_registered():
     return result
 
 def register():
+    if LAST_CHECK == int(time()):
+        return
+    LAST_CHECK = int(time())
     send_data = {
         "type": "register",
         "info": {
