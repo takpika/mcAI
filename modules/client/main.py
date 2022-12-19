@@ -372,14 +372,8 @@ learn_data = {}
 
 if __name__ == "__main__":
     try:
-        # 起動直後用。Gnomeがアクティビティ画面を開いた状態で立ち上がるため
-        sleep(1)
-        move_center()
-        mouse.click(mbt.left)
-
         while True:
             subprocess.Popen(["portablemc", "start", "-u", HOSTNAME, "forge:%s" % (config["version"]), "--resol", "%dx%d" % (WIDTH, HEIGHT), "-s", SERVER])
-
             while True:
                 try:
                     requests.get("http://localhost:%d/" % (PORT))
@@ -608,4 +602,4 @@ if __name__ == "__main__":
                     threading.Thread(target=register).start()
     finally:
         end_session(hash_id)
-        subprocess.Popen(["gnome-terminal", "--", "bash", "/home/taku/startmcai.sh"])
+        subprocess.Popen(["bash", "/home/taku/startmcai.sh"])

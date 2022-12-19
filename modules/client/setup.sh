@@ -17,6 +17,9 @@ bash scripts/change_host.sh client${ID}
 bash scripts/change_dns.sh 8.8.8.8
 fi
 sudo apt update
+if [ "$PID1" = "systemd" ]; then
+DEBIAN_FRONTEND=noninteractive sudo apt install xserver-xorg xserver-xorg-video-fbdev openbox xinit -y
+else
 DEBIAN_FRONTEND=noninteractive sudo apt install xserver-xorg xserver-xorg-video-dummy openbox xinit -y
 sudo tee /usr/share/X11/xorg.conf.d/99-headless.conf << EOF
 Section "Monitor"
@@ -38,6 +41,7 @@ Section "Screen"
     EndSubSection
 EndSection
 EOF
+fi
 tee - ~/.xinitrc << EOF
 export PATH="~/.local/bin:\$PATH"
 bash /home/$USERNAME/startmcai.sh &
