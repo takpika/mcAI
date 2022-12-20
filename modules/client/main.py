@@ -1,4 +1,3 @@
-from attr import has
 import subprocess, requests, json, pynput, screeninfo, urllib.parse, os, argparse, threading, mcai, psutil, socket, cv2, random, pyautogui
 from mss import mss
 from PIL import ImageDraw, Image
