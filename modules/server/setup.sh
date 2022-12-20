@@ -34,11 +34,11 @@ else
 sed -i -e "s/unix_args.txt/unix_args.txt nogui/g" run.sh
 fi
 mkdir -p ~/world
-for json in ~/*.json; do
-    rm $json
-done
 mkdir -p ~/server
 for json in {ops,whitelist,usercache,banned-ips,banned-players}.json; do
+    if [ -f ~/$json ]; then
+        rm ~/$json
+    fi
     touch ~/server/$json
     ln -s ~/server/$json ~/$json
 done
