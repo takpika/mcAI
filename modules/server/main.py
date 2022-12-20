@@ -29,9 +29,9 @@ if not os.path.exists("world/"):
 jsons = ["ops", "whitelist", "usercache", "banned-ips", "banned-players"]
 if not os.path.exists("server/"):
     os.mkdir("server/")
-for json in jsons:
-    if not os.path.exists("server/%s.json" % json):
-        with open("server/%s.json" % json, "w") as f:
+for j in jsons:
+    if not os.path.exists("server/%s.json" % j):
+        with open("server/%s.json" % j, "w") as f:
             f.write("[]")
 
 CENTRAL_IP = None
