@@ -142,6 +142,7 @@ sudo reboot
 else
 sudo tee /init << EOF
 #!/bin/bash
+rm /tmp/.X0-lock
 cd $HOME
 sudo -u $USERNAME /usr/bin/xinit
 EOF
