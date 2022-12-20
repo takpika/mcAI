@@ -40,6 +40,8 @@ def search_central():
                     break
             except:
                 pass
+        if CENTRAL_IP != None:
+            break
     sock.close()
 
 search_central()
