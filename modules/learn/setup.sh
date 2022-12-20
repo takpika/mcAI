@@ -1,5 +1,6 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
+MODULE="learn"
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 PID1=`ps -p 1 -o comm=`
@@ -20,7 +21,6 @@ tee -a ~/.bashrc << EOF
 export PATH="~/.local/bin:\$PATH"
 EOF
 source ~/.bashrc
-sudo pip install -r modules/learn/requirements.txt
 if [ ! -d ~/.minecraft/mods ]; then
 mkdir -p ~/.minecraft/mods
 fi
@@ -37,7 +37,8 @@ else
     git pull
     cd ..
 fi
-cp -r mcAI/modules/learn/* ~/
+sudo pip install -r mcAI/modules/$MODULE/requirements.txt
+cp -r mcAI/modules/$MODULE/* ~/
 cp mcAI/scripts/chars.json ~/
 cp -r mcAI/mcai/ ~/
 python ~/main.py

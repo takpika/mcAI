@@ -1,4 +1,5 @@
 #!/bin/bash
+MODULE="client"
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
@@ -57,7 +58,6 @@ tee -a ~/.bashrc << EOF
 export PATH="~/.local/bin:\$PATH"
 EOF
 source ~/.bashrc
-sudo pip install -r modules/client/requirements.txt
 if [ ! -d ~/.minecraft/mods ]; then
 mkdir -p ~/.minecraft/mods
 fi
@@ -68,7 +68,6 @@ cp modules/client/options.txt ~/.minecraft/
 cp -r modules/client/* ~/
 cp scripts/chars.json ~/
 cp -r mcai/ ~/
-rm -rf ~/.config/autostart/setup.desktop
 
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
@@ -79,15 +78,16 @@ else
     git pull
     cd ..
 fi
-cp mcAI/modules/client/options.txt ~/.minecraft/
-cp -r mcAI/modules/client/* ~/
+sudo pip install -r mcAI/modules/$MODULE/requirements.txt
+cp mcAI/modules/$MODULE/options.txt ~/.minecraft/
+cp -r mcAI/modules/$MODULE/* ~/
 cp mcAI/scripts/chars.json ~/
 cp -r mcAI/mcai/ ~/
 python ~/main.py
 EOF
 
 if [ "$PID1" = "systemd" ]; then
-sudo tee /etc/systemd/system/xinitlauncher.service << EOF
+sudo tee /etc/systemd/system/xinit.service << EOF
 [Unit]
 Description=X11 session for $USERNAME
 After=graphical.target systemd-user-sessions.service network-online.target
@@ -137,7 +137,7 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable mc_watchdog.timer xinitlauncher.service
+sudo systemctl enable mc_watchdog.timer xinit.service
 sudo reboot
 else
 sudo tee /init << EOF
