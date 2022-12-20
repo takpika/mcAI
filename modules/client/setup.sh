@@ -2,7 +2,7 @@
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
-ID=`printf "%02d" $2`
+ID=`printf "%02d" $1`
 PID1=`ps -p 1 -o comm=`
 if [ "$PID1" = "systemd" ]; then
     echo "Normal Environment, Running Systemd"
@@ -82,7 +82,7 @@ cp mcAI/modules/client/options.txt ~/.minecraft/
 cp -r mcAI/modules/client/* ~/
 cp mcAI/scripts/chars.json ~/
 cp -r mcAI/mcai/ ~/
-python ~/main.py -i $1
+python ~/main.py
 EOF
 
 if [ "$PID1" = "systemd" ]; then

@@ -9,8 +9,10 @@ else
     echo "Maybe Docker, Chroot or something, Not running Systemd"
 fi
 
-bash scripts/change_host.sh server
+if [ "$PID1" = "systemd" ]; then
+bash scripts/change_host.sh client${ID}
 bash scripts/change_dns.sh 8.8.8.8
+fi
 set -e
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip cifs-utils screen inetutils-ping watchdog -y
@@ -45,7 +47,7 @@ else
 fi
 cp mcAI/modules/server/* ~/
 cp -r mcAI/mcai/ ~/
-python ~/main.py -i $1
+python ~/main.py
 EOF
 if [ "$PID1" = "systemd" ]; then
 sudo tee /etc/systemd/system/minecraft.service << EOF

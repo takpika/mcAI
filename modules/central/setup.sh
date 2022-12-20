@@ -9,8 +9,10 @@ else
     echo "Maybe Docker, Chroot or something, Not running Systemd"
 fi
 
-bash scripts/change_host.sh central
+if [ "$PID1" = "systemd" ]; then
+bash scripts/change_host.sh client${ID}
 bash scripts/change_dns.sh 8.8.8.8
+fi
 set -e
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt install python3 python3-pip python-is-python3 watchdog -y
