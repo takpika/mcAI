@@ -33,6 +33,7 @@ echo Skip run.sh...
 else
 sed -i -e "s/unix_args.txt/unix_args.txt nogui/g" run.sh
 fi
+mkdir -p ~/world
 for json in ~/*.json; do
     rm $json
 done

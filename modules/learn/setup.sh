@@ -27,6 +27,7 @@ fi
 cp -r modules/learn/* ~/
 cp scripts/chars.json ~/
 cp -r mcai/ ~/
+mkdir -p ~/models
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
 if [ ! -d mcAI ]; then
