@@ -494,7 +494,11 @@ if __name__ == "__main__":
                         x_reg2 = np.array([getBit(mem_reg2, i) for i in range(7,-1,-1)])
                         x_mem2 = mem[mem_reg2]
                         if len(messages) > 0:
-                            x_name = conv_name(hostname2name(messages[0]["author"]))
+                            if not "name" in messages[0]:
+                                messages[0]["name"] = hostname2name(messages[0]["author"])
+                            elif messages[0]["name"] == "":
+                                messages[0]["name"] = hostname2name(messages[0]["author"])
+                            x_name = conv_name(messages[0]["name"])
                             x_mes = conv_char(messages[0]["message"][char_at])
                             char_at += 1
                             if char_at >= len(messages[0]["message"]):
