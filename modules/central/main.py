@@ -279,7 +279,7 @@ class Handler(BaseHTTPRequestHandler):
                 }
         elif path == "/hostname":
             if "hostname" in query:
-                hostname = query["hostname"][0]
+                hostname = query["hostname"][0].replace("\n", "")
                 if hostname in clients:
                     status_code = 200
                     response = {
