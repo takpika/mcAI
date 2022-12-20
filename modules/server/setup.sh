@@ -33,6 +33,14 @@ echo Skip run.sh...
 else
 sed -i -e "s/unix_args.txt/unix_args.txt nogui/g" run.sh
 fi
+for json in ~/*.json; do
+    rm $json
+done
+mkdir -p ~/serverconf
+for json in {ops,whitelist,usercache,banned-ips,banned-players}.json; do
+    touch ~/serverconf/$json
+    ln -s ~/serverconf/$json ~/$json
+done
 cd $CURRENT_DIR
 cp modules/server/* ~/
 cp -r mcai/ ~/
@@ -68,6 +76,7 @@ WantedBy=multi-user.target
 EOF
 sudo systemctl enable --now minecraft
 else
+rm -rf ~/serverconf
 sudo tee /init << EOF
 #!/bin/bash
 cd $HOME

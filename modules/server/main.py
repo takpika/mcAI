@@ -10,6 +10,11 @@ logger.addHandler(logger_handler)
 
 SERV_TYPE = "minecraft"
 
+if os.path.exists("eula.txt"):
+    os.remove("eula.txt")
+with open("eula.txt", "w") as f:
+    f.write("eula=true")
+
 if os.path.exists("server.properties"):
     with open("server.properties", "r") as f:
         data = f.read()
@@ -17,6 +22,17 @@ if os.path.exists("server.properties"):
     data = data.replace("difficulty=easy", "difficulty=hard")
     with open("server.properties", "w") as f:
         f.write(data)
+
+if not os.path.exists("world/"):
+    os.mkdir("world/")
+
+jsons = ["ops", "whitelist", "usercache", "banned-ips", "banned-players"]
+if not os.path.exists("serverconf/"):
+    os.mkdir("serverconf/")
+for json in jsons:
+    if not os.path.exists("serverconf/%s.json" % json):
+        with open("serverconf/%s.json" % json, "w") as f:
+            f.write("[]")
 
 CENTRAL_IP = None
 logger.info("Searching for Central Server...")

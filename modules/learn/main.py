@@ -19,6 +19,10 @@ logger.addHandler(logger_handler)
 SERV_TYPE = "learn"
 
 CENTRAL_IP = None
+
+if not os.path.exists("models/"):
+    os.mkdir("models")
+
 logger.info("Searching for Central Server...")
 
 def search_central():
@@ -28,7 +32,7 @@ def search_central():
     }
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("0.0.0.0", 9999))
-    sock.settimeout(1)
+    sock.settimeout(3)
     for _ in range(10):
         sock.sendto(json.dumps(sendData).encode("utf-8"), ("224.1.1.1", 9999))
         for _ in range(10):
@@ -263,8 +267,6 @@ def check():
         CHECK_FIRSTRUN = False
     if sum(learn_counts) >= 1000 and not training:
         training = True
-        #if os.path.exists("model.h5"):
-        #    model.model.load_weights("model.h5")
         logger.info("Start Learning")
         logger.debug("Start: VAE Learning [Alpha]")
         vae = mcai.image.ImageVAE()
@@ -355,9 +357,9 @@ def check():
                     os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         logger.info("Finish Learning")
         MODEL_WRITING = True
-        model.model.save("model.h5")
+        model.model.save("models/model.h5")
         MODEL_WRITING = False
-        with open("version", "w") as f:
+        with open("models/version", "w") as f:
             f.write(str(int(datetime.now().timestamp())))
         training = False
 
@@ -365,8 +367,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.path == "/model.h5":
             version = 0
-            if os.path.exists('version'):
-                with open("version", "r") as f:
+            if os.path.exists('models/version'):
+                with open("models/version", "r") as f:
                     version = int(f.read())
             response = {
                 'status': 'ok',
@@ -401,11 +403,11 @@ class Handler(BaseHTTPRequestHandler):
                 responseBody = json.dumps(response)
                 self.wfile.write(responseBody.encode('utf-8'))
             else:
-                if os.path.exists("model.h5"):
+                if os.path.exists("models/model.h5"):
                     self.send_response(200)
                     self.send_header('Content-type', 'application/octet-stream')
                     self.end_headers()
-                    self.wfile.write(open("model.h5", "rb").read())
+                    self.wfile.write(open("models/model.h5", "rb").read())
                 else:
                     response = {
                         'status': 'ng', 
