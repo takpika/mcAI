@@ -11,4 +11,8 @@ RUN echo "mcai ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 RUN cd /var/mcai && sudo -u mcai git clone https://github.com/takpika/mcAI.git
 RUN cd /var/mcai/mcAI && sudo -u mcai git checkout development && sudo -u mcai git pull && sudo -u mcai bash modules/learn/setup.sh
 
+USER mcai
+VOLUME ["/var/mcai/models"]
+
+USER root
 CMD ["/init"]
