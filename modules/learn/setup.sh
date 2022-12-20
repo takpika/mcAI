@@ -30,6 +30,11 @@ cp -r mcai/ ~/
 mkdir -p ~/models
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
+if [ -d models ]; then
+    sudo chown -R $USERNAME:$USERNAME models
+else
+    mkdir -p models
+fi
 if [ ! -d mcAI ]; then
     git clone https://github.com/takpika/mcAI.git
 else

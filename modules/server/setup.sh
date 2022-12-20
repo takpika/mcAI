@@ -47,6 +47,13 @@ cp modules/server/* ~/
 cp -r mcai/ ~/
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
+for folder in {world, server}; do
+    if [ -d $folder ]; then
+        sudo chown -R $USERNAME:$USERNAME \$folder
+    else
+        mkdir -p \$folder
+    fi
+done
 if [ ! -d mcAI ]; then
     git clone https://github.com/takpika/mcAI.git
 else
