@@ -1,4 +1,4 @@
-import json, os, psutil, socket, requests, argparse, subprocess, threading
+import json, os, socket, requests, subprocess
 from logging import getLogger, DEBUG, StreamHandler, Formatter
 
 logger = getLogger(__name__)

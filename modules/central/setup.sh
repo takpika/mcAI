@@ -16,6 +16,7 @@ fi
 set -e
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt install python3 python3-pip python-is-python3 watchdog -y
+sudo pip install -r modules/central/requirements.txt
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
 if [ ! -d mcAI ]; then

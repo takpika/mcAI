@@ -16,7 +16,7 @@ fi
 set -e
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip cifs-utils screen inetutils-ping watchdog -y
-pip install psutil
+sudo pip install -r modules/server/requirements.txt
 cd ~/
 wget https://maven.minecraftforge.net/net/minecraftforge/forge/1.18.1-39.0.79/forge-1.18.1-39.0.79-installer.jar
 java -jar forge-1.18.1-39.0.79-installer.jar --installServer
