@@ -142,7 +142,7 @@ class Handler(BaseHTTPRequestHandler):
                     "msg": "type is required"
                 }
         elif path == "/chat":
-            hostname = query["hostname"][0]
+            hostname = query["hostname"][0].replace("\n","")
             players = get_players()
             if hostname in players:
                 player_pos = players[hostname]["pos"]
