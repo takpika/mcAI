@@ -32,7 +32,7 @@ def main():
     )
     args = parser.parse_args()
     devnull = open("/dev/null", "wb")
-    process = subprocess.check_output("ps -p 1 -o comm=".split()).encode().replace("\n","")
+    process = subprocess.check_output("ps -p 1 -o comm=".split()).decode().replace("\n","")
     if process == "systemd":
         netplanText = """
         network:
