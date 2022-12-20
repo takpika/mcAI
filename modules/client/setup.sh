@@ -61,7 +61,7 @@ source ~/.bashrc
 if [ ! -d ~/.minecraft/mods ]; then
 mkdir -p ~/.minecraft/mods
 fi
-sudo pip install requests
+sudo pip install requests BeautifulSoup4
 curl -o ~/.minecraft/mods/OptiFine_1.18.1_HD_U_H4.jar `python scripts/download_optifine.py`
 bash modules/client/build_mod.sh
 mv ~/*.jar ~/.minecraft/mods
