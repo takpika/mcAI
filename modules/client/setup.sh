@@ -21,6 +21,7 @@ if [ "$PID1" = "systemd" ]; then
 DEBIAN_FRONTEND=noninteractive sudo apt install xserver-xorg xserver-xorg-video-fbdev openbox xinit -y
 else
 DEBIAN_FRONTEND=noninteractive sudo apt install xserver-xorg xserver-xorg-video-dummy openbox xinit -y
+sudo sed -ie "s/console/anybody/g" /etc/X11/Xwrapper.config 
 sudo tee /usr/share/X11/xorg.conf.d/99-headless.conf << EOF
 Section "Monitor"
     Identifier "dummy_monitor"
