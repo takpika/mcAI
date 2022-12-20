@@ -51,7 +51,7 @@ fi
 
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 sudo apt update
-DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip python3-tk python3-dev scrot git cifs-utils xinput inetutils-ping psmisc watchdog libgl1-mesa-dev -y
+DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip python3-tk python3-dev scrot git cifs-utils xinput inetutils-ping psmisc watchdog libgl1-mesa-dev curl -y
 tee -a ~/.bashrc << EOF
 export PATH="~/.local/bin:\$PATH"
 EOF
