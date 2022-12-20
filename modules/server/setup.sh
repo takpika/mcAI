@@ -1,5 +1,6 @@
 #!/bin/bash
 export DEBIAN_FRONTEND=noninteractive
+MODULE="server"
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 PID1=`ps -p 1 -o comm=`
@@ -16,7 +17,6 @@ fi
 set -e
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip cifs-utils screen inetutils-ping watchdog curl -y
-sudo pip install -r modules/server/requirements.txt
 cd ~/
 curl -O https://maven.minecraftforge.net/net/minecraftforge/forge/1.18.1-39.0.79/forge-1.18.1-39.0.79-installer.jar
 java -jar forge-1.18.1-39.0.79-installer.jar --installServer
@@ -37,10 +37,10 @@ mkdir -p ~/world
 for json in ~/*.json; do
     rm $json
 done
-mkdir -p ~/serverconf
+mkdir -p ~/server
 for json in {ops,whitelist,usercache,banned-ips,banned-players}.json; do
-    touch ~/serverconf/$json
-    ln -s ~/serverconf/$json ~/$json
+    touch ~/server/$json
+    ln -s ~/server/$json ~/$json
 done
 cd $CURRENT_DIR
 cp modules/server/* ~/
@@ -54,7 +54,8 @@ else
     git pull
     cd ..
 fi
-cp mcAI/modules/server/* ~/
+sudo pip install -r mcAI/modules/$MODULE/requirements.txt
+cp mcAI/modules/$MODULE/* ~/
 cp -r mcAI/mcai/ ~/
 python ~/main.py
 EOF
@@ -77,7 +78,7 @@ WantedBy=multi-user.target
 EOF
 sudo systemctl enable --now minecraft
 else
-rm -rf ~/serverconf
+rm -rf ~/server
 sudo tee /init << EOF
 #!/bin/bash
 cd $HOME
