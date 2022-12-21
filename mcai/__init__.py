@@ -6,6 +6,7 @@ from tensorflow.keras.backend import clear_session
 import numpy as np
 from random import random
 import os
+from . import image
 
 class mcAI():
     def __init__(self, WIDTH, HEIGHT, CHARS_COUNT, logger):
@@ -14,6 +15,8 @@ class mcAI():
         self.HEIGHT = HEIGHT
         self.CHARS_COUNT = CHARS_COUNT
         self.logger = logger
+        self.encoder = image.ImageEncoder()
+        self.encoder.model.trainable = False
         self.make_model()
 
     def clearSession(self):
@@ -50,27 +53,13 @@ class mcAI():
         out = Dense(16, activation="relu")(hid)
         return Model([reg, data, reg2, data2], out)
 
-    def build_videoEncoder(self):
-        inp = Input(shape=(self.HEIGHT, self.WIDTH, 3))
-        hid = Conv2D(64, kernel_size=4, padding="same", activation="relu")(inp)
-        hid = MaxPooling2D((2,2))(hid)
-        hid = BatchNormalization()(hid)
-        hid = Conv2D(128, kernel_size=4, padding="same", activation="relu")(hid)
-        hid = MaxPooling2D((2,2))(hid)
-        hid = BatchNormalization()(hid)
-        hid = Conv2D(256, kernel_size=4, padding="same", activation="relu")(hid)
-        hid = MaxPooling2D((2,2))(hid)
-        hid = BatchNormalization()(hid)
-        hid = Flatten()(hid)
-        out = Dense(16, activation="relu")(hid)
-        return Model([inp], out)
-
     def build_hidden(self):
-        video = self.build_videoEncoder()
+        video = self.encoder.model
         mem = self.memEncoder()
         chat = self.chatEncoder()
         seed = Input(shape=(100))
-        hid = Concatenate()([video.output, mem.output, chat.output, seed])
+        video_hid = Flatten()(video.output)
+        hid = Concatenate()([video_hid, mem.output, chat.output, seed])
         hid = Dropout(0.2)(hid)
         hid = Dense(64, activation="relu")(hid)
         hid = Dense(32, activation="relu")(hid)

@@ -32,19 +32,21 @@ def main():
     )
     args = parser.parse_args()
     devnull = open("/dev/null", "wb")
-    netplanText = """
-    network:
-        version: 2
-        ethernets:
-            %s:
-                addresses: [\\\"%s\\\"]
-    """ % (args.interface, args.ip)
-    netplanFileName = "99-mcAI.yaml"
-    if os.path.exists(os.path.join("/etc/netplan", netplanFileName)):
-        subprocess.run("sudo rm \"%s\"" % (os.path.join("/etc/netplan", netplanFileName)), shell=True)
-    subprocess.run('echo "%s" | sudo tee /etc/netplan/%s' % (netplanText, netplanFileName), shell=True, stdout=devnull)
-    subprocess.run('sudo netplan apply', shell=True)
-    subprocess.run("bash modules/%s/setup.sh %s %d" % (args.type, args.interface, args.number), shell=True)
+    process = subprocess.check_output("ps -p 1 -o comm=".split()).decode().replace("\n","")
+    if process == "systemd":
+        netplanText = """
+        network:
+            version: 2
+            ethernets:
+                %s:
+                    addresses: [\\\"%s\\\"]
+        """ % (args.interface, args.ip)
+        netplanFileName = "99-mcAI.yaml"
+        if os.path.exists(os.path.join("/etc/netplan", netplanFileName)):
+            subprocess.run("sudo rm \"%s\"" % (os.path.join("/etc/netplan", netplanFileName)), shell=True)
+        subprocess.run('echo "%s" | sudo tee /etc/netplan/%s' % (netplanText, netplanFileName), shell=True, stdout=devnull)
+        subprocess.run('sudo netplan apply', shell=True)
+    subprocess.run("bash modules/%s/setup.sh %d" % (args.type, args.number), shell=True)
 
 if __name__ == "__main__":
     main()

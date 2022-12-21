@@ -4,19 +4,20 @@
         "mc_folder": "__HOME__/.minecraft",
         "save_folder": "__WORKDIR__/saves",
         "data_folder": "__WORKDIR__/data",
+        "video_folder": "__WORKDIR__/videos",
         "name_file": "__WORKDIR__/names.txt",
         "char_file": "__WORKDIR__/chars.json",
         "video_file": "__WORKDIR__/record.mp4"
     },
     "resolution": {
-        "x": 175,
-        "y": 175
+        "x": 256,
+        "y": 256
     },
     "chat_chars_limit": 512,
     "frame_record_limit": 1000,
     "port": 8000,
     "version": "1.18.1",
-    "epochs": 5,
+    "epochs": 10,
     "threshold": {
         "distance": 10.0,
         "direction": 30.0

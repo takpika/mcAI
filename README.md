@@ -5,6 +5,29 @@ Minecraftという仮想世界の中でAIを野放しにして、人の手を一
 現状成果はありませんが、管理のこともありソースコードを公開することにしました。
 
 ## インストール方法
+Docker版とソースコード版の2つがあります。
+## Docker版
+### 1. インストール
+1. Dockerをインストール
+```bash
+sudo apt install docker docker-compose docker.io -y
+```
+
+2. レポジトリをクローン
+```bash
+git clone https://github.com/takpika/mcAI
+```
+
+### 2. 実行
+```bash
+sudo docker-compose up -d
+```
+ - 停止するには以下のコマンドを実行してください
+```bash
+sudo docker-compose down
+```
+
+## ソースコード版
 ### 1. 用意するもの
 - 以下の種類をそれぞれ実行できるLinuxサーバー（できればUbuntu・最低4台）
   - 中央サーバー（推奨メモリ: 1GB）`central`

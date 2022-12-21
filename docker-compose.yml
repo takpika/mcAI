@@ -1,0 +1,19 @@
+version: '2'
+services:
+  central:
+    image: takpika/mcai-central:latest
+  client01:
+    image: takpika/mcai-client:latest
+  client02:
+    image: takpika/mcai-client:latest
+  learn:
+    image: takpika/mcai-learn:latest
+    volumes:
+      - ./models:/var/mcai/models
+  server:
+    image: takpika/mcai-server:latest
+    volumes:
+      - ./world:/var/mcai/world
+      - ./server:/var/mcai/server
+    ports:
+      - "25565:25565"

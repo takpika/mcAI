@@ -1,8 +1,9 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
-import json, requests, argparse, os, urllib.parse, hashlib
+import json, requests, argparse, os, urllib.parse, hashlib, threading, socket
 import math, random
 from logging import getLogger, DEBUG, StreamHandler, Formatter
+from time import sleep
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -11,7 +12,7 @@ logger_formatter = Formatter(fmt='%(asctime)-15s [%(name)s] %(message)s')
 logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
-clients = []
+clients = {}
 mc_server = None
 learn_server = None
 
@@ -32,21 +33,46 @@ with open(config["files"]["name_file"].replace("__WORKDIR__", os.getcwd()), "r")
 def get_players():
     global clients
     clientsCopy = clients.copy()
-    players = []
-    for i in range(len(clients)):
+    players = {}
+    for client in clientsCopy:
         try:
-            data = json.loads(requests.get("http://%s:8000/" % (clientsCopy[i]["ip"])).text)
+            data = json.loads(requests.get("http://%s:8000/" % (clientsCopy[client]["ip"])).text)
             if "playing":
-                players.append({
-                    "name": data["player"]["name"],
+                players[data["player"]["name"]] = {
+                    "name": clientsCopy[client]["name"],
                     "pos": data["player"]["pos"],
                     "dir": data["player"]["direction"]
-                })
+                }
                 continue
         except:
             pass
-        clients.remove(clientsCopy[i])
+        clients.pop(client)
     return players
+
+def udpServer():
+    multicast_group = "224.1.1.1"
+    multicast_port = 9999
+    server_address = ("", multicast_port)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(server_address)
+    mreq = socket.inet_aton(multicast_group) + socket.inet_aton("0.0.0.0")
+    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+    while True:
+        data, address = sock.recvfrom(1024)
+        logger.debug("Received multicast from %s" % (address[0]))
+        data = json.loads(data.decode("utf-8"))
+        sleep(0.5)
+        if "type" in data:
+            if data["type"] == "hello":
+                reply = {
+                    "status": "ok",
+                    "info": {
+                        "type": "central"
+                    }
+                }
+                for i in range(10):
+                    sock.sendto(json.dumps(reply).encode("utf-8"), (address[0], 9999))
+                    sleep(0.1)
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -59,6 +85,7 @@ class Handler(BaseHTTPRequestHandler):
         path = parse_data.path
         query = urllib.parse.parse_qs(parse_data.query)
         status_code = 400
+        ip_addr = self.client_address[0]
         if path == "/config":
             if "type" in query:
                 pc_type = query["type"][0].lower()
@@ -95,6 +122,7 @@ class Handler(BaseHTTPRequestHandler):
                             "port": config["port"],
                             "save_folder": config["files"]["save_folder"],
                             "data_folder": config["files"]["data_folder"],
+                            "video_folder": config["files"]["video_folder"],
                             "char_file": config["files"]["char_file"],
                             "version": config["version"],
                             "resolution": config["resolution"],
@@ -114,29 +142,25 @@ class Handler(BaseHTTPRequestHandler):
                     "msg": "type is required"
                 }
         elif path == "/chat":
-            name = query["name"][0]
+            hostname = query["hostname"][0].replace("\n","")
             players = get_players()
-            p_names = [p["name"] for p in players]
-            if name in p_names:
-                for i in players:
-                    if i["name"] == name:
-                        player_pos = i["pos"]
-                        player_dir = i["dir"]
-                        break
+            if hostname in players:
+                player_pos = players[hostname]["pos"]
+                player_dir = players[hostname]["dir"]
                 dis_ok = []
                 for p in players:
-                    if p["name"] != name:
-                        dis_x = p["pos"]["x"] - player_pos["x"]
-                        dis_y = p["pos"]["y"] - player_pos["y"]
-                        dis_z = p["pos"]["z"] - player_pos["z"]
+                    if p != hostname:
+                        dis_x = players[p]["pos"]["x"] - player_pos["x"]
+                        dis_y = players[p]["pos"]["y"] - player_pos["y"]
+                        dis_z = players[p]["pos"]["z"] - player_pos["z"]
                         dis = (dis_x ** 2 + dis_y ** 2 + dis_z ** 2) ** 0.5
                         if dis <= config["threshold"]["distance"]:
                             dis_ok.append(p)
                 talkable = []
                 dir_dis = []
                 for p in dis_ok:
-                    dis_x = p["pos"]["x"] - player_pos["x"]
-                    dis_z = p["pos"]["z"] - player_pos["z"]
+                    dis_x = players[p]["pos"]["x"] - player_pos["x"]
+                    dis_z = players[p]["pos"]["z"] - player_pos["z"]
                     y_degree = 0
                     if dis_x == 0:
                         if dis_z >= 0:
@@ -165,7 +189,7 @@ class Handler(BaseHTTPRequestHandler):
                         elif tmp_z >= 0 and tmp_x >= 0:
                             y_degree = degree + 270
                     dis_xz = (dis_x ** 2 + dis_z ** 2) ** 0.5
-                    dis_y = p["pos"]["y"] - player_pos["y"]
+                    dis_y = players[p]["pos"]["y"] - player_pos["y"]
                     tmp_y = dis_y
                     if tmp_y < 0:
                         tmp_y = -tmp_y
@@ -207,7 +231,7 @@ class Handler(BaseHTTPRequestHandler):
                             response = {
                                 'status': 'ok',
                                 'info': {
-                                    'name': talkable[i]['name']
+                                    'name': talkable[i]
                                 }
                             }
                             break
@@ -218,22 +242,64 @@ class Handler(BaseHTTPRequestHandler):
                     'msg': 'unknown name. please register'
                 }
         elif path == "/name":
-            players = get_players()
-            p_names = [p["name"] for p in players]
-            while True:
-                if len(names) < 1:
-                    with open(config["files"]["name_file"].replace("__WORKDIR__", os.getcwd()), "r") as f:
-                        names = f.read().splitlines()
-                name = random.sample(names, 1)[0]
-                if not name in p_names:
-                    break
-            status_code = 200
-            response = {
-                'status': 'ok',
-                'info': {
-                    'name': name
+            if "hostname" in query:
+                hostname = query["hostname"][0].replace("\n","")
+                if hostname in clients:
+                    client_data = clients[hostname]
+                    players = get_players()
+                    p_names = [players[p]["name"] for p in players]
+                    while True:
+                        if len(names) < 1:
+                            with open(config["files"]["name_file"].replace("__WORKDIR__", os.getcwd()), "r") as f:
+                                names = f.read().splitlines()
+                        name = random.sample(names, 1)[0]
+                        if not name in p_names:
+                            break
+                    if not hostname in clients:
+                        clients[hostname] = client_data
+                    clients[hostname]["name"] = name
+                    status_code = 200
+                    response = {
+                        'status': 'ok',
+                        'info': {
+                            'name': name
+                        }
+                    }
+                else:
+                    status_code = 400
+                    response = {
+                        'status': 'ng',
+                        'msg': 'plz register first'
+                    }
+            else:
+                status_code = 400
+                response = {
+                    'status': 'ng',
+                    'msg': 'missing parm hostname'
                 }
-            }
+        elif path == "/hostname":
+            if "hostname" in query:
+                hostname = query["hostname"][0].replace("\n", "")
+                if hostname in clients:
+                    status_code = 200
+                    response = {
+                        'status': 'ok',
+                        'info': {
+                            'name': clients[hostname]["name"]
+                        }
+                    }
+                else:
+                    status_code = 404
+                    response = {
+                        'status': 'ng',
+                        'msg': 'not found'
+                    }
+            else:
+                status_code = 400
+                response = {
+                    'status': 'ng',
+                    'msg': 'missing parm hostname'
+                }
         elif path == "/id":
             seed = str(random.random())
             status_code = 200
@@ -244,7 +310,7 @@ class Handler(BaseHTTPRequestHandler):
                 }
             }
         elif path == "/check":
-            if "type" in query and "ip" in query:
+            if "type" in query:
                 status_code = 404
                 response = {
                     'status': 'ok',
@@ -254,17 +320,17 @@ class Handler(BaseHTTPRequestHandler):
                 }
                 if query['type'][0] == 'client':
                     for c in clients:
-                        if c['ip'] == query["ip"][0]:
+                        if clients[c]['ip'] == ip_addr:
                             status_code = 200
                             response['info']['result'] = True
                 elif query['type'][0] == 'learn':
                     if learn_server != None:
-                        if learn_server["ip"] == query['ip'][0]:
+                        if learn_server["ip"] == ip_addr:
                             status_code = 200
                             response['info']['result'] = True
                 elif query['type'][0] == 'minecraft':
                     if mc_server != None:
-                        if mc_server['ip'] == query['ip'][0]:
+                        if mc_server['ip'] == ip_addr:
                             status_code = 200
                             response['info']['result'] = True
                 else:
@@ -316,22 +382,31 @@ class Handler(BaseHTTPRequestHandler):
                 type = requestBody["type"]
                 if type == "register":
                     status_code = 200
+                    ip_addr = self.client_address[0]
                     response = {
                         "status": "ok"
                     }
                     data = requestBody["info"]
                     pc_type = data["type"]
                     if pc_type == "client":
-                        clients.append({
-                            "ip": data["ip"]
-                        })
+                        if not "hostname" in data:
+                            status_code = 400
+                            response = {
+                                "status": "ng",
+                                "msg": "missing parm hostname"
+                            }
+                        else:
+                            clients[data["hostname"]] = {
+                                "ip": ip_addr,
+                                "name": ""
+                            }
                     elif pc_type == "learn":
                         learn_server = {
-                            "ip": data["ip"]
+                            "ip": ip_addr
                         }
                     elif pc_type == "minecraft":
                         mc_server = {
-                            "ip": data["ip"]
+                            "ip": ip_addr
                         }
                     else:
                         response = {
@@ -365,5 +440,8 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 if __name__ == '__main__':
+    udpThread = threading.Thread(target=udpServer)
+    udpThread.daemon = True
+    udpThread.start()
     server = ThreadedHTTPServer(("0.0.0.0", 8000), Handler)
     server.serve_forever()

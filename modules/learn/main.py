@@ -18,63 +18,37 @@ logger.addHandler(logger_handler)
 
 SERV_TYPE = "learn"
 
-CHECK_FIRSTRUN = True
-
-parser = argparse.ArgumentParser(
-    prog='server.py',
-    description='mcAI Learning Agent',
-    add_help = True
-)
-parser.add_argument('-i', '--interface', help='Interface', default="eth0", type=str)
-args = parser.parse_args()
-
-if_addrs = psutil.net_if_addrs()
-if not args.interface in if_addrs:
-    logger.error("Interface not found:", args.interface)
-    exit(1)
-ip = None
-for addr in if_addrs[args.interface]:
-    if addr.family == socket.AF_INET:
-        ip = addr.address
-
-if ip == None:
-    logger.error("IPv4 address required.")
-    exit(2)
-logger.info("Your IP: "+ip)
-lan_addr = ""
-for i in range(3):
-    lan_addr += ip.split(".")[i] + "."
-
-def ping(ip):
-    devnull = open("/dev/null", "wb")
-    result = subprocess.run(["ping", ip, "-c", "1", "-w", "1"], stdout=devnull, stderr=devnull)
-    devnull.close()
-    return result.returncode == 0
-
 CENTRAL_IP = None
+
+if not os.path.exists("models/"):
+    os.mkdir("models")
+
 logger.info("Searching for Central Server...")
-def search_central(start, end):
+
+def search_central():
     global CENTRAL_IP
-    for x in range(start, end):
-        try:
-            if lan_addr + str(x) != ip and CENTRAL_IP == None:
-                if ping(lan_addr+str(x)):
-                    res = requests.get("http://%s:%d/hello" % (lan_addr+str(x), 8000))
-                    if res.status_code != 200:
-                        continue
-                    data = json.loads(res.text)
-                    if not "info" in data:
-                        continue
-                    if data["info"]["type"] == "central":
-                        CENTRAL_IP = lan_addr + str(x)
-                        break
-        except:
-            pass
-ts = [threading.Thread(target=search_central, args=(i*64, (i+1)*64)) for i in range(4)]
-for t in ts:
-    t.start()
-for t in ts:
-    t.join()
+    sendData = {
+        "type": "hello"
+    }
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(("0.0.0.0", 9999))
+    sock.settimeout(3)
+    for _ in range(10):
+        sock.sendto(json.dumps(sendData).encode("utf-8"), ("224.1.1.1", 9999))
+        for _ in range(10):
+            try:
+                data, addr = sock.recvfrom(1024)
+                data = json.loads(data.decode("utf-8"))
+                if data["status"] == "ok" and data["info"]["type"] == "central":
+                    CENTRAL_IP = addr[0]
+                    break
+            except:
+                pass
+        if CENTRAL_IP != None:
+            break
+    sock.close()
+
+search_central()
 
 if CENTRAL_IP == None:
     logger.error("Central Server not found")
@@ -84,13 +58,12 @@ logger.info("Central Server IP: " + CENTRAL_IP)
 send_data = {
     "type": "register",
     "info": {
-        "type": SERV_TYPE.lower(),
-        "ip": ip
+        "type": SERV_TYPE.lower()
     }
 }
 trys = 0
 
-while requests.get("http://%s:%d/check?type=%s&ip=%s" % (CENTRAL_IP, 8000, SERV_TYPE, ip)).status_code != 200:
+while requests.get("http://%s:%d/check?type=%s" % (CENTRAL_IP, 8000, SERV_TYPE)).status_code != 200:
     requests.post("http://%s:%d/" % (CENTRAL_IP, 8000), json=send_data)
     trys += 1
     if trys > 10:
@@ -111,10 +84,13 @@ for key in config.keys():
 
 SAVE_FOLDER = config["save_folder"]
 DATA_FOLDER = config["data_folder"]
+VIDEO_FOLDER = config["video_folder"]
 if not os.path.exists(SAVE_FOLDER):
     os.makedirs(SAVE_FOLDER)
 if not os.path.exists(DATA_FOLDER):
     os.makedirs(DATA_FOLDER)
+if not os.path.exists(VIDEO_FOLDER):
+    os.makedirs(VIDEO_FOLDER)
 
 WIDTH = config["resolution"]["x"]
 HEIGHT = config["resolution"]["y"]
@@ -129,6 +105,7 @@ CHARS_COUNT = len(chars["chars"])
 data = []
 learn_data = []
 training = False
+vae = mcai.image.ImageVAE()
 model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
 
 def limit(i):
@@ -249,13 +226,13 @@ def convBit(value):
     return np.array([getBit(value, i) for i in range(7, -1, -1)])
 
 CHECK_PROCESSING = False
+MODEL_WRITING = False
+CHECK_FIRSTRUN = True
 
 def check():
-    global training
-    global learn_data
-    global data
-    global CHECK_PROCESSING
-    global CHECK_FIRSTRUN
+    global training, learn_data, data
+    global CHECK_PROCESSING, CHECK_FIRSTRUN, MODEL_WRITING
+    global model, vae
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
     learn_counts = [0]
@@ -265,6 +242,7 @@ def check():
         if len(counts) > 0:
             for id in ids:
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+                shutil.copy(os.path.join(DATA_FOLDER, "%s.mp4" % (id)), os.path.join(VIDEO_FOLDER, "%s.mp4" % (id)))
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.json" % (id)), os.path.join(DATA_FOLDER, "%s.json" % (id)))
                 with open(os.path.join(DATA_FOLDER, "%s.json" % (id)), "r") as f:
                     data = json.loads(f.read())
@@ -289,27 +267,57 @@ def check():
         CHECK_FIRSTRUN = False
     if sum(learn_counts) >= 1000 and not training:
         training = True
-        if os.path.exists("model.h5"):
-            model.model.load_weights("model.h5")
         logger.info("Start Learning")
+        logger.debug("Start: VAE Learning [Alpha]")
+        vae = mcai.image.ImageVAE()
+        video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
+        for epoch in range(EPOCHS):
+            i = 0
+            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+            frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
+            while True:
+                ret, frame = video.read()
+                if not ret:
+                    video.release()
+                    if i < len(video_ids) - 1:
+                        i += 1
+                        video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+                        continue
+                    else:
+                        vae.model.train_on_batch(frames/255, frames/255)
+                        break
+                try:
+                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
+                    frames = np.append(frames, np.array(frame).astype("uint8").reshape((1,256,256,3)), axis=0)
+                except:
+                    logger.warning("Frame Skipped")
+                    logger.warning(frame)
+                if frames.shape[0] >= 10:
+                    loss = vae.model.train_on_batch(frames/255, frames/255)
+                    logger.debug("VAE Loss: %.6f" % (loss))
+                    frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
+        vae.encoder.model.save("encoder.h5")
+        logger.debug("End: VAE Learning [Alpha]")
         total_count = 0
         now_count = 0
         mx, mn = max(learn_counts), min(learn_counts)
         ave, pow_ave = sum(learn_counts) / len(learn_counts), sum([count ** 2 for count in learn_counts]) / len(learn_counts)
         max_dis = mx - ave
         for count in learn_counts:
-            a, b = int(count / 1000), count % 1000
+            a, b = int(count / 10), count % 10
             if b > 0:
                 a += 1
             total_count += a
         total_count *= EPOCHS
+        model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
+        model.encoder.model.load_weights("encoder.h5")
         for epoch in range(EPOCHS):
             for id in learn_ids:
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                     l_data = pickle.load(f)
                 count = len(l_data)
                 point = (count - ave) / max_dis
-                a, b = int(count / 1000), count % 1000
+                a, b = int(count / 10), count % 10
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 all_count = a
                 if b > 0:
@@ -318,7 +326,7 @@ def check():
                 for i in range(all_count):
                     c = b
                     if i != a:
-                        c = 1000
+                        c = 10
                     learn_data = []
                     for x in range(c):
                         f = []
@@ -328,7 +336,7 @@ def check():
                         except:
                             break
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
-                        f_ctrls = l_data[i*1000+x]
+                        f_ctrls = l_data[i*10+x]
                         for v in range(8):
                             f_ctrls[6+v] = f_ctrls[6+v] * point
                             if point < 0:
@@ -338,17 +346,20 @@ def check():
                         learn_data.append(f)
                     x, y = convertData()
                     try:
-                        model.model.fit(x, y, epochs=1, batch_size=10)
+                        model.model.train_on_batch(x, y)
                     except:
                         logger.error("Training failure, skipped...")
                     now_count += 1
-                    logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
+                    if now_count % 10 == 0:
+                        logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
                 if epoch >= EPOCHS-1:
                     os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                     os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         logger.info("Finish Learning")
-        model.model.save("model.h5")
-        with open("version", "w") as f:
+        MODEL_WRITING = True
+        model.model.save("models/model.h5")
+        MODEL_WRITING = False
+        with open("models/version", "w") as f:
             f.write(str(int(datetime.now().timestamp())))
         training = False
 
@@ -356,8 +367,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.path == "/model.h5":
             version = 0
-            if os.path.exists('version'):
-                with open("version", "r") as f:
+            if os.path.exists('models/version'):
+                with open("models/version", "r") as f:
                     version = int(f.read())
             response = {
                 'status': 'ok',
@@ -381,7 +392,7 @@ class Handler(BaseHTTPRequestHandler):
             responseBody = json.dumps(response)
             self.wfile.write(responseBody.encode('utf-8'))
         else:
-            if training:
+            if MODEL_WRITING:
                 response = {
                     'status': 'ng', 
                     'error': 'training'
@@ -392,11 +403,11 @@ class Handler(BaseHTTPRequestHandler):
                 responseBody = json.dumps(response)
                 self.wfile.write(responseBody.encode('utf-8'))
             else:
-                if os.path.exists("model.h5"):
+                if os.path.exists("models/model.h5"):
                     self.send_response(200)
                     self.send_header('Content-type', 'application/octet-stream')
                     self.end_headers()
-                    self.wfile.write(open("model.h5", "rb").read())
+                    self.wfile.write(open("models/model.h5", "rb").read())
                 else:
                     response = {
                         'status': 'ng', 
