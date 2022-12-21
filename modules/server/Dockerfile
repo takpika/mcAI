@@ -10,6 +10,5 @@ RUN useradd -m -d /var/mcai -s /bin/bash mcai
 RUN echo "mcai ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 RUN cd /var/mcai && sudo -u mcai git clone https://github.com/takpika/mcAI.git
 RUN cd /var/mcai/mcAI && sudo -u mcai git checkout development && sudo -u mcai git pull && sudo -u mcai bash modules/server/setup.sh
-RUN chown -R mcai:mcai /var/mcai/{world,server}
 
 CMD ["/init"]
