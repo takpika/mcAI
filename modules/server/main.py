@@ -82,4 +82,11 @@ while requests.get("http://%s:%d/check?type=%s" % (CENTRAL_IP, 8000, SERV_TYPE))
         logger.error("Register Failed")
         exit(4)
 
+if os.path.exists("config/toughasnails/temperature.toml"):
+    with open("config/toughasnails/temperature.toml", "r") as f:
+        data = f.read()
+    data = data.replace("climate_clemency_duration = 6000", "climate_clemency_duration = 0")
+    with open("config/toughasnails/temperature.toml", "w") as f:
+        f.write(data)
+
 subprocess.run(["/usr/bin/screen", "-DmS", "minecraft", "bash", "run.sh"])
