@@ -5,6 +5,7 @@ CURRENT_DIR=`pwd`
 PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
 ID=`printf "%02d" $1`
 PID1=`ps -p 1 -o comm=`
+MCVERSION="1.18.1"
 if [ "$PID1" = "systemd" ]; then
     echo "Normal Environment, Running Systemd"
 else
@@ -55,6 +56,7 @@ sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.ta
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip python3-tk python3-dev scrot git cifs-utils xinput inetutils-ping psmisc watchdog libgl1-mesa-dev curl libglib2.0-0 -y
 sudo pip install -r modules/$MODULE/requirements.txt
+portablemc start -u setup forge:${MCVERSION} --dry
 tee -a ~/.bashrc << EOF
 export PATH="~/.local/bin:\$PATH"
 EOF
@@ -62,7 +64,7 @@ source ~/.bashrc
 if [ ! -d ~/.minecraft/mods ]; then
 mkdir -p ~/.minecraft/mods
 fi
-curl -o ~/.minecraft/mods/OptiFine_1.18.1_HD_U_H4.jar `python scripts/download_optifine.py`
+curl -o ~/.minecraft/mods/OptiFine_${MCVERSION}_HD_U_H4.jar `python scripts/download_optifine.py`
 bash modules/client/build_mod.sh
 mv ~/*.jar ~/.minecraft/mods
 cp modules/client/options.txt ~/.minecraft/
