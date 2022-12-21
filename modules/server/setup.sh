@@ -36,6 +36,9 @@ sed -i -e "s/unix_args.txt/unix_args.txt nogui/g" run.sh
 fi
 mkdir -p ~/world
 mkdir -p ~/server
+mkdir -p ~/mods
+curl -O https://mediafilez.forgecdn.net/files/3871/450/ToughAsNails-1.19-8.0.0.78.jar
+mv ToughAsNails-1.19-8.0.0.78.jar ~/mods/
 for json in {ops,whitelist,usercache,banned-ips,banned-players}.json; do
     if [ -f ~/$json ]; then
         rm ~/$json

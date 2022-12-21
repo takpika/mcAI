@@ -5,7 +5,7 @@ CURRENT_DIR=`pwd`
 PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
 ID=`printf "%02d" $1`
 PID1=`ps -p 1 -o comm=`
-MCVERSION="1.18.1"
+MCVERSION="1.19.2"
 if [ "$PID1" = "systemd" ]; then
     echo "Normal Environment, Running Systemd"
 else
@@ -63,9 +63,11 @@ source ~/.bashrc
 if [ ! -d ~/.minecraft/mods ]; then
 mkdir -p ~/.minecraft/mods
 fi
-curl -o ~/.minecraft/mods/OptiFine_${MCVERSION}_HD_U_H4.jar `python scripts/download_optifine.py`
+curl -o ~/.minecraft/mods/OptiFine_${MCVERSION}_HD_U_H9.jar `python scripts/download_optifine.py`
 bash modules/client/build_mod.sh
 mv ~/*.jar ~/.minecraft/mods
+curl -O https://mediafilez.forgecdn.net/files/3871/450/ToughAsNails-1.19-8.0.0.78.jar
+mv ToughAsNails-1.19-8.0.0.78.jar ~/.minecraft/mods
 cp modules/client/options.txt ~/.minecraft/
 cp -r modules/client/* ~/
 cp scripts/chars.json ~/
