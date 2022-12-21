@@ -16,7 +16,7 @@
     "chat_chars_limit": 512,
     "frame_record_limit": 1000,
     "port": 8000,
-    "version": "1.18.1",
+    "version": "1.19.2",
     "epochs": 10,
     "threshold": {
         "distance": 10.0,
