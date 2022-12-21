@@ -296,7 +296,7 @@ def check():
                     loss = vae.model.train_on_batch(frames/255, frames/255)
                     logger.debug("VAE Loss: %.6f" % (loss))
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
-        vae.encoder.model.save("encoder.h5")
+        vae.encoder.model.save("models/vae.h5")
         logger.debug("End: VAE Learning")
         total_count = 0
         now_count = 0
@@ -310,7 +310,7 @@ def check():
             total_count += a
         total_count *= EPOCHS
         model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
-        model.encoder.model.load_weights("encoder.h5")
+        model.encoder.model.load_weights("models/vae.h5")
         for epoch in range(EPOCHS):
             for id in learn_ids:
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
