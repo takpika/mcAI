@@ -138,6 +138,13 @@ CHARS_LIMIT = config["chat_chars_limit"]
 
 FRAME_LIMIT = config["frame_record_limit"]
 
+if os.path.exists(".minecraft/config/toughasnails/temperature.toml"):
+    with open(".minecraft/config/toughasnails/temperature.toml", "r") as f:
+        data = f.read()
+    data = data.replace("climate_clemency_duration = 6000", "climate_clemency_duration = 0")
+    with open(".minecraft/config/toughasnails/temperature.toml", "w") as f:
+        f.write(data)
+
 def clear_keyboard():
     for k in KEYS:
         handle_keyboard(k, False)
