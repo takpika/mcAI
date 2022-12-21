@@ -54,6 +54,7 @@ fi
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip python3-tk python3-dev scrot git cifs-utils xinput inetutils-ping psmisc watchdog libgl1-mesa-dev curl libglib2.0-0 -y
+sudo pip install -r modules/$MODULE/requirements.txt
 tee -a ~/.bashrc << EOF
 export PATH="~/.local/bin:\$PATH"
 EOF
@@ -61,7 +62,6 @@ source ~/.bashrc
 if [ ! -d ~/.minecraft/mods ]; then
 mkdir -p ~/.minecraft/mods
 fi
-sudo pip install requests BeautifulSoup4
 curl -o ~/.minecraft/mods/OptiFine_1.18.1_HD_U_H4.jar `python scripts/download_optifine.py`
 bash modules/client/build_mod.sh
 mv ~/*.jar ~/.minecraft/mods
