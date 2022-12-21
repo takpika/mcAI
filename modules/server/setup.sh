@@ -3,6 +3,8 @@ export DEBIAN_FRONTEND=noninteractive
 MODULE="server"
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
+MC_VERSION="1.19.2"
+FORGE_VERSION="43.2.1"
 PID1=`ps -p 1 -o comm=`
 if [ "$PID1" = "systemd" ]; then
     echo "Normal Environment, Running Systemd"
@@ -19,8 +21,8 @@ sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip cifs-utils screen inetutils-ping watchdog curl -y
 sudo pip install -r modules/$MODULE/requirements.txt
 cd ~/
-curl -O https://maven.minecraftforge.net/net/minecraftforge/forge/1.18.1-39.0.79/forge-1.18.1-39.0.79-installer.jar
-java -jar forge-1.18.1-39.0.79-installer.jar --installServer
+curl -o forge-installer.jar https://maven.minecraftforge.net/net/minecraftforge/forge/${MC_VERSION}-${FORGE_VERSION}/forge-${MC_VERSION}-${FORGE_VERSION}-installer.jar
+java -jar forge-installer.jar --installServer
 tee eula.txt << EOF
 eula=true
 EOF
@@ -37,8 +39,7 @@ fi
 mkdir -p ~/world
 mkdir -p ~/server
 mkdir -p ~/mods
-curl -O https://mediafilez.forgecdn.net/files/3871/450/ToughAsNails-1.19-8.0.0.78.jar
-mv ToughAsNails-1.19-8.0.0.78.jar ~/mods/
+curl -o ~/mods/ToughAsNails-${MC_VERSION}.jar https://mediafilez.forgecdn.net/files/3871/450/ToughAsNails-1.19-8.0.0.78.jar
 for json in {ops,whitelist,usercache,banned-ips,banned-players}.json; do
     if [ -f ~/$json ]; then
         rm ~/$json
