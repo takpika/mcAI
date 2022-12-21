@@ -268,10 +268,10 @@ def check():
     if sum(learn_counts) >= 1000 and not training:
         training = True
         logger.info("Start Learning")
-        logger.debug("Start: VAE Learning [Alpha]")
+        logger.debug("Start: VAE Learning")
         vae = mcai.image.ImageVAE()
         video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
-        for epoch in range(EPOCHS):
+        for epoch in range(2):
             i = 0
             video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
             frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
@@ -297,7 +297,7 @@ def check():
                     logger.debug("VAE Loss: %.6f" % (loss))
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
         vae.encoder.model.save("encoder.h5")
-        logger.debug("End: VAE Learning [Alpha]")
+        logger.debug("End: VAE Learning")
         total_count = 0
         now_count = 0
         mx, mn = max(learn_counts), min(learn_counts)
