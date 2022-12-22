@@ -190,6 +190,9 @@ def conv_data(ld):
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg"])]))
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg2"])]))
     inpdata.append(np.array([conv_char(ld["output"]["chat"])]))
+    for i in range(len(inpdata)):
+        if i != 1 and i != 3 and i != 10:
+            inpdata[i] = np.where(inpdata[i] < 0.5, 0, 1)
     return inpdata
 
 def conv_char(char):
@@ -270,6 +273,9 @@ def check():
         logger.info("Start Learning")
         logger.debug("Start: VAE Learning")
         vae = mcai.image.ImageVAE()
+        if os.path.exists("models/vae_d.h5") and os.path.exists("models/vae_e.h5"):
+            vae.decoder.model.load_weights("models/vae_d.h5")
+            vae.encoder.model.load_weights("models/vae_e.h5")
         video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
         for epoch in range(2):
             i = 0
@@ -296,7 +302,8 @@ def check():
                     loss = vae.model.train_on_batch(frames/255, frames/255)
                     logger.debug("VAE Loss: %.6f" % (loss))
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
-        vae.encoder.model.save("models/vae.h5")
+        vae.encoder.model.save("models/vae_e.h5")
+        vae.decoder.model.save("models/vae_d.h5")
         logger.debug("End: VAE Learning")
         total_count = 0
         now_count = 0
@@ -310,7 +317,7 @@ def check():
             total_count += a
         total_count *= EPOCHS
         model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
-        model.encoder.model.load_weights("models/vae.h5")
+        model.encoder.model.load_weights("models/vae_e.h5")
         for epoch in range(EPOCHS):
             for id in learn_ids:
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
