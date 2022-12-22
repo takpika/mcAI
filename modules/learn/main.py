@@ -352,13 +352,14 @@ def check():
                             f.append(f_ctrl)
                         learn_data.append(f)
                     x, y = convertData()
+                    loss = -1
                     try:
-                        model.model.train_on_batch(x, y)
+                        loss = model.model.train_on_batch(x, y)
                     except:
                         logger.error("Training failure, skipped...")
                     now_count += 1
                     if now_count % 10 == 0:
-                        logger.debug("Learning Progress: %d/%d (%.1f%%)" % (now_count, total_count, now_count/total_count*100))
+                        logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f" % (now_count, total_count, now_count/total_count*100, loss))
                 if epoch >= EPOCHS-1:
                     os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                     os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
