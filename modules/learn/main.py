@@ -191,7 +191,7 @@ def conv_data(ld):
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg2"])]))
     inpdata.append(np.array([conv_char(ld["output"]["chat"])]))
     for i in range(len(inpdata)):
-        if i != 1 and i != 3 and i != 10:
+        if i != 1 and i != 3 and i != 7 and i != 10:
             inpdata[i] = np.where(inpdata[i] < 0.5, 0, 1)
     return inpdata
 
