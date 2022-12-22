@@ -619,4 +619,6 @@ if __name__ == "__main__":
                     threading.Thread(target=register).start()
     finally:
         end_session(hash_id)
-        subprocess.Popen(["bash", "/home/taku/startmcai.sh"])
+        force_quit()
+        homeDir = os.getenv('HOME')
+        subprocess.Popen(["bash", os.path.join(homeDir, "startmcai.sh")])
