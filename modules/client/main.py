@@ -342,7 +342,7 @@ def send_chat(name, message):
 def send_chat_function(name, message):
     op_name = get_available_chat_name(name)
     if op_name != "":
-        send_chat(op_name, urllib.parse.quote(message))
+        send_chat(op_name, urllib.parse.quote(message.replace("\n","").replace("\t","")))
 
 def get_newName():
     while True:
