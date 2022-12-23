@@ -346,7 +346,6 @@ def check():
                         for v in range(8):
                             mxi = np.argmax(f_ctrls[6+v])
                             f_ctrls[6+v, mxi] = point
-                            f_ctrls[6+v] = np.exp(f_ctrls[6+v]) / np.sum(np.exp(f_ctrls[6+v]))
                         for f_ctrl in f_ctrls:
                             f.append(f_ctrl)
                         learn_data.append(f)
