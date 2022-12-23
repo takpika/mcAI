@@ -521,12 +521,12 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
-                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * random_threthold
+                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * random_threthold * random.random() * 10
                         for i in ai_m:
-                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold
+                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold * random.random() * 10
                         for i in ai_mem:
-                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold
-                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * random_threthold
+                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold * random.random() * 10
+                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * random_threthold * random.random() * 10
                         AI_USING = False
                         keys_str = "\r\033[37m"
                         for i in range(len(KEYS)):
