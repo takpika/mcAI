@@ -336,7 +336,7 @@ def get_available_chat_name(name):
         return data["info"]["name"]
 
 def send_chat(name, message):
-    logger.info("Send Chat: %s %s" % (name, message))
+    logger.info("Send Chat to %s: %s" % (name, message))
     requests.get("http://localhost:%d/?name=%s&message=%s" % (PORT, name, message))
 
 def send_chat_function(name, message):
@@ -406,7 +406,7 @@ if __name__ == "__main__":
                 if FORCE_QUIT:
                     break
                 send_message_data = ""
-                random_threthold = 1 - (random.random() ** 2)
+                random_seed = 1 - (random.random() ** 2)
                 hash_id = start_recording()
                 mem = np.random.random((2**8, 8))
                 if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
@@ -524,26 +524,13 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
-                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * random_threthold * random.random() * 10
+                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * random_seed
                         for i in ai_m:
-                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold * random.random() * 10
+                            i += (np.random.random(i.shape) * 2 - 1) * random_seed
                         for i in ai_mem:
-                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold * random.random() * 10
-                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * random_threthold * random.random() * 10
+                            i += (np.random.random(i.shape) * 2 - 1) * random_seed
+                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * random_seed
                         AI_USING = False
-                        keys_str = "\r\033[37m"
-                        for i in range(len(KEYS)):
-                            res = ai_k[0][i] >= 0.5
-                            if before_key[i] != res:
-                                handle_keyboard(KEYS[i], ai_k[0][i] >= 0.5)
-                            before_key[i] = res
-                            if ai_k[0][i] >= 0.5:
-                                keys_str += '\033[42m'
-                            else:
-                                keys_str += '\033[40m'
-                            keys_str += KEYS[i][0].upper()
-                        keys_str += '\033[0m'
-                        print(keys_str, end='')
                         x = (min(max(ai_m[0][0][0], 0.0), 1.0) - 0.5) * 20
                         y = (min(max(ai_m[0][0][1], 0.0), 1.0) - 0.5) * 20
                         handle_mouse("left", ai_m[1][0][0] >= 0.5)

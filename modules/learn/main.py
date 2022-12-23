@@ -190,9 +190,6 @@ def conv_data(ld):
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg"])]))
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg2"])]))
     inpdata.append(np.array([conv_char(ld["output"]["chat"])]))
-    for i in range(len(inpdata)):
-        if i != 1 and i != 3 and i != 7 and i != 10:
-            inpdata[i] = np.where(inpdata[i] < 0.5, 0, 1)
     return inpdata
 
 def conv_char(char):
@@ -279,6 +276,7 @@ def check():
         video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
         for epoch in range(2):
             i = 0
+            count = 0
             video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
             frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
             while True:
@@ -299,17 +297,18 @@ def check():
                     logger.warning("Frame Skipped")
                     logger.warning(frame)
                 if frames.shape[0] >= 10:
+                    count += 1
                     loss = vae.model.train_on_batch(frames/255, frames/255)
-                    logger.debug("VAE Loss: %.6f" % (loss))
+                    if count % 10 == 0:
+                        logger.debug("VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, count))
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
         vae.encoder.model.save("models/vae_e.h5")
         vae.decoder.model.save("models/vae_d.h5")
         logger.debug("End: VAE Learning")
         total_count = 0
         now_count = 0
-        mx, mn = max(learn_counts), min(learn_counts)
-        ave, pow_ave = sum(learn_counts) / len(learn_counts), sum([count ** 2 for count in learn_counts]) / len(learn_counts)
-        max_dis = mx - ave
+        mx = max(learn_counts)
+        ave = sum(learn_counts) / len(learn_counts)
         for count in learn_counts:
             a, b = int(count / 10), count % 10
             if b > 0:
@@ -323,7 +322,7 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                     l_data = pickle.load(f)
                 count = len(l_data)
-                point = (count - ave) / max_dis
+                point = count / mx
                 a, b = int(count / 10), count % 10
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 all_count = a
@@ -345,9 +344,9 @@ def check():
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
                         f_ctrls = l_data[i*10+x]
                         for v in range(8):
-                            f_ctrls[6+v] = f_ctrls[6+v] * point
-                            if point < 0:
-                                f_ctrls[6+v] = f_ctrls[6+v] + 1
+                            mxi = np.argmax(f_ctrls[6+v])
+                            f_ctrls[6+v, mxi] = point
+                            f_ctrls[6+v] = np.exp(f_ctrls[6+v]) / np.sum(np.exp(f_ctrls[6+v]))
                         for f_ctrl in f_ctrls:
                             f.append(f_ctrl)
                         learn_data.append(f)
