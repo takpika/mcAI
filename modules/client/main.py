@@ -541,8 +541,8 @@ if __name__ == "__main__":
                             keys_str += KEYS[i][0].upper()
                         keys_str += '\033[0m'
                         print(keys_str, end='')
-                        x = (min(ai_m[0][0][0], 1.0) - 0.5) * 20
-                        y = (min(ai_m[0][0][1], 1.0) - 0.5) * 20
+                        x = (min(max(ai_m[0][0][0], 0.0), 1.0) - 0.5) * 20
+                        y = (min(max(ai_m[0][0][1], 0.0), 1.0) - 0.5) * 20
                         handle_mouse("left", ai_m[1][0][0] >= 0.5)
                         handle_mouse("right", ai_m[1][0][1] >= 0.5)
                         save_reg = convBit(ai_mem[0][0])
