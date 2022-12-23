@@ -47,8 +47,8 @@ EOF
 fi
 tee - ~/.xinitrc << EOF
 export PATH="~/.local/bin:\$PATH"
-bash $HOME/startmcai.sh &
-exec openbox-session
+openbox-session &
+bash $HOME/startmcai.sh
 EOF
 fi
 
