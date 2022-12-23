@@ -152,7 +152,6 @@ def clear_keyboard():
 def clear_mouse():
     mouse.release(mbt.left)
     mouse.release(mbt.right)
-    subprocess.run(["xinput", "enable", "10"])
 
 def clear_all():
     clear_keyboard()
@@ -255,7 +254,10 @@ def send_learnData(hash_id):
             }
             requests.post("http://%s:%d/" % (L_SERVER, PORT), json=sendData, headers=headers)
         os.remove(os.path.join(WORK_DIR, "%s.mp4" % (hash_id)))
-        subprocess.run(["rm", "%s/*.mp4" % (WORK_DIR)])
+    files = os.listdir(WORK_DIR)
+    for file in files:
+        if file.endswith(".mp4"):
+            os.remove(os.path.join(WORK_DIR, file))
     learn_data.clear()
 
 def start_recording():
