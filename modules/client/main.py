@@ -334,6 +334,7 @@ def get_available_chat_name(name):
         return data["info"]["name"]
 
 def send_chat(name, message):
+    logger.info("Send Chat: %s %s" % (name, message))
     requests.get("http://localhost:%d/?name=%s&message=%s" % (PORT, name, message))
 
 def send_chat_function(name, message):
