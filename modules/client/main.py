@@ -346,10 +346,13 @@ def send_chat_function(name, message):
 
 def get_newName():
     while True:
-        res = json.loads(requests.get("http://%s:%d/name?hostname=%s" % (CENTRAL_IP, PORT, HOSTNAME)).text)
-        if res['status'] == 'ok':
-            break
-        register(True)
+        try:
+            res = json.loads(requests.get("http://%s:%d/name?hostname=%s" % (CENTRAL_IP, PORT, HOSTNAME)).text)
+            if res['status'] == 'ok':
+                break
+            register(True)
+        except:
+            pass
     return res["info"]["name"]
 
 def end_session(hash_id):
