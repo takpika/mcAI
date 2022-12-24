@@ -65,9 +65,9 @@ def check_registered():
         CHECK_COUNT = 0
     return result
 
-def register():
+def register(ignore_time=False):
     global LAST_CHECK
-    if LAST_CHECK == int(time()):
+    if LAST_CHECK == int(time()) and not ignore_time:
         return
     LAST_CHECK = int(time())
     send_data = {
@@ -349,7 +349,7 @@ def get_newName():
         res = json.loads(requests.get("http://%s:%d/name?hostname=%s" % (CENTRAL_IP, PORT, HOSTNAME)).text)
         if res['status'] == 'ok':
             break
-        register()
+        register(True)
     return res["info"]["name"]
 
 def end_session(hash_id):

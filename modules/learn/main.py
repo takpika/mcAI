@@ -309,6 +309,7 @@ def check():
         now_count = 0
         mx = max(learn_counts)
         ave = sum(learn_counts) / len(learn_counts)
+        mx_dis = mx - ave
         for count in learn_counts:
             a, b = int(count / 10), count % 10
             if b > 0:
@@ -322,7 +323,7 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                     l_data = pickle.load(f)
                 count = len(l_data)
-                point = count / mx
+                point = (count - ave) / mx_dis
                 a, b = int(count / 10), count % 10
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 all_count = a
@@ -344,8 +345,8 @@ def check():
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
                         f_ctrls = l_data[i*10+x]
                         for v in range(8):
-                            mxi = np.argmax(f_ctrls[6+v])
-                            f_ctrls[6+v, mxi] = point
+                            f_ctrls[6+v] -= (f_ctrls[6+v] - 0.5) * point + 0.5
+                            f_ctrls[6+v] = np.where(f_ctrls[6+v] < 0.5, 0, 1)
                         for f_ctrl in f_ctrls:
                             f.append(f_ctrl)
                         learn_data.append(f)
