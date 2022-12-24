@@ -409,7 +409,7 @@ if __name__ == "__main__":
                 if FORCE_QUIT:
                     break
                 send_message_data = ""
-                random_seed = (1 - (random.random() ** 2)) * 2
+                random_seed = (random.random() ** 2) * 10
                 hash_id = start_recording()
                 mem = np.random.random((2**8, 8))
                 if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
