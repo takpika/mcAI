@@ -534,6 +534,11 @@ if __name__ == "__main__":
                             i += (np.random.random(i.shape) * 2 - 1) * random_seed
                         ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * random_seed
                         AI_USING = False
+                        for i in range(len(KEYS)):
+                            res = ai_k[0][i] >= 0.5
+                            if before_key[i] != res:
+                                handle_keyboard(KEYS[i], ai_k[0][i] >= 0.5)
+                            before_key[i] = res
                         x = (min(max(ai_m[0][0][0], 0.0), 1.0) - 0.5) * 20
                         y = (min(max(ai_m[0][0][1], 0.0), 1.0) - 0.5) * 20
                         handle_mouse("left", ai_m[1][0][0] >= 0.5)
@@ -600,7 +605,7 @@ if __name__ == "__main__":
                             end_session(hash_id)
                             force_quit()
                             break
-                        elif time() - mc_start_time > 300:
+                        elif time() - mc_start_time > 180:
                             logger.warning("Maybe disconnected. Auto restart...")
                             end_session(hash_id)
                             force_quit()
