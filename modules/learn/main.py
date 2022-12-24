@@ -345,7 +345,7 @@ def check():
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
                         f_ctrls = l_data[i*10+x]
                         for v in range(8):
-                            f_ctrls[6+v] -= (f_ctrls[6+v] - 0.5) * point + 0.5
+                            f_ctrls[6+v] = (f_ctrls[6+v] - 0.5) * point + 0.5
                             f_ctrls[6+v] = np.where(f_ctrls[6+v] < 0.5, 0, 1)
                         for f_ctrl in f_ctrls:
                             f.append(f_ctrl)
