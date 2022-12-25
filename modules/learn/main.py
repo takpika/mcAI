@@ -296,7 +296,7 @@ def check():
                 except:
                     logger.warning("Frame Skipped")
                     logger.warning(frame)
-                if frames.shape[0] >= 10:
+                if frames.shape[0] >= 30:
                     count += 1
                     loss = vae.model.train_on_batch(frames/255, frames/255)
                     if count % 10 == 0:
@@ -311,7 +311,7 @@ def check():
         ave = sum(learn_counts) / len(learn_counts)
         mx_dis = mx - ave
         for count in learn_counts:
-            a, b = int(count / 10), count % 10
+            a, b = int(count / 30), count % 30
             if b > 0:
                 a += 1
             total_count += a
@@ -324,7 +324,7 @@ def check():
                     l_data = pickle.load(f)
                 count = len(l_data)
                 point = (count - ave) / mx_dis
-                a, b = int(count / 10), count % 10
+                a, b = int(count / 30), count % 30
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 all_count = a
                 if b > 0:
@@ -333,7 +333,7 @@ def check():
                 for i in range(all_count):
                     c = b
                     if i != a:
-                        c = 10
+                        c = 30
                     learn_data = []
                     for x in range(c):
                         f = []
@@ -343,7 +343,7 @@ def check():
                         except:
                             break
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
-                        f_ctrls = l_data[i*10+x]
+                        f_ctrls = l_data[i*30+x]
                         for v in range(8):
                             f_ctrls[6+v] = (f_ctrls[6+v] - 0.5) * point + 0.5
                             f_ctrls[6+v] = np.where(f_ctrls[6+v] < 0.5, 0, 1)
