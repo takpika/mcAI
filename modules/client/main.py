@@ -360,7 +360,8 @@ def end_session(hash_id):
     model.clearSession()
     gc.collect(2)
     clear_all()
-    stop_recording(hash_id)
+    if hash_id in learn_data:
+        stop_recording(hash_id)
 
 def hostname2name(hostname):
     data = json.loads(requests.get('http://%s:%d/hostname?hostname=%s' % (CENTRAL_IP, PORT, hostname)).text)
@@ -596,7 +597,9 @@ if __name__ == "__main__":
                                 }
                             }
                             learn_data[hash_id].append(this_frame)
-                        if len(learn_data[hash_id]) > FRAME_LIMIT:
+                        if not hash_id in learn_data:
+                            hash_id = start_recording()
+                        elif len(learn_data[hash_id]) > FRAME_LIMIT:
                             stop_recording(hash_id)
                             hash_id = start_recording()
                     else:
@@ -616,7 +619,8 @@ if __name__ == "__main__":
                         mes_id = int(data["message"][0]["id"])
                     threading.Thread(target=register).start()
     finally:
-        end_session(hash_id)
+        if not (hash_id == "" or hash_id == None):
+            end_session(hash_id)
         force_quit()
         homeDir = os.getenv('HOME')
-        subprocess.Popen(["bash", os.path.join(homeDir, "startmcai.sh")])
+        subprocess.run(["bash", os.path.join(homeDir, "startmcai.sh")])
