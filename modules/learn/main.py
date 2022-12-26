@@ -287,10 +287,7 @@ def check():
                     video.release()
                     if i < len(video_ids) - 1:
                         i += 1
-                        if not GPU_AVAIL:
-                            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
-                        else:
-                            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])), cv2.CAP_PROP_HW_ACCELERATION)
+                        video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
                         continue
                     else:
                         vae.model.train_on_batch(frames/255, frames/255)
