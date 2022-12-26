@@ -138,7 +138,7 @@ def conv_all():
     ai_chat = np.empty((0, CHARS_COUNT))
     global learn_data
     for ld in learn_data:
-        x_img = np.append(x_img, ld[0].reshape((1,HEIGHT,WIDTH,3)), axis=0)
+        x_img = np.append(x_img, ld[0].reshape((1,HEIGHT,WIDTH,3)).astype("uint8"), axis=0)
         x_reg = np.append(x_reg, ld[1].reshape((1,8)), axis=0)
         x_mem = np.append(x_mem, ld[2].reshape((1,8)), axis=0)
         x_reg2 = np.append(x_reg2, ld[3].reshape((1,8)), axis=0)
@@ -344,6 +344,7 @@ def check():
                 for f_ctrl in f_ctrls:
                     f.append(f_ctrl)
                 learn_data.append(f)
+                logger.info("Load OK: %s, current frames: %d" % (id, len(learn_data)))
             os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
             os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         x, y = conv_all()
