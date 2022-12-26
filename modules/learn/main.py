@@ -349,8 +349,8 @@ def check():
             os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         x, y = conv_all()
         for epoch in range(EPOCHS):
-            total_count = int(len(learn_data) / 50)
-            if len(learn_data) % 50 > 0:
+            total_count = int(len(x) / 50)
+            if len(x) % 50 > 0:
                 total_count += 1
             for i in range(total_count):
                 if i == total_count - 1:
