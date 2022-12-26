@@ -279,10 +279,7 @@ def check():
         for epoch in range(2):
             i = 0
             count = 0
-            if not GPU_AVAIL:
-                video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
-            else:
-                video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])), cv2.CAP_PROP_HW_ACCELERATION)
+            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
             frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
             while True:
                 ret, frame = video.read()
@@ -328,6 +325,7 @@ def check():
         model.encoder.model.load_weights("models/vae_e.h5")
         learn_data.clear()
         for id in learn_ids:
+            logger.info("Load Start: %s" % (id))
             with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                 l_data = pickle.load(f)
             count = len(l_data)
@@ -350,6 +348,7 @@ def check():
                 for f_ctrl in f_ctrls:
                     f.append(f_ctrl)
                 learn_data.append(f)
+            logger.info("Load End %s, Frames: %d" % (id, len(learn_data)))
         x, y = convertData()
         for epoch in range(EPOCHS):
                 total_count = int(len(learn_data) / 30)
