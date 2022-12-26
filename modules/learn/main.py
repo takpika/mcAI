@@ -342,8 +342,11 @@ def check():
                 for f_ctrl in f_ctrls:
                     f.append(f_ctrl)
                 learn_data.append(f)
+            video.release()
+            os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
+            os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
         for epoch in range(EPOCHS):
-            total_count = int(len(learn_data) / 30)
+            total_count = int(len(learn_data) / 50)
             if len(learn_data) % 50 > 0:
                 total_count += 1
             for i in range(total_count):
