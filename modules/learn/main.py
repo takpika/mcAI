@@ -344,13 +344,13 @@ def check():
                 learn_data.append(f)
         for epoch in range(EPOCHS):
             total_count = int(len(learn_data) / 30)
-            if len(learn_data) % 30 > 0:
+            if len(learn_data) % 50 > 0:
                 total_count += 1
             for i in range(total_count):
                 if i != total_count - 1:
-                    x_batch, y_batch = conv_all(learn_data[i*30:(i+1)*30])
+                    x_batch, y_batch = conv_all(learn_data[i*50:(i+1)*50])
                 else:
-                    x_batch, y_batch = conv_all(learn_data[i*30:])
+                    x_batch, y_batch = conv_all(learn_data[i*50:])
                 loss = -1
                 try:
                     loss = model.model.train_on_batch(x_batch, y_batch)
