@@ -349,16 +349,23 @@ def check():
             os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         x, y = conv_all()
         for epoch in range(EPOCHS):
-            total_count = int(len(x) / 50)
-            if len(x) % 50 > 0:
+            total_count = int(x[0].shape[0] / 50)
+            if x[0].shape[0] % 50 > 0:
                 total_count += 1
             for i in range(total_count):
-                if i == total_count - 1:
-                    x_batch, y_batch = x[i*50:], y[i*50:]
-                else:
-                    x_batch, y_batch = x[i*50:(i+1)*50], y[i*50:(i+1)*50]
-                for xb in range(x_batch.shape[0]):
-                    x_batch[xb][0] = x_batch[xb][0] / 255
+                x_batch, y_batch = [], []
+                for xi in x:
+                    x_batch.append(xi[i*50:(i+1)*50])
+                for yi in range(len(y)):
+                    if yi == 1 or yi == 2:
+                        yil = []
+                        for yilx in y[yi]:
+                            yil.append(yilx[i*50:(i+1)*50])
+                    else:
+                        yil = y[yi][i*50:(i+1)*50]
+                    y_batch.append(yil)
+                for xb in range(x_batch[0].shape[0]):
+                    x_batch[0][xb] = x_batch[0][xb] / 255
                 loss = -1
                 try:
                     loss = model.model.train_on_batch(x_batch, y_batch)
