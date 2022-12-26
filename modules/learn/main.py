@@ -320,7 +320,6 @@ def check():
         model.encoder.model.load_weights("models/vae_e.h5")
         learn_data.clear()
         for id in learn_ids:
-            logger.info("Load Start: %s" % (id))
             with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                 l_data = pickle.load(f)
             count = len(l_data)
@@ -343,7 +342,6 @@ def check():
                 for f_ctrl in f_ctrls:
                     f.append(f_ctrl)
                 learn_data.append(f)
-            logger.info("Load End %s, Frames: %d" % (id, len(learn_data)))
         for epoch in range(EPOCHS):
             total_count = int(len(learn_data) / 30)
             if len(learn_data) % 30 > 0:
