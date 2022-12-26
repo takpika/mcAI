@@ -120,7 +120,7 @@ def nichi(i):
     i[i<0.5]=0
     return i
 
-def convertData():
+def convertData(lds):
     x_img = np.empty((0, HEIGHT, WIDTH, 3))
     x_reg = np.empty((0, 8))
     x_mem = np.empty((0, 8))
@@ -136,8 +136,7 @@ def convertData():
     ai_mem_3 = np.empty((0, 8))
     ai_mem_4 = np.empty((0, 8))
     ai_chat = np.empty((0, CHARS_COUNT))
-    global learn_data
-    for ld in learn_data:
+    for ld in lds:
         x_img = np.append(x_img, ld[0].reshape((1,HEIGHT,WIDTH,3)), axis=0)
         x_reg = np.append(x_reg, ld[1].reshape((1,8)), axis=0)
         x_mem = np.append(x_mem, ld[2].reshape((1,8)), axis=0)
@@ -173,7 +172,6 @@ def convertData():
     output_data = [
         ai_k, [ai_m_1, ai_m_2], [ai_mem_1, ai_mem_2, ai_mem_3, ai_mem_4], ai_chat
     ]
-    learn_data.clear()
     return input_data, output_data
 
 def conv_data(ld):
@@ -346,27 +344,26 @@ def check():
                     f.append(f_ctrl)
                 learn_data.append(f)
             logger.info("Load End %s, Frames: %d" % (id, len(learn_data)))
-        x, y = convertData()
         for epoch in range(EPOCHS):
-                total_count = int(len(learn_data) / 30)
-                if len(learn_data) % 30 > 0:
-                    total_count += 1
-                for i in range(total_count):
-                    if i != total_count - 1:
-                        x_batch, y_batch = x[i*30:(i+1)*30], y[i*30:(i+1)*30]
-                    else:
-                        x_batch, y_batch = x[i*30:], y[i*30:]
-                    loss = -1
-                    try:
-                        loss = model.model.train_on_batch(x_batch, y_batch)
-                    except:
-                        logger.error("Training failure, skipped...")
-                    now_count += 1
-                    if now_count % 10 == 0:
-                        logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f" % (now_count, total_count * EPOCHS, now_count/(total_count*EPOCHS)*100, loss[0]))
-                    if epoch >= EPOCHS-1:
-                        os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                        os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
+            total_count = int(len(learn_data) / 30)
+            if len(learn_data) % 30 > 0:
+                total_count += 1
+            for i in range(total_count):
+                if i != total_count - 1:
+                    x_batch, y_batch = conv_data(learn_data[i*30:(i+1)*30])
+                else:
+                    x_batch, y_batch = conv_data(learn_data[i*30:])
+                loss = -1
+                try:
+                    loss = model.model.train_on_batch(x_batch, y_batch)
+                except:
+                    logger.error("Training failure, skipped...")
+                now_count += 1
+                if now_count % 10 == 0:
+                    logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f" % (now_count, total_count * EPOCHS, now_count/(total_count*EPOCHS)*100, loss[0]))
+                if epoch >= EPOCHS-1:
+                    os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+                    os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         logger.info("Finish Learning")
         MODEL_WRITING = True
         model.model.save("models/model.h5")
