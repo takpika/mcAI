@@ -121,7 +121,7 @@ def nichi(i):
     return i
 
 def conv_all():
-    x_img = np.empty((0, HEIGHT, WIDTH, 3))
+    x_img = np.empty((0, HEIGHT, WIDTH, 3), dtype="uint8")
     x_reg = np.empty((0, 8))
     x_mem = np.empty((0, 8))
     x_reg2 = np.empty((0, 8))
@@ -320,50 +320,52 @@ def check():
         total_count *= EPOCHS
         model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
         model.encoder.model.load_weights("models/vae_e.h5")
+        learn_data.clear()
+        for id in learn_ids:
+            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
+                l_data = pickle.load(f)
+            count = len(l_data)
+            point = (count - ave) / mx_dis
+            a, b = int(count / 30), count % 30
+            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            for x in range(count):
+                f = []
+                try:
+                    _, frame = video.read()
+                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
+                except:
+                    break
+                f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
+                f_ctrls = l_data[x]
+                for v in range(8):
+                    f_ctrls[6+v] = (f_ctrls[6+v] - 0.5) * point + 0.5
+                    f_ctrls[6+v] = np.where(f_ctrls[6+v] < 0.5, 0, 1)
+                for f_ctrl in f_ctrls:
+                    f.append(f_ctrl)
+                learn_data.append(f)
+            os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+            os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
+        x, y = conv_all()
         for epoch in range(EPOCHS):
-            for id in learn_ids:
-                with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
-                    l_data = pickle.load(f)
-                count = len(l_data)
-                point = (count - ave) / mx_dis
-                a, b = int(count / 30), count % 30
-                video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                all_count = a
-                if b > 0:
-                    all_count += 1
-                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                for i in range(all_count):
-                    c = b
-                    if i != a:
-                        c = 30
-                    learn_data = []
-                    for x in range(c):
-                        f = []
-                        try:
-                            _, frame = video.read()
-                            frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
-                        except:
-                            break
-                        f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
-                        f_ctrls = l_data[i*30+x]
-                        for v in range(8):
-                            f_ctrls[6+v] = (f_ctrls[6+v] - 0.5) * point + 0.5
-                            f_ctrls[6+v] = np.where(f_ctrls[6+v] < 0.5, 0, 1)
-                        for f_ctrl in f_ctrls:
-                            f.append(f_ctrl)
-                        learn_data.append(f)
-                    x, y = conv_all()
-                    loss = -1
-                    try:
-                        loss = model.model.train_on_batch(x, y)
-                    except:
-                        logger.error("Training failure, skipped...")
-                    now_count += 1
-                    if now_count % 10 == 0:
-                        logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f" % (now_count, total_count, now_count/total_count*100, loss[0]))
-                if epoch >= EPOCHS-1:
-                    os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                    os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
+            total_count = int(len(learn_data) / 50)
+            if len(learn_data) % 50 > 0:
+                total_count += 1
+            for i in range(total_count):
+                if i == total_count - 1:
+                    x_batch, y_batch = x[i*50:], y[i*50:]
+                else:
+                    x_batch, y_batch = x[i*50:(i+1)*50], y[i*50:(i+1)*50]
+                for xb in range(x_batch.shape[0]):
+                    x_batch[xb][0] = x_batch[xb][0] / 255
+                loss = -1
+                try:
+                    loss = model.model.train_on_batch(x_batch, y_batch)
+                except:
+                    logger.error("Training failure, skipped...")
+                now_count += 1
+                if now_count % 10 == 0:
+                    logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f" % (now_count, total_count * EPOCHS, now_count/(total_count*EPOCHS)*100, loss[0]))
         logger.info("Finish Learning")
         MODEL_WRITING = True
         model.model.save("models/model.h5")
