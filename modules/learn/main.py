@@ -120,7 +120,7 @@ def nichi(i):
     i[i<0.5]=0
     return i
 
-def convertData(lds):
+def conv_all(lds):
     x_img = np.empty((0, HEIGHT, WIDTH, 3))
     x_reg = np.empty((0, 8))
     x_mem = np.empty((0, 8))
@@ -174,7 +174,7 @@ def convertData(lds):
     ]
     return input_data, output_data
 
-def conv_data(ld):
+def conv_frame(ld):
     inpdata = []
     inpdata.append(np.array([convBit(ld["input"]["mem"]["reg"])]))
     inpdata.append(np.array([ld["input"]["mem"]["data"]]))
@@ -248,7 +248,7 @@ def check():
                     data = json.loads(f.read())
                 c_data = []
                 for d in data["data"]:
-                    daf = conv_data(d)
+                    daf = conv_frame(d)
                     c_data.append(daf)
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                     pickle.dump(c_data, f)
@@ -348,9 +348,9 @@ def check():
                 total_count += 1
             for i in range(total_count):
                 if i != total_count - 1:
-                    x_batch, y_batch = conv_data(learn_data[i*30:(i+1)*30])
+                    x_batch, y_batch = conv_all(learn_data[i*30:(i+1)*30])
                 else:
-                    x_batch, y_batch = conv_data(learn_data[i*30:])
+                    x_batch, y_batch = conv_all(learn_data[i*30:])
                 loss = -1
                 try:
                     loss = model.model.train_on_batch(x_batch, y_batch)
