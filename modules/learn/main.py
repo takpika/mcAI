@@ -8,6 +8,7 @@ import numpy as np
 from datetime import datetime
 from logging import getLogger, DEBUG, StreamHandler, Formatter
 from PIL import Image
+import tensorflow as tf
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -19,6 +20,7 @@ logger.addHandler(logger_handler)
 SERV_TYPE = "learn"
 
 CENTRAL_IP = None
+GPU_AVAIL = tf.test.is_gpu_available()
 
 if not os.path.exists("models/"):
     os.mkdir("models")
@@ -277,7 +279,10 @@ def check():
         for epoch in range(2):
             i = 0
             count = 0
-            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+            if not GPU_AVAIL:
+                video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+            else:
+                video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])), cv2.CAP_PROP_HW_ACCELERATION)
             frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
             while True:
                 ret, frame = video.read()
@@ -285,7 +290,10 @@ def check():
                     video.release()
                     if i < len(video_ids) - 1:
                         i += 1
-                        video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+                        if not GPU_AVAIL:
+                            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+                        else:
+                            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])), cv2.CAP_PROP_HW_ACCELERATION)
                         continue
                     else:
                         vae.model.train_on_batch(frames/255, frames/255)
@@ -325,7 +333,10 @@ def check():
                 count = len(l_data)
                 point = (count - ave) / mx_dis
                 a, b = int(count / 30), count % 30
-                video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+                if not GPU_AVAIL:
+                    video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+                else:
+                    video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)), cv2.CAP_PROP_HW_ACCELERATION)
                 all_count = a
                 if b > 0:
                     all_count += 1
