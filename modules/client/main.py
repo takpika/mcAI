@@ -452,6 +452,12 @@ if __name__ == "__main__":
                             end_session(hash_id)
                             subprocess.run(["killall", "-9", "java"])
                             exit(10)
+                    if data["screen"]:
+                        if "net.minecraft.client.gui.screens.DisconnectedScreen" in data["screenInfo"]["id"]:
+                            logger.warning("Disconnected. Auto restart...")
+                            end_session(hash_id)
+                            force_quit()
+                            break
                     if data["playing"]:
                         played = True
                         img = sct.grab(mon)
@@ -481,11 +487,6 @@ if __name__ == "__main__":
                                 sleep(0.2)
                                 pyautogui.keyUp("esc")
                                 continue
-                            if "net.minecraft.client.gui.screens.DisconnectedScreen" in data["screenInfo"]["id"]:
-                                logger.warning("Disconnected. Auto restart...")
-                                end_session(hash_id)
-                                force_quit()
-                                break
                             inscreen = True
                             mouse.move(int(x), int(y))
                             check_mousecursor()
