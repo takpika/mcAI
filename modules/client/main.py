@@ -524,6 +524,8 @@ if __name__ == "__main__":
                                     if not data["player"]["death"]:
                                         raise Exception("Failed to kill")
                                     continue
+                        else:
+                            head_topbtm_time = -1
                         x_img = np.array(image).reshape((1, HEIGHT, WIDTH, 3)) / 255
                         x_reg = np.array([getBit(mem_reg, i) for i in range(7,-1,-1)])
                         x_mem = mem[mem_reg]
