@@ -517,7 +517,7 @@ if __name__ == "__main__":
                                             data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)))
                                             if data["status"] == "ok":
                                                 break
-                                            sleep(0.1)
+                                            sleep(1)
                                         except:
                                             pass
                                     continue
