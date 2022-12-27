@@ -1,14 +1,5 @@
 name: Build container images
-on:
-  push:
-    branches:
-      - development
-      - main
-  pull_request:
-    types: [closed]
-    branches:
-      - development
-      - main
+on: push
 
 jobs:
   build:
@@ -39,7 +30,12 @@ jobs:
       - name: Set image tag for master
         run: |
           COMMITID=$(git rev-parse --short ${{ github.sha }})
-          if [ "$GITHUB_REF" = "development" ]; then
+          if [ ${{ github.base_ref }} = "" ]; then
+            echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          else
+            echo "BRANCH_NAME=${{ github.base_ref }}" >> $GITHUB_ENV
+          fi
+          if [ "${{ env.BRANCH_NAME }}" = "development" ]; then
             echo "DOCKER_TAG=dev-${COMMITID}" >> $GITHUB_ENV
           else
             echo "DOCKER_TAG=${COMMITID}" >> $GITHUB_ENV
@@ -47,12 +43,12 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build ./modules/${{ matrix.target }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build-arg BRANCH="$GITHUB_REF"
+          docker build ./modules/${{ matrix.target }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build-arg BRANCH="${{ env.BRANCH_NAME }}"
 
       - name: Push Docker Image
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }}
-          if [ "$GITHUB_REF" = "development" ]; then
+          if [ "${{ env.BRANCH_NAME }}" = "development" ]; then
             docker tag ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest-dev
             docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest-dev
           else
