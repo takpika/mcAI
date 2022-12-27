@@ -519,7 +519,7 @@ if __name__ == "__main__":
                                                 break
                                         except:
                                             pass
-                                        sleep(1)
+                                        sleep(0.1)
                                     continue
                         else:
                             head_topbtm_time = -1
