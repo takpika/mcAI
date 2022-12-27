@@ -30,7 +30,7 @@ jobs:
       - name: Set image tag for master
         run: |
           COMMITID=$(git rev-parse --short ${{ github.sha }})
-          if [ ${{ github.base_ref }} = "" ]; then
+          if [ "${{ github.base_ref }}" = "" ]; then
             BRANCH_NAME=${GITHUB_REF#refs/heads/}
             echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
           else
