@@ -474,13 +474,18 @@ if __name__ == "__main__":
                                 sleep(0.1)
                                 break
                             break
-                        if data["screen"]: # ポーズ画面と死亡画面のみAIに見せずに特別処理
+                        if data["screen"]:
                             if data["screenInfo"]["pause"]:
                                 logger.info("Pause")
                                 pyautogui.keyDown("esc")
                                 sleep(0.2)
                                 pyautogui.keyUp("esc")
                                 continue
+                            if "net.minecraft.client.gui.screens..DisconnectedScreen" in data["screenInfo"]["id"]:
+                                logger.warning("Disconnected. Auto restart...")
+                                end_session(hash_id)
+                                force_quit()
+                                break
                             inscreen = True
                             mouse.move(int(x), int(y))
                             check_mousecursor()
