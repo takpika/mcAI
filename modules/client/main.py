@@ -514,7 +514,7 @@ if __name__ == "__main__":
                                     logger.info("Head spinning")
                                     for _ in range(10):
                                         try:
-                                            data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)))
+                                            data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
                                             if data["status"] == "ok":
                                                 break
                                         except:
