@@ -525,7 +525,7 @@ if __name__ == "__main__":
                                     continue
                         else:
                             head_topbtm_time = -1
-                        pos = (data["player"]["position"]["x"], data["player"]["position"]["y"], data["player"]["position"]["z"])
+                        pos = (data["player"]["pos"]["x"], data["player"]["pos"]["y"], data["player"]["pos"]["z"])
                         dir = (data["player"]["direction"]["x"], data["player"]["direction"]["y"])
                         if pos != last_pos or dir != last_dir:
                             last_change = time()
