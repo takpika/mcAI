@@ -474,8 +474,8 @@ if __name__ == "__main__":
                                 sleep(0.1)
                                 break
                             break
-                        if data["player"]["screen"]: # ポーズ画面と死亡画面のみAIに見せずに特別処理
-                            if data["player"]["screeninfo"]["pause"]:
+                        if data["screen"]: # ポーズ画面と死亡画面のみAIに見せずに特別処理
+                            if data["screeninfo"]["pause"]:
                                 logger.info("Pause")
                                 pyautogui.keyDown("esc")
                                 sleep(0.2)
@@ -485,7 +485,7 @@ if __name__ == "__main__":
                             mouse.move(int(x), int(y))
                             check_mousecursor()
                             image = drawPointer(image)
-                            if data["player"]["screeninfo"]["edit"]:
+                            if data["screeninfo"]["edit"]:
                                 send_message_data = ""
                                 char_k = None
                                 if edit_char == "\n":
@@ -589,7 +589,7 @@ if __name__ == "__main__":
                         mem_reg = convBit(ai_mem[2][0])
                         mem_reg2 = convBit(ai_mem[3][0])
                         mes_char = bin_to_char(ai_chat[0])
-                        if mes_char != "\n" or mes_char != "NONE" and not data["player"]["screen"]:
+                        if mes_char != "\n" or mes_char != "NONE" and not data["screen"]:
                             if mes_char == "DEL":
                                 if len(send_message_data) > 1:
                                     send_message_data = send_message_data[:-1]
@@ -600,8 +600,8 @@ if __name__ == "__main__":
                                 send_message_data = ""
                             else:
                                 send_message_data += mes_char
-                        elif data["player"]["screen"]:
-                            if data["player"]["screeninfo"]["edit"]:
+                        elif data["screen"]:
+                            if data["screeninfo"]["edit"]:
                                 edit_char = mes_char
                         if len(send_message_data) > CHARS_LIMIT:
                             send_message_data = send_message_data[:CHARS_LIMIT]

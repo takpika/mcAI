@@ -122,6 +122,15 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 status_code = 400
                 response["msg"] = "Bad Request"
+        elif path == "/gamemode":
+            if "name" in query and "mode" in query:
+                subprocess.run("/usr/bin/screen -S minecraft -X eval 'stuff \"gamemode %s %s\"'\015" % (query["mode"][0], query["name"][0]), shell=True)
+                status_code = 200
+                response["status"] = "ok"
+                response["msg"] = "Success"
+            else:
+                status_code = 400
+                response["msg"] = "Bad Request"
         self.send_response(status_code)
         self.send_header("Content-type", "application/json")
         self.end_headers()
