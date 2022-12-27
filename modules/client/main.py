@@ -519,10 +519,6 @@ if __name__ == "__main__":
                                             killed = True
                                             break
                                         sleep(0.1)
-                                    sleep(3)
-                                    data = json.loads(requests.get(url))
-                                    if not data["player"]["death"]:
-                                        raise Exception("Failed to kill")
                                     continue
                         else:
                             head_topbtm_time = -1
