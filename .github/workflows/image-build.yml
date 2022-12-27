@@ -5,7 +5,7 @@ on:
       - development
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-20.04
     permissions:
       contents: read
