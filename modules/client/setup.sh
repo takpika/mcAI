@@ -20,7 +20,6 @@ bash scripts/change_dns.sh 8.8.8.8
 fi
 sudo apt update
 sudo apt install -y  -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" keyboard-configuration
-sudo dpkg-reconfigure keyboard-configuration -f noninteractive
 if [ "$PID1" = "systemd" ]; then
 DEBIAN_FRONTEND=noninteractive sudo apt install xserver-xorg xserver-xorg-video-fbdev openbox xinit -y
 else
