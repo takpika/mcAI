@@ -512,11 +512,9 @@ if __name__ == "__main__":
                             else:
                                 if time() - head_topbtm_time > 10:
                                     logger.info("Head spinning")
-                                    end_session(hash_id)
                                     for _ in range(10):
                                         data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)))
                                         if data["status"] == "ok":
-                                            killed = True
                                             break
                                         sleep(0.1)
                                     continue
