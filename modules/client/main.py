@@ -663,4 +663,4 @@ if __name__ == "__main__":
             end_session(hash_id)
         force_quit()
         homeDir = os.getenv('HOME')
-        subprocess.run(["bash", os.path.join(homeDir, "startmcai.sh")])
+        #subprocess.run(["bash", os.path.join(homeDir, "startmcai.sh")])
