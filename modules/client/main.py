@@ -425,6 +425,7 @@ if __name__ == "__main__":
                 edit_char = ""
                 inscreen = False
                 before_key = [False for _ in KEYS]
+                head_topbtm_time = -1
                 while True:
                     url = "http://localhost:%d/" % (PORT)
                     send_data = {}
@@ -502,6 +503,27 @@ if __name__ == "__main__":
                                     pyautogui.keyUp(char_k)
                         else:
                             inscreen = False
+                        dir_X = data["player"]["direction"]["x"]
+                        if dir_X < 0:
+                            dir_X *= -1
+                        if dir_X > 85:
+                            if head_topbtm_time == -1:
+                                head_topbtm_time = time()
+                            else:
+                                if time() - head_topbtm_time > 10:
+                                    logger.info("Head spinning")
+                                    end_session(hash_id)
+                                    for _ in range(10):
+                                        data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)))
+                                        if data["status"] == "ok":
+                                            killed = True
+                                            break
+                                        sleep(0.1)
+                                    sleep(3)
+                                    data = json.loads(requests.get(url))
+                                    if not data["player"]["death"]:
+                                        raise Exception("Failed to kill")
+                                    continue
                         x_img = np.array(image).reshape((1, HEIGHT, WIDTH, 3)) / 255
                         x_reg = np.array([getBit(mem_reg, i) for i in range(7,-1,-1)])
                         x_mem = mem[mem_reg]
