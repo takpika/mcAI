@@ -517,9 +517,9 @@ if __name__ == "__main__":
                                             data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)))
                                             if data["status"] == "ok":
                                                 break
-                                            sleep(1)
                                         except:
                                             pass
+                                        sleep(1)
                                     continue
                         else:
                             head_topbtm_time = -1
