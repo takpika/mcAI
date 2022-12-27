@@ -36,7 +36,6 @@ jobs:
           COMMITID=$(git rev-parse --short ${{ github.sha }})
           echo "DOCKER_TAG=master-${COMMITID}" >> $GITHUB_ENV
 
-　　　 # 並列でContainer Imageをビルド
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
