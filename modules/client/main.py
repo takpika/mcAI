@@ -636,6 +636,8 @@ if __name__ == "__main__":
                         logger.info("A message from " + data["message"][0]["author"] + " : " + data["message"][0]["message"])
                         mes_id = int(data["message"][0]["id"])
                     threading.Thread(target=register).start()
+    except Exception as e:
+        logger.error("Error: " + str(e))
     finally:
         if not (hash_id == "" or hash_id == None):
             end_session(hash_id)
