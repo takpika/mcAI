@@ -513,10 +513,13 @@ if __name__ == "__main__":
                                 if time() - head_topbtm_time > 10:
                                     logger.info("Head spinning")
                                     for _ in range(10):
-                                        data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)))
-                                        if data["status"] == "ok":
-                                            break
-                                        sleep(0.1)
+                                        try:
+                                            data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)))
+                                            if data["status"] == "ok":
+                                                break
+                                            sleep(0.1)
+                                        except:
+                                            pass
                                     continue
                         else:
                             head_topbtm_time = -1
@@ -636,8 +639,6 @@ if __name__ == "__main__":
                         logger.info("A message from " + data["message"][0]["author"] + " : " + data["message"][0]["message"])
                         mes_id = int(data["message"][0]["id"])
                     threading.Thread(target=register).start()
-    except Exception as e:
-        logger.error("Error: " + str(e))
     finally:
         if not (hash_id == "" or hash_id == None):
             end_session(hash_id)
