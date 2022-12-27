@@ -47,8 +47,8 @@ EOF
 fi
 tee - ~/.xinitrc << EOF
 export PATH="~/.local/bin:\$PATH"
-bash $HOME/startmcai.sh &
-exec openbox-session
+openbox-session &
+bash $HOME/startmcai.sh
 EOF
 fi
 
@@ -71,7 +71,7 @@ cp modules/client/options.txt ~/.minecraft/
 cp -r modules/client/* ~/
 cp scripts/chars.json ~/
 cp -r mcai/ ~/
-portablemc start -u setup forge:${MCVERSION} --dry
+portablemc start -u setup forge:${MC_VERSION} --dry
 
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..

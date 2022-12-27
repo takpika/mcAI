@@ -8,6 +8,7 @@ import numpy as np
 from datetime import datetime
 from logging import getLogger, DEBUG, StreamHandler, Formatter
 from PIL import Image
+import tensorflow as tf
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -19,6 +20,7 @@ logger.addHandler(logger_handler)
 SERV_TYPE = "learn"
 
 CENTRAL_IP = None
+GPU_AVAIL = tf.test.is_gpu_available()
 
 if not os.path.exists("models/"):
     os.mkdir("models")
@@ -118,7 +120,7 @@ def nichi(i):
     i[i<0.5]=0
     return i
 
-def convertData():
+def conv_all():
     x_img = np.empty((0, HEIGHT, WIDTH, 3))
     x_reg = np.empty((0, 8))
     x_mem = np.empty((0, 8))
@@ -174,7 +176,7 @@ def convertData():
     learn_data.clear()
     return input_data, output_data
 
-def conv_data(ld):
+def conv_frame(ld):
     inpdata = []
     inpdata.append(np.array([convBit(ld["input"]["mem"]["reg"])]))
     inpdata.append(np.array([ld["input"]["mem"]["data"]]))
@@ -190,9 +192,6 @@ def conv_data(ld):
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg"])]))
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg2"])]))
     inpdata.append(np.array([conv_char(ld["output"]["chat"])]))
-    for i in range(len(inpdata)):
-        if i != 1 and i != 3 and i != 7 and i != 10:
-            inpdata[i] = np.where(inpdata[i] < 0.5, 0, 1)
     return inpdata
 
 def conv_char(char):
@@ -251,7 +250,7 @@ def check():
                     data = json.loads(f.read())
                 c_data = []
                 for d in data["data"]:
-                    daf = conv_data(d)
+                    daf = conv_frame(d)
                     c_data.append(daf)
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                     pickle.dump(c_data, f)
@@ -279,6 +278,7 @@ def check():
         video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
         for epoch in range(2):
             i = 0
+            count = 0
             video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
             frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
             while True:
@@ -298,33 +298,36 @@ def check():
                 except:
                     logger.warning("Frame Skipped")
                     logger.warning(frame)
-                if frames.shape[0] >= 10:
+                if frames.shape[0] >= 30:
+                    count += 1
                     loss = vae.model.train_on_batch(frames/255, frames/255)
-                    logger.debug("VAE Loss: %.6f" % (loss))
+                    if count % 10 == 0:
+                        logger.debug("VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, count))
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
         vae.encoder.model.save("models/vae_e.h5")
         vae.decoder.model.save("models/vae_d.h5")
         logger.debug("End: VAE Learning")
         total_count = 0
         now_count = 0
-        mx, mn = max(learn_counts), min(learn_counts)
-        ave, pow_ave = sum(learn_counts) / len(learn_counts), sum([count ** 2 for count in learn_counts]) / len(learn_counts)
-        max_dis = mx - ave
+        mx = max(learn_counts)
+        ave = sum(learn_counts) / len(learn_counts)
+        mx_dis = mx - ave
         for count in learn_counts:
-            a, b = int(count / 10), count % 10
+            a, b = int(count / 30), count % 30
             if b > 0:
                 a += 1
             total_count += a
         total_count *= EPOCHS
         model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
         model.encoder.model.load_weights("models/vae_e.h5")
+        learn_data.clear()
         for epoch in range(EPOCHS):
             for id in learn_ids:
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                     l_data = pickle.load(f)
                 count = len(l_data)
-                point = (count - ave) / max_dis
-                a, b = int(count / 10), count % 10
+                point = (count - ave) / mx_dis
+                a, b = int(count / 30), count % 30
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 all_count = a
                 if b > 0:
@@ -333,7 +336,7 @@ def check():
                 for i in range(all_count):
                     c = b
                     if i != a:
-                        c = 10
+                        c = 30
                     learn_data = []
                     for x in range(c):
                         f = []
@@ -342,16 +345,15 @@ def check():
                             frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
                         except:
                             break
-                        f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
-                        f_ctrls = l_data[i*10+x]
+                        f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)) / 255)
+                        f_ctrls = l_data[i*30+x]
                         for v in range(8):
-                            f_ctrls[6+v] = f_ctrls[6+v] * point
-                            if point < 0:
-                                f_ctrls[6+v] = f_ctrls[6+v] + 1
+                            f_ctrls[6+v] = (f_ctrls[6+v] - 0.5) * point + 0.5
+                            f_ctrls[6+v] = np.where(f_ctrls[6+v] < 0.5, 0, 1)
                         for f_ctrl in f_ctrls:
                             f.append(f_ctrl)
                         learn_data.append(f)
-                    x, y = convertData()
+                    x, y = conv_all()
                     loss = -1
                     try:
                         loss = model.model.train_on_batch(x, y)

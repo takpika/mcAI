@@ -1,5 +1,9 @@
 import json, os, socket, requests, subprocess
 from logging import getLogger, DEBUG, StreamHandler, Formatter
+from time import sleep
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
+import threading, urllib.parse
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -8,7 +12,7 @@ logger_formatter = Formatter(fmt='%(asctime)-15s [%(name)s] %(message)s')
 logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
-SERV_TYPE = "minecraft"
+SERV_TYPE = "server"
 
 if os.path.exists("eula.txt"):
     os.remove("eula.txt")
@@ -81,6 +85,16 @@ while requests.get("http://%s:%d/check?type=%s" % (CENTRAL_IP, 8000, SERV_TYPE))
     if trys > 10:
         logger.error("Register Failed")
         exit(4)
+        
+logger.info("Waiting for Central Server to configuration...")
+while True:
+    res = requests.get("http://%s:%d/config?type=%s" % (CENTRAL_IP, 8000, SERV_TYPE))
+    if res.status_code == 200:
+        config = json.loads(res.text)["config"]
+        break
+    sleep(0.1)
+
+PORT = config["port"]
 
 if os.path.exists("config/toughasnails/temperature.toml"):
     with open("config/toughasnails/temperature.toml", "r") as f:
@@ -89,4 +103,39 @@ if os.path.exists("config/toughasnails/temperature.toml"):
     with open("config/toughasnails/temperature.toml", "w") as f:
         f.write(data)
 
-subprocess.run(["/usr/bin/screen", "-DmS", "minecraft", "bash", "run.sh"])
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        parse_data = urllib.parse.urlparse(self.path)
+        path = parse_data.path
+        query = urllib.parse.parse_qs(parse_data.query)
+        status_code = 404
+        response = {
+            "status": "ng",
+            "msg": "Not Found"
+        }
+        if path == "/kill":
+            if "name" in query:
+                subprocess.run("/usr/bin/screen -S minecraft -X eval 'stuff \"kill %s\"'\015" % query["name"][0], shell=True)
+                status_code = 200
+                response["status"] = "ok"
+                response["msg"] = "Success"
+            else:
+                status_code = 400
+                response["msg"] = "Bad Request"
+        self.send_response(status_code)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(response).encode("utf-8"))
+
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle requests in a separate thread."""
+
+def start_httpServer():
+    server = ThreadedHTTPServer(("0.0.0.0", PORT), Handler)
+    server.serve_forever()
+
+if __name__ == "__main__":
+    t = threading.Thread(target=start_httpServer)
+    t.daemon = True
+    t.start()
+    subprocess.run(["/usr/bin/screen", "-DmS", "minecraft", "bash", "run.sh"])

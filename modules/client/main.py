@@ -65,9 +65,9 @@ def check_registered():
         CHECK_COUNT = 0
     return result
 
-def register():
+def register(ignore_time=False):
     global LAST_CHECK
-    if LAST_CHECK == int(time()):
+    if LAST_CHECK == int(time()) and not ignore_time:
         return
     LAST_CHECK = int(time())
     send_data = {
@@ -152,7 +152,6 @@ def clear_keyboard():
 def clear_mouse():
     mouse.release(mbt.left)
     mouse.release(mbt.right)
-    subprocess.run(["xinput", "enable", "10"])
 
 def clear_all():
     clear_keyboard()
@@ -255,7 +254,10 @@ def send_learnData(hash_id):
             }
             requests.post("http://%s:%d/" % (L_SERVER, PORT), json=sendData, headers=headers)
         os.remove(os.path.join(WORK_DIR, "%s.mp4" % (hash_id)))
-        subprocess.run(["rm", "%s/*.mp4" % (WORK_DIR)])
+    files = os.listdir(WORK_DIR)
+    for file in files:
+        if file.endswith(".mp4"):
+            os.remove(os.path.join(WORK_DIR, file))
     learn_data.clear()
 
 def start_recording():
@@ -334,20 +336,23 @@ def get_available_chat_name(name):
         return data["info"]["name"]
 
 def send_chat(name, message):
-    logger.info("Send Chat: %s %s" % (name, message))
+    logger.info("Send Chat to %s: %s" % (name, message))
     requests.get("http://localhost:%d/?name=%s&message=%s" % (PORT, name, message))
 
 def send_chat_function(name, message):
     op_name = get_available_chat_name(name)
     if op_name != "":
-        send_chat(op_name, urllib.parse.quote(message))
+        send_chat(op_name, urllib.parse.quote(message.replace("\n","").replace("\t","")))
 
 def get_newName():
     while True:
-        res = json.loads(requests.get("http://%s:%d/name?hostname=%s" % (CENTRAL_IP, PORT, HOSTNAME)).text)
-        if res['status'] == 'ok':
-            break
-        register()
+        try:
+            res = json.loads(requests.get("http://%s:%d/name?hostname=%s" % (CENTRAL_IP, PORT, HOSTNAME)).text)
+            if res['status'] == 'ok':
+                break
+            register(True)
+        except:
+            pass
     return res["info"]["name"]
 
 def end_session(hash_id):
@@ -355,7 +360,8 @@ def end_session(hash_id):
     model.clearSession()
     gc.collect(2)
     clear_all()
-    stop_recording(hash_id)
+    if hash_id in learn_data:
+        stop_recording(hash_id)
 
 def hostname2name(hostname):
     data = json.loads(requests.get('http://%s:%d/hostname?hostname=%s' % (CENTRAL_IP, PORT, hostname)).text)
@@ -404,7 +410,7 @@ if __name__ == "__main__":
                 if FORCE_QUIT:
                     break
                 send_message_data = ""
-                random_threthold = 1 - (random.random() ** 2)
+                random_seed = (random.random() ** 2) * 10
                 hash_id = start_recording()
                 mem = np.random.random((2**8, 8))
                 if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
@@ -419,6 +425,7 @@ if __name__ == "__main__":
                 edit_char = ""
                 inscreen = False
                 before_key = [False for _ in KEYS]
+                head_topbtm_time = -1
                 while True:
                     url = "http://localhost:%d/" % (PORT)
                     send_data = {}
@@ -496,6 +503,27 @@ if __name__ == "__main__":
                                     pyautogui.keyUp(char_k)
                         else:
                             inscreen = False
+                        dir_X = data["player"]["direction"]["x"]
+                        if dir_X < 0:
+                            dir_X *= -1
+                        if dir_X > 85:
+                            if head_topbtm_time == -1:
+                                head_topbtm_time = time()
+                            else:
+                                if time() - head_topbtm_time > 10:
+                                    logger.info("Head spinning")
+                                    for _ in range(10):
+                                        try:
+                                            data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
+                                            if data["status"] == "ok":
+                                                sleep(1)
+                                                break
+                                        except:
+                                            pass
+                                        sleep(1)
+                                    continue
+                        else:
+                            head_topbtm_time = -1
                         x_img = np.array(image).reshape((1, HEIGHT, WIDTH, 3)) / 255
                         x_reg = np.array([getBit(mem_reg, i) for i in range(7,-1,-1)])
                         x_mem = mem[mem_reg]
@@ -522,26 +550,18 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
-                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * random_threthold * random.random() * 10
+                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * random_seed
                         for i in ai_m:
-                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold * random.random() * 10
+                            i += (np.random.random(i.shape) * 2 - 1) * random_seed
                         for i in ai_mem:
-                            i += (np.random.random(i.shape) * 2 - 1) * random_threthold * random.random() * 10
-                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * random_threthold * random.random() * 10
+                            i += (np.random.random(i.shape) * 2 - 1) * random_seed
+                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * random_seed
                         AI_USING = False
-                        keys_str = "\r\033[37m"
                         for i in range(len(KEYS)):
                             res = ai_k[0][i] >= 0.5
                             if before_key[i] != res:
                                 handle_keyboard(KEYS[i], ai_k[0][i] >= 0.5)
                             before_key[i] = res
-                            if ai_k[0][i] >= 0.5:
-                                keys_str += '\033[42m'
-                            else:
-                                keys_str += '\033[40m'
-                            keys_str += KEYS[i][0].upper()
-                        keys_str += '\033[0m'
-                        print(keys_str, end='')
                         x = (min(max(ai_m[0][0][0], 0.0), 1.0) - 0.5) * 20
                         y = (min(max(ai_m[0][0][1], 0.0), 1.0) - 0.5) * 20
                         handle_mouse("left", ai_m[1][0][0] >= 0.5)
@@ -599,7 +619,9 @@ if __name__ == "__main__":
                                 }
                             }
                             learn_data[hash_id].append(this_frame)
-                        if len(learn_data[hash_id]) > FRAME_LIMIT:
+                        if not hash_id in learn_data:
+                            hash_id = start_recording()
+                        elif len(learn_data[hash_id]) > FRAME_LIMIT:
                             stop_recording(hash_id)
                             hash_id = start_recording()
                     else:
@@ -608,7 +630,7 @@ if __name__ == "__main__":
                             end_session(hash_id)
                             force_quit()
                             break
-                        elif time() - mc_start_time > 300:
+                        elif time() - mc_start_time > 180:
                             logger.warning("Maybe disconnected. Auto restart...")
                             end_session(hash_id)
                             force_quit()
@@ -619,7 +641,8 @@ if __name__ == "__main__":
                         mes_id = int(data["message"][0]["id"])
                     threading.Thread(target=register).start()
     finally:
-        end_session(hash_id)
+        if not (hash_id == "" or hash_id == None):
+            end_session(hash_id)
         force_quit()
         homeDir = os.getenv('HOME')
-        subprocess.Popen(["bash", os.path.join(homeDir, "startmcai.sh")])
+        subprocess.run(["bash", os.path.join(homeDir, "startmcai.sh")])

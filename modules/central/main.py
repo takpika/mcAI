@@ -129,6 +129,14 @@ class Handler(BaseHTTPRequestHandler):
                             "epochs": config["epochs"]
                         }
                     }
+                elif pc_type == "server":
+                    status_code = 200
+                    response = {
+                        "status": "ok",
+                        "config": {
+                            "port": config["port"]
+                        }
+                    }
                 else:
                     status_code = 400
                     response = {
@@ -328,7 +336,7 @@ class Handler(BaseHTTPRequestHandler):
                         if learn_server["ip"] == ip_addr:
                             status_code = 200
                             response['info']['result'] = True
-                elif query['type'][0] == 'minecraft':
+                elif query['type'][0] == 'server':
                     if mc_server != None:
                         if mc_server['ip'] == ip_addr:
                             status_code = 200
@@ -404,7 +412,7 @@ class Handler(BaseHTTPRequestHandler):
                         learn_server = {
                             "ip": ip_addr
                         }
-                    elif pc_type == "minecraft":
+                    elif pc_type == "server":
                         mc_server = {
                             "ip": ip_addr
                         }
