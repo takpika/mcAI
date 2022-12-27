@@ -1,8 +1,14 @@
 name: Build container images
 on:
-  - push
+  push:
+    branches:
+      - development
+      - main
   pull_request:
     types: [closed]
+    branches:
+      - development
+      - main
 
 jobs:
   build:
@@ -41,15 +47,15 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build ./modules/${{ matrix.target }} -t ghcr.io/takpika/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build-arg BRANCH="$GITHUB_REF"
+          docker build ./modules/${{ matrix.target }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build-arg BRANCH="$GITHUB_REF"
 
       - name: Push Docker Image
         run: |
-          docker push ghcr.io/takpika/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }}
+          docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }}
           if [ "$GITHUB_REF" = "development" ]; then
-            docker tag ghcr.io/takpika/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} ghcr.io/takpika/mcai-${{ matrix.target }}:latest-dev
-            docker push ghcr.io/takpika/mcai-${{ matrix.target }}:latest-dev
+            docker tag ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest-dev
+            docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest-dev
           else
-            docker tag ghcr.io/takpika/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} ghcr.io/takpika/mcai-${{ matrix.target }}:latest
-            docker push ghcr.io/takpika/mcai-${{ matrix.target }}:latest
+            docker tag ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest
+            docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest
           fi
