@@ -34,11 +34,11 @@ jobs:
         if: github.ref == 'refs/heads/master'
         run: |
           COMMITID=$(git rev-parse --short ${{ github.sha }})
-          echo "DOCKER_TAG=master-${COMMITID}" >> $GITHUB_ENV
+          echo "DOCKER_TAG=development-${COMMITID}" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
           context: ./modules/${{ matrix.target }}
           push: true
-          tags: ghcr.io/takpika/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }}
+          tags: ghcr.io/takpika/mcai-${{ matrix.target }}:dev-${COMMITID}
