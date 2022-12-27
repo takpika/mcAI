@@ -41,4 +41,4 @@ jobs:
         with:
           context: ./modules/${{ matrix.target }}
           push: true
-          tags: ghcr.io/takpika/mcai-${{ matrix.target }}:dev-${COMMITID}
+          tags: ghcr.io/takpika/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }}
