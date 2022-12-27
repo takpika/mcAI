@@ -542,10 +542,12 @@ if __name__ == "__main__":
                                     continue
                         else:
                             head_topbtm_time = -1
-                        pos = (data["player"]["pos"]["x"], data["player"]["pos"]["y"], data["player"]["pos"]["z"])
-                        dir = (data["player"]["direction"]["x"], data["player"]["direction"]["y"])
-                        if pos != last_pos or dir != last_dir:
+                        pos = (int(data["player"]["pos"]["x"]), int(data["player"]["pos"]["y"]), int(data["player"]["pos"]["z"]))
+                        dir = (int(data["player"]["direction"]["x"]), int(data["player"]["direction"]["y"]))
+                        if pos != last_pos or dir != last_dir or last_change == -1:
                             last_change = time()
+                            last_pos = pos
+                            last_dir = dir
                         else:
                             if time() - last_change > 10 and last_change != -1:
                                 logger.info("Stuck")
