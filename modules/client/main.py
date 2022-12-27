@@ -426,6 +426,7 @@ if __name__ == "__main__":
                 inscreen = False
                 before_key = [False for _ in KEYS]
                 head_topbtm_time = -1
+                last_pos, last_dir, last_change = (-1, -1, -1), (-1, -1), -1
                 while True:
                     url = "http://localhost:%d/" % (PORT)
                     send_data = {}
@@ -524,6 +525,23 @@ if __name__ == "__main__":
                                     continue
                         else:
                             head_topbtm_time = -1
+                        pos = (data["player"]["position"]["x"], data["player"]["position"]["y"], data["player"]["position"]["z"])
+                        dir = (data["player"]["direction"]["x"], data["player"]["direction"]["y"])
+                        if pos != last_pos or dir != last_dir:
+                            last_change = time()
+                        else:
+                            if time() - last_change > 10:
+                                logger.info("Stuck")
+                                for _ in range(10):
+                                    try:
+                                        data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
+                                        if data["status"] == "ok":
+                                            sleep(1)
+                                            break
+                                    except:
+                                        pass
+                                    sleep(1)
+                                continue
                         x_img = np.array(image).reshape((1, HEIGHT, WIDTH, 3)) / 255
                         x_reg = np.array([getBit(mem_reg, i) for i in range(7,-1,-1)])
                         x_mem = mem[mem_reg]
