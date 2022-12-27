@@ -481,7 +481,7 @@ if __name__ == "__main__":
                                 sleep(0.2)
                                 pyautogui.keyUp("esc")
                                 continue
-                            if "net.minecraft.client.gui.screens..DisconnectedScreen" in data["screenInfo"]["id"]:
+                            if "net.minecraft.client.gui.screens.DisconnectedScreen" in data["screenInfo"]["id"]:
                                 logger.warning("Disconnected. Auto restart...")
                                 end_session(hash_id)
                                 force_quit()
