@@ -1,19 +1,39 @@
-version: '2'
+version: '2.3'
 services:
   central:
-    image: takpika/mcai-central:latest
+    image: ghcr.io/takpika/mcai-central:latest
   client01:
-    image: takpika/mcai-client:latest
+    image: ghcr.io/takpika/mcai-client:latest
+    depends_on:
+      - central
+      - learn
+      - server
   client02:
-    image: takpika/mcai-client:latest
+    image: ghcr.io/takpika/mcai-client:latest
+    depends_on:
+      - central
+      - learn
+      - server
   learn:
-    image: takpika/mcai-learn:latest
+    image: ghcr.io/takpika/mcai-learn:latest
+    #image: ghcr.io/takpika/mcai-learn-gpu:latest # for GPU
     volumes:
       - ./models:/var/mcai/models
+    depends_on:
+      - central
+    #deploy: # for GPU
+    #  resources:
+    #    reservations:
+    #      devices:
+    #        - driver: nvidia
+    #          count: 1
+    #          capabilities: [gpu]
   server:
-    image: takpika/mcai-server:latest
+    image: ghcr.io/takpika/mcai-server:latest
     volumes:
       - ./world:/var/mcai/world
       - ./server:/var/mcai/server
     ports:
       - "25565:25565"
+    depends_on:
+      - central
