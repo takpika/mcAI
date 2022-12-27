@@ -31,11 +31,13 @@ jobs:
         run: |
           COMMITID=$(git rev-parse --short ${{ github.sha }})
           if [ ${{ github.base_ref }} = "" ]; then
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
             echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
           else
+            BRANCH_NAME=${{ github.base_ref }}
             echo "BRANCH_NAME=${{ github.base_ref }}" >> $GITHUB_ENV
           fi
-          if [ "${{ env.BRANCH_NAME }}" = "development" ]; then
+          if [ "${BRANCH_NAME}" = "development" ]; then
             echo "DOCKER_TAG=dev-${COMMITID}" >> $GITHUB_ENV
           else
             echo "DOCKER_TAG=${COMMITID}" >> $GITHUB_ENV
