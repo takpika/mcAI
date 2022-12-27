@@ -507,7 +507,7 @@ if __name__ == "__main__":
                         dir_X = data["player"]["direction"]["x"]
                         if dir_X < 0:
                             dir_X *= -1
-                        if dir_X > 85:
+                        if dir_X > 80:
                             if head_topbtm_time == -1:
                                 head_topbtm_time = time()
                             else:
