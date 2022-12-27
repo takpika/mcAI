@@ -44,7 +44,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build ./modules/${{ matrix.target }} -t ghcr.io/takpika/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build_arg BRANCH="${{ env.BRANCH }}"
+          docker build ./modules/${{ matrix.target }} -t ghcr.io/takpika/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build-arg BRANCH="${{ env.BRANCH }}"
 
       - name: Push Docker Image
         run: |
