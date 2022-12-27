@@ -6,6 +6,7 @@ ENV TZ=Asia/Tokyo
 
 RUN apt update
 RUN apt install tzdata -y
+RUN apt install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" keyboard-configuration
 RUN apt install git sudo -y
 RUN useradd -m -d /var/mcai -s /bin/bash mcai
 RUN echo "mcai ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
