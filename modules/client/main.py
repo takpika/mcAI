@@ -462,6 +462,17 @@ if __name__ == "__main__":
                         played = True
                         img = sct.grab(mon)
                         image = Image.frombytes('RGB', (img.width, img.height), img.rgb)
+                        if data["player"]["gamemode"] != "SURVIVAL":
+                            for _ in range(10):
+                                try:
+                                    data = json.loads(requests.get("http://%s:%d/gamemode?name=%s&mode=survival" % (SERVER, PORT, HOSTNAME)).text)
+                                    if data["status"] == "ok":
+                                        break
+                                    sleep(0.1)
+                                except:
+                                    pass
+                            sleep(1)
+                            continue
                         if data["player"]["death"]:
                             logger.info("Dead")
                             end_session(hash_id)
