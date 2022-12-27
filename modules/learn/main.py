@@ -304,6 +304,7 @@ def check():
                     if count % 10 == 0:
                         logger.debug("VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, count))
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
+                    model.model.clear_session()
         vae.encoder.model.save("models/vae_e.h5")
         vae.decoder.model.save("models/vae_d.h5")
         logger.debug("End: VAE Learning")
