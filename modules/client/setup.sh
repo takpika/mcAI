@@ -26,7 +26,7 @@ DEBIAN_FRONTEND=noninteractive sudo apt install xserver-xorg xserver-xorg-video-
 sudo sed -ie "s/console/anybody/g" /etc/X11/Xwrapper.config 
 sudo tee /usr/share/X11/xorg.conf.d/99-headless.conf << EOF
 Section "Monitor"
-    Identifier "dummy_monitor" 
+    Identifier "dummy_monitor"
     DisplaySize 1024 768
 EndSection
 
