@@ -530,7 +530,7 @@ if __name__ == "__main__":
                         if pos != last_pos or dir != last_dir:
                             last_change = time()
                         else:
-                            if time() - last_change > 10:
+                            if time() - last_change > 10 and last_change != -1:
                                 logger.info("Stuck")
                                 for _ in range(10):
                                     try:
