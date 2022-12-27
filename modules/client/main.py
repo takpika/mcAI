@@ -475,7 +475,7 @@ if __name__ == "__main__":
                                 break
                             break
                         if data["screen"]: # ポーズ画面と死亡画面のみAIに見せずに特別処理
-                            if data["screeninfo"]["pause"]:
+                            if data["screenInfo"]["pause"]:
                                 logger.info("Pause")
                                 pyautogui.keyDown("esc")
                                 sleep(0.2)
@@ -485,7 +485,7 @@ if __name__ == "__main__":
                             mouse.move(int(x), int(y))
                             check_mousecursor()
                             image = drawPointer(image)
-                            if data["screeninfo"]["edit"]:
+                            if data["screenInfo"]["edit"]:
                                 send_message_data = ""
                                 char_k = None
                                 if edit_char == "\n":
@@ -601,7 +601,7 @@ if __name__ == "__main__":
                             else:
                                 send_message_data += mes_char
                         elif data["screen"]:
-                            if data["screeninfo"]["edit"]:
+                            if data["screenInfo"]["edit"]:
                                 edit_char = mes_char
                         if len(send_message_data) > CHARS_LIMIT:
                             send_message_data = send_message_data[:CHARS_LIMIT]
@@ -662,5 +662,3 @@ if __name__ == "__main__":
         if not (hash_id == "" or hash_id == None):
             end_session(hash_id)
         force_quit()
-        homeDir = os.getenv('HOME')
-        #subprocess.run(["bash", os.path.join(homeDir, "startmcai.sh")])
