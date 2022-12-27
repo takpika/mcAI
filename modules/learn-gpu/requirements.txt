@@ -1,5 +1,0 @@
-tensorflow-gpu
-numpy
-psutil
-opencv-python
-pillow
