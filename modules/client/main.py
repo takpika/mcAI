@@ -394,7 +394,7 @@ learn_data = {}
 if __name__ == "__main__":
     try:
         while True:
-            ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%d:%d" % (WIDTH, HEIGHT), server=SERVER)
+            ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%dx%d" % (WIDTH, HEIGHT), server=SERVER)
             ptmc.start()
             while True:
                 try:
