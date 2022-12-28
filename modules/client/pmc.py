@@ -28,6 +28,7 @@ class PortableMinecraft:
     def override(self):
         @cli.mixin
         def new_version(old, ctx: cli.CliContext, version_id: str) -> Version:
+            print("Override Version Working")
             if version_id.startswith("forge:"):
 
                 main_dir = path.dirname(ctx.versions_dir)
