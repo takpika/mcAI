@@ -395,7 +395,8 @@ if __name__ == "__main__":
     try:
         while True:
             ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%dx%d" % (WIDTH, HEIGHT), server=SERVER)
-            ptmc.start()
+            mc_thread = threading.Thread(target=ptmc.start)
+            mc_thread.start()
             while True:
                 try:
                     requests.get("http://localhost:%d/" % (PORT))
