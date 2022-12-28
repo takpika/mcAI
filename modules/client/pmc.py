@@ -64,7 +64,7 @@ class PortableMinecraft:
                 # Test if the user has given the full forge version
                 forge_version = game_version
 
-            installer = ForgeVersionInstaller(ctx, forge_version, prefix=ctx.ns.forge_prefix)
+            installer = ForgeVersionInstaller(ctx, forge_version, prefix="forge")
             installer.jvm_exec = self.jvm
 
             if installer.needed():
