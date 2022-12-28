@@ -5,7 +5,7 @@ from time import sleep, time
 import numpy as np
 from logging import getLogger, DEBUG, StreamHandler, Formatter
 import gc
-from .pmc import PortableMinecraft
+from pmc import PortableMinecraft
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
