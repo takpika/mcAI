@@ -43,27 +43,24 @@ jobs:
           fi
           if [ "${BRANCH_NAME}" = "development" ]; then
             echo "DOCKER_TAG=dev-${COMMITID}" >> $GITHUB_ENV
+            echo "DOCKER_TAG2=latest-dev" >> $GITHUB_ENV
           else
             echo "DOCKER_TAG=${COMMITID}" >> $GITHUB_ENV
+            echo "DOCKER_TAG2=latest" >> $GITHUB_ENV
           fi
 
-      - name: Build Docker Image
+      - name: Build and Push Docker Image
         if : ${{ matrix.target != 'learn-gpu' }}
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }}
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }} --push
 
       - name: Build Docker Image (learn-gpu)
         if : ${{ matrix.target == 'learn-gpu' }}
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }}
+          docker build -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }}
 
       - name: Push Docker Image
+        if : ${{ matrix.target == 'learn-gpu' }}
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }}
-          if [ "${{ env.BRANCH_NAME }}" = "development" ]; then
-            docker tag ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest-dev
-            docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest-dev
-          else
-            docker tag ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest
-            docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:latest
-          fi
+          docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }}
