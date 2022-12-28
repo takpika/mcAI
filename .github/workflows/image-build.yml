@@ -47,8 +47,14 @@ jobs:
           fi
 
       - name: Build Docker Image
+        if : ${{ matrix.target != 'learn-gpu' }}
         run: |
           docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }}
+
+      - name: Build Docker Image (learn-gpu)
+        if : ${{ matrix.target == 'learn-gpu' }}
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }}
 
       - name: Push Docker Image
         run: |
