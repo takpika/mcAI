@@ -5,6 +5,7 @@ from time import sleep, time
 import numpy as np
 from logging import getLogger, DEBUG, StreamHandler, Formatter
 import gc
+from .pmc import PortableMinecraft
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -393,7 +394,8 @@ learn_data = {}
 if __name__ == "__main__":
     try:
         while True:
-            subprocess.Popen(["portablemc", "start", "-u", HOSTNAME, "forge:%s" % (config["version"]), "--resol", "%dx%d" % (WIDTH, HEIGHT), "-s", SERVER, "--jvm", "/usr/bin/java"])
+            ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%d:%d" % (WIDTH, HEIGHT), server=SERVER)
+            ptmc.start()
             while True:
                 try:
                     requests.get("http://localhost:%d/" % (PORT))

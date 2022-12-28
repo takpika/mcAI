@@ -71,7 +71,7 @@ cp modules/client/options.txt ~/.minecraft/
 cp -r modules/client/* ~/
 cp scripts/chars.json ~/
 cp -r mcai/ ~/
-portablemc start -u setup forge:${MC_VERSION} --dry --jvm /usr/bin/java
+python modules/client/pmc.py $MC_VERSION
 
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
