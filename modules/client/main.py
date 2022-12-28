@@ -110,6 +110,14 @@ WIDTH = config["resolution"]["x"]
 HEIGHT = config["resolution"]["y"]
 
 sct = mss()
+ARCH = os.uname()[4]
+if ARCH == "x86_64":
+    J_ARCH = "amd64"
+elif ARCH == "aarch64":
+    J_ARCH = "arm64"
+else:
+    logger.error("Unsupported Architecture: " + ARCH)
+    exit(1)
 
 VERSION = 0
 AI_USING = False
@@ -393,7 +401,7 @@ learn_data = {}
 if __name__ == "__main__":
     try:
         while True:
-            subprocess.Popen(["portablemc", "start", "-u", HOSTNAME, "forge:%s" % (config["version"]), "--resol", "%dx%d" % (WIDTH, HEIGHT), "-s", SERVER, "--jvm", "/usr/bin/java"])
+            subprocess.Popen(["portablemc", "start", "-u", HOSTNAME, "forge:%s" % (config["version"]), "--resol", "%dx%d" % (WIDTH, HEIGHT), "-s", SERVER, "--jvm", "/usr/lib/jvm/java-17-openjdk-%s/bin/java" % (J_ARCH)])
             while True:
                 try:
                     requests.get("http://localhost:%d/" % (PORT))
