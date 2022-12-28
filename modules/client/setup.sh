@@ -71,13 +71,7 @@ cp modules/client/options.txt ~/.minecraft/
 cp -r modules/client/* ~/
 cp scripts/chars.json ~/
 cp -r mcai/ ~/
-ARCH=`uname -m`
-if [ "$ARCH" = "x86_64" ]; then
-    J_ARCH="x64"
-elif [ "$ARCH" = "aarch64" ]; then
-    J_ARCH="arm64"
-fi
-portablemc start -u setup forge:${MC_VERSION} --dry --jvm /usr/lib/jvm/java-17-openjdk-${J_ARCH}/bin/java
+portablemc start -u setup forge:${MC_VERSION} --dry --jvm /usr/bin/java
 
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
