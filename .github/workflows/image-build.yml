@@ -49,18 +49,18 @@ jobs:
             echo "DOCKER_TAG2=latest" >> $GITHUB_ENV
           fi
 
-      #- name: Build and Push Docker Image
-      #  if : ${{ matrix.target != 'learn-gpu' }}
-      #  run: |
-      #    docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }} --push
+      - name: Build and Push Docker Image
+        if : ${{ matrix.target != 'learn-gpu' }}
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }} --push
 
       - name: Build Docker Image (learn-gpu)
-        #if : ${{ matrix.target == 'learn-gpu' }}
+        if : ${{ matrix.target == 'learn-gpu' }}
         run: |
           docker build -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }}
 
       - name: Push Docker Image
-        #if : ${{ matrix.target == 'learn-gpu' }}
+        if : ${{ matrix.target == 'learn-gpu' }}
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }}
           docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }}
