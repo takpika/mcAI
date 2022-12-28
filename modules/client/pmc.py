@@ -25,6 +25,7 @@ class PortableMinecraft:
         cli.cmd_start(ns, cli.new_context(ns))
 
     def new_version(self, old, ctx: cli.CliContext, version_id: str) -> Version:
+        print("Installing %s" % version_id")
         if version_id.startswith("forge:"):
 
             main_dir = path.dirname(ctx.versions_dir)
