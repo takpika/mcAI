@@ -531,7 +531,7 @@ if __name__ == "__main__":
                             if head_topbtm_time == -1:
                                 head_topbtm_time = time()
                             else:
-                                if time() - head_topbtm_time > 10:
+                                if time() - head_topbtm_time >= 3:
                                     logger.info("Head spinning")
                                     for _ in range(10):
                                         try:
