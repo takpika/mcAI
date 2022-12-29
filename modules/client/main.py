@@ -388,13 +388,13 @@ def force_quit():
 video = None
 
 model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
+ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%dx%d" % (WIDTH, HEIGHT), server=SERVER)
 
 learn_data = {}
 
 if __name__ == "__main__":
     try:
         while True:
-            ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%dx%d" % (WIDTH, HEIGHT), server=SERVER)
             mc_thread = threading.Thread(target=ptmc.start)
             mc_thread.start()
             while True:
