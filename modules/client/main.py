@@ -611,7 +611,7 @@ if __name__ == "__main__":
                         mem_reg = convBit(ai_mem[2][0])
                         mem_reg2 = convBit(ai_mem[3][0])
                         mes_char = bin_to_char(ai_chat[0])
-                        if mes_char != "\n" or mes_char != "NONE" and not data["screen"]:
+                        if mes_char != "\n" and mes_char != "NONE" and not data["screen"]:
                             if mes_char == "DEL":
                                 if len(send_message_data) > 1:
                                     send_message_data = send_message_data[:-1]
@@ -620,8 +620,6 @@ if __name__ == "__main__":
                             elif mes_char == "\t":
                                 threading.Thread(target=send_chat_function, args=(data["player"]["name"], send_message_data)).start()
                                 send_message_data = ""
-                            elif mes_char == "NONE":
-                                pass
                             else:
                                 send_message_data += mes_char
                         elif data["screen"]:
