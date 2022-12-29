@@ -329,6 +329,9 @@ def check():
                     l_data = pickle.load(f)
                 count = len(l_data)
                 if (count / mx) < 0.9:
+                    if epoch == EPOCHS - 1:
+                        os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+                        os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
                     continue
                 point = count / mx
                 a, b = int(count / 30), count % 30
@@ -366,9 +369,6 @@ def check():
                     now_count += 1
                     if now_count % 10 == 0:
                         logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f" % (now_count, total_count, now_count/total_count*100, loss[0]))
-        for id in learn_ids:
-            os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-            os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         logger.info("Finish Learning")
         MODEL_WRITING = True
         model.model.save("models/model.h5")
