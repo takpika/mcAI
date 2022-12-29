@@ -313,6 +313,8 @@ def check():
         ave = sum(learn_counts) / len(learn_counts)
         mx_dis = mx - ave
         for count in learn_counts:
+            if (count / mx) < 0.9:
+                continue
             a, b = int(count / 30), count % 30
             if b > 0:
                 a += 1
@@ -326,7 +328,9 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                     l_data = pickle.load(f)
                 count = len(l_data)
-                point = (count - ave) / mx_dis
+                if (count / mx) < 0.9:
+                    continue
+                point = count / mx
                 a, b = int(count / 30), count % 30
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 all_count = a
