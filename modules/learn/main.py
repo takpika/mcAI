@@ -373,6 +373,7 @@ def check():
         MODEL_WRITING = True
         model.model.save("models/model.h5")
         MODEL_WRITING = False
+        model.clearSession()
         with open("models/version", "w") as f:
             f.write(str(int(datetime.now().timestamp())))
         training = False
