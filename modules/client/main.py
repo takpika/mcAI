@@ -620,6 +620,8 @@ if __name__ == "__main__":
                             elif mes_char == "\t":
                                 threading.Thread(target=send_chat_function, args=(data["player"]["name"], send_message_data)).start()
                                 send_message_data = ""
+                            elif mes_char == "NONE":
+                                pass
                             else:
                                 send_message_data += mes_char
                         elif data["screen"]:
