@@ -71,6 +71,7 @@ else
 sudo tee /init << EOF
 #!/bin/bash
 cd $HOME
+chown -R $USERNAME:$USERNAME ~/models
 sudo -u $USERNAME bash $HOME/startmcai.sh
 EOF
 sudo chmod +x /init

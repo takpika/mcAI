@@ -94,6 +94,8 @@ rm -rf ~/server
 sudo tee /init << EOF
 #!/bin/bash
 cd $HOME
+chown -R $USERNAME:$USERNAME ~/server
+chown -R $USERNAME:$USERNAME ~/world
 sudo -u $USERNAME bash $HOME/startmcai.sh
 EOF
 sudo chmod +x /init
