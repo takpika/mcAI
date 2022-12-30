@@ -271,7 +271,6 @@ def check():
         training = True
         logger.info("Start Learning")
         logger.debug("Start: VAE Learning")
-        vae = mcai.image.ImageVAE()
         if os.path.exists("models/vae_d.h5") and os.path.exists("models/vae_e.h5"):
             vae.decoder.model.load_weights("models/vae_d.h5")
             vae.encoder.model.load_weights("models/vae_e.h5")
@@ -322,7 +321,6 @@ def check():
                 a += 1
             total_count += a
         total_count *= EPOCHS
-        model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
         model.encoder.model.load_weights("models/vae_e.h5")
         learn_data.clear()
         for epoch in range(EPOCHS):
