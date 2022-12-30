@@ -291,6 +291,7 @@ def check():
                         continue
                     else:
                         vae.model.train_on_batch(frames/255, frames/255)
+                        frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
                         break
                 try:
                     frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
@@ -306,6 +307,7 @@ def check():
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
         vae.encoder.model.save("models/vae_e.h5")
         vae.decoder.model.save("models/vae_d.h5")
+        model.clearSession()
         logger.debug("End: VAE Learning")
         total_count = 0
         now_count = 0
@@ -369,6 +371,7 @@ def check():
                     now_count += 1
                     if now_count % 10 == 0:
                         logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f" % (now_count, total_count, now_count/total_count*100, loss[0]))
+                video.release()
         logger.info("Finish Learning")
         MODEL_WRITING = True
         model.model.save("models/model.h5")
