@@ -431,6 +431,8 @@ if __name__ == "__main__":
                 head_topbtm_time = -1
                 last_pos, last_dir, last_change = (-1, -1, -1), (-1, -1), -1
                 while True:
+                    if not hash_id in learn_data:
+                        learn_data[hash_id] = []
                     url = "http://localhost:%d/" % (PORT)
                     send_data = {}
                     if (x != 0 and not inscreen):
@@ -531,7 +533,7 @@ if __name__ == "__main__":
                             if head_topbtm_time == -1:
                                 head_topbtm_time = time()
                             else:
-                                if time() - head_topbtm_time >= 3:
+                                if time() - head_topbtm_time >= 3 and len(learn_data[hash_id]) >= 2:
                                     logger.info("Head spinning")
                                     for _ in range(10):
                                         try:
@@ -552,7 +554,7 @@ if __name__ == "__main__":
                             last_pos = pos
                             last_dir = dir
                         else:
-                            if time() - last_change > 10 and last_change != -1:
+                            if time() - last_change > 10 and last_change != -1 and len(learn_data[hash_id]) >= 2:
                                 logger.info("Stuck")
                                 for _ in range(10):
                                     try:
