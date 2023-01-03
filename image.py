@@ -34,7 +34,7 @@ class ImageEncoder():
         hid = MaxPooling2D((2,2))(hid)
         #32, 32, 128
         out = Conv2D(128, kernel_size=2, padding="same", activation="relu")(hid)
-        return Model(inp, out, name="image_encoder")
+        return Model(inp, out)
 
 class ImageDecoder():
     def __init__(self, path=None):
@@ -54,4 +54,4 @@ class ImageDecoder():
         hid = UpSampling2D((2,2))(hid)
         hid = Conv2D(16, kernel_size=2, padding="same", activation="relu")(hid)
         out = Conv2D(3, kernel_size=2, padding="same", activation="relu")(hid)
-        return Model(inp, out, name="image_decoder")
+        return Model(inp, out)

@@ -6,7 +6,7 @@ from tensorflow.keras.backend import clear_session
 import numpy as np
 from random import random
 import os
-from . import image, text, control
+from . import image
 
 class mcAI():
     def __init__(self, WIDTH, HEIGHT, CHARS_COUNT, logger):
@@ -17,30 +17,30 @@ class mcAI():
         self.logger = logger
         self.encoder = image.ImageEncoder()
         self.encoder.model.trainable = False
-        self.charencoder = text.CharEncoder(CHARS_COUNT)
-        self.charencoder.model.trainable = False
-        self.keyboarddecoder = control.KeyboardDecoder()
-        self.keyboarddecoder.model.trainable = False
-        self.mousedecoder = control.MouseDecoder()
-        self.mousedecoder.model.trainable = False
         self.make_model()
 
     def clearSession(self):
         clear_session()
 
+    def charEncoder(self):
+        inp = Input(shape=(self.CHARS_COUNT))
+        out = Dense(2, activation="relu")(inp)
+        return Model([inp], out)
+
     def nameEncoder(self):
-        name_chars = [self.charencoder for i in range(6)]
-        name_chars_o = [c.model.output for c in name_chars]
-        name_chars_i = [c.model.input for c in name_chars]
-        hid = Concatenate()(name_chars)
+        name_chars = [self.charEncoder() for i in range(6)]
+        name_chars_o = [c.output for c in name_chars]
+        name_chars_i = [c.input for c in name_chars]
+        hid = Concatenate()(name_chars_o)
         out = Dense(16, activation="relu")(hid)
         return Model(name_chars_i, out)
 
     def chatEncoder(self):
         name = self.nameEncoder()
-        hid = Concatenate()([name, self.charencoder.model])
+        char = self.charEncoder()
+        hid = Concatenate()([name.output, char.output])
         out = Dense(16, activation="relu")(hid)
-        return Model([name.input, self.charencoder.model.input], out)
+        return Model([name.input, char.input], out)
 
     def memEncoder(self):
         reg = Input(shape=(8))
@@ -58,13 +58,28 @@ class mcAI():
         mem = self.memEncoder()
         chat = self.chatEncoder()
         seed = Input(shape=(100))
-        video_hid = Flatten()(video)
-        hid = Concatenate()([video_hid, mem, chat, seed])
+        video_hid = Flatten()(video.output)
+        hid = Concatenate()([video_hid, mem.output, chat.output, seed])
         hid = Dropout(0.2)(hid)
         hid = Dense(64, activation="relu")(hid)
         hid = Dense(32, activation="relu")(hid)
         out = Dense(16, activation="relu")(hid)
         return Model([video.input, mem.input, chat.input, seed], out)
+
+    def build_controlDecoder(self):
+        inp = Input(shape=(16))
+        hid = Dense(64, activation="relu")(inp)
+        hid = Dense(32, activation="relu")(hid)
+        out = Dense(17, activation="relu")(hid)
+        return Model([inp], out)
+
+    def build_mouseDecoder(self):
+        inp = Input(shape=(16))
+        hid = Dense(64, activation="relu")(inp)
+        hid = Dense(32, activation="relu")(hid)
+        out_dir = Dense(2, activation="relu")(hid)
+        out_lr = Dense(2, activation="relu")(hid)
+        return Model([inp], [out_dir, out_lr])
 
     def build_memDecoder(self):
         inp = Input(shape=(16))
@@ -85,10 +100,10 @@ class mcAI():
 
     def build_Model(self):
         hid = self.build_hidden()
-        ctrl = self.keyboarddecoder.model(hid)
-        mouse = self.mousedecoder.model(hid)
-        mem = self.build_memDecoder()(hid)
-        chat = self.build_chatDecoder()(hid)
+        ctrl = self.build_controlDecoder()(hid.output)
+        mouse = self.build_mouseDecoder()(hid.output)
+        mem = self.build_memDecoder()(hid.output)
+        chat = self.build_chatDecoder()(hid.output)
         return Model([hid.input], [ctrl, mouse, mem, chat])
 
     def make_model(self):

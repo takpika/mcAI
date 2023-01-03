@@ -108,6 +108,9 @@ data = []
 learn_data = []
 training = False
 vae = mcai.image.ImageVAE()
+charVAE = mcai.char.CharVAE(CHARS_COUNT)
+keyboardVAE = mcai.control.KeyboardVAE()
+mouseVAE = mcai.control.MouseVAE()
 model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
 
 def limit(i):
@@ -270,7 +273,7 @@ def check():
     if sum(learn_counts) >= 1000 and not training:
         training = True
         logger.info("Start Learning")
-        logger.debug("Start: VAE Learning")
+        logger.debug("Start: Image VAE Learning")
         if os.path.exists("models/vae_d.h5") and os.path.exists("models/vae_e.h5"):
             vae.decoder.model.load_weights("models/vae_d.h5")
             vae.encoder.model.load_weights("models/vae_e.h5")
@@ -302,12 +305,49 @@ def check():
                     count += 1
                     loss = vae.model.train_on_batch(frames/255, frames/255)
                     if count % 10 == 0:
-                        logger.debug("VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, count))
+                        logger.debug("Image VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, count))
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
         vae.encoder.model.save("models/vae_e.h5")
         vae.decoder.model.save("models/vae_d.h5")
         model.clearSession()
-        logger.debug("End: VAE Learning")
+        logger.debug("End: Image VAE Learning")
+        logger.debug("Start: Char VAE Learning")
+        for epoch in range(2):
+            for iter in range(100):
+                x = np.random.random((10, CHARS_COUNT))
+                x = np.where(x == x.max(axis=1, keepdims=True), 1, 0)
+                loss = charVAE.model.train_on_batch(x, x)
+                if iter % 10 == 0:
+                    logger.debug("Char VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
+        charVAE.encoder.model.save("models/char_e.h5")
+        charVAE.decoder.model.save("models/char_d.h5")
+        model.clearSession()
+        logger.debug("End: Char VAE Learning")
+        logger.debug("Start: Keyboard VAE Learning")
+        for epoch in range(2):
+            for iter in range(100):
+                x = np.random.random((10, 17))
+                x = np.where(x >= 0.5, 1, 0)
+                loss = keyboardVAE.model.train_on_batch(x, x)
+                if iter % 10 == 0:
+                    logger.debug("Keyboard VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
+        keyboardVAE.encoder.model.save("models/keyboard_e.h5")
+        keyboardVAE.decoder.model.save("models/keyboard_d.h5")
+        model.clearSession()
+        logger.debug("End: Keyboard VAE Learning")
+        logger.debug("Start: Mouse VAE Learning")
+        for epoch in range(2):
+            for iter in range(100):
+                x_dir = np.random.random((10, 2))
+                x_btn = np.random.random((10, 2))
+                x_btn = np.where(x_btn >= 0.5, 1, 0)
+                mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
+                if iter % 10 == 0:
+                    logger.debug("Mouse VAE Loss: %d epochs, %3d" % (epoch, iter))
+        mouseVAE.encoder.model.save("models/mouse_e.h5")
+        mouseVAE.decoder.model.save("models/mouse_d.h5")
+        model.clearSession()
+        logger.debug("End: Mouse VAE Learning")
         total_count = 0
         now_count = 0
         mx = max(learn_counts)
@@ -322,6 +362,9 @@ def check():
             total_count += a
         total_count *= EPOCHS
         model.encoder.model.load_weights("models/vae_e.h5")
+        model.charencoder.model.load_weights("models/char_e.h5")
+        model.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
+        model.mousedecoder.model.load_weights("models/mouse_d.h5")
         learn_data.clear()
         for epoch in range(EPOCHS):
             for id in learn_ids:
