@@ -19,6 +19,9 @@ class mcAI():
         self.encoder.model.trainable = False
         self.charencoder = text.CharEncoder(CHARS_COUNT)
         self.charencoder.model.trainable = False
+        self.nameChars = [self.charencoder for i in range(6)]
+        for c in self.nameChars:
+            c.model.trainable = False
         self.keyboarddecoder = control.KeyboardDecoder()
         self.keyboarddecoder.model.trainable = False
         self.mousedecoder = control.MouseDecoder()
@@ -29,9 +32,8 @@ class mcAI():
         clear_session()
 
     def nameEncoder(self):
-        name_chars = [self.charencoder for i in range(6)]
-        name_chars_o = [c.model.output for c in name_chars]
-        name_chars_i = [c.model.input for c in name_chars]
+        name_chars_o = [c.model.output for c in self.nameChars]
+        name_chars_i = [c.model.input for c in self.nameChars]
         hid = Concatenate()(name_chars_o)
         out = Dense(16, activation="relu")(hid)
         return Model(name_chars_i, out)
