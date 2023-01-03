@@ -108,7 +108,7 @@ data = []
 learn_data = []
 training = False
 vae = mcai.image.ImageVAE()
-charVAE = mcai.char.CharVAE(CHARS_COUNT)
+charVAE = mcai.text.CharVAE(CHARS_COUNT)
 keyboardVAE = mcai.control.KeyboardVAE()
 mouseVAE = mcai.control.MouseVAE()
 model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
