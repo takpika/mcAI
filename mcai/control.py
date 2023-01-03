@@ -42,9 +42,8 @@ class MouseVAE():
         self.model = self.build_model()
 
     def build_model(self):
-        model = Sequential()
-        model.add(self.encoder.model)
-        model.add(self.decoder.model)
+        out = self.decoder.model(self.encoder.model)
+        model = Model(self.encoder.model.input, out)
         model.compile(optimizer="Adam", loss="mae")
         return model
 
