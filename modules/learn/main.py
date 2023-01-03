@@ -343,7 +343,7 @@ def check():
                 x_btn = np.where(x_btn >= 0.5, 1, 0)
                 loss = mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
                 if iter % 10 == 0:
-                    logger.debug("Mouse VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
+                    logger.debug("Mouse VAE Loss: %.6f, %d epochs, %3d" % (loss[0], epoch, iter))
         mouseVAE.encoder.model.save("models/mouse_e.h5")
         mouseVAE.decoder.model.save("models/mouse_d.h5")
         model.clearSession()
