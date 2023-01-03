@@ -288,49 +288,38 @@ def download_update():
     modelFiles = ["model.h5", "vae_e.h5", "char_e.h5", "keyboard_d.h5", "mouse_d.h5"]
     if not DOWNLOAD_LOCK:
         DOWNLOAD_LOCK = True
-        try:
-            current = check_version()
-            if current == 0:
-                DOWNLOAD_LOCK = False
-                for model in modelFiles:
-                    if os.path.exists(os.path.join(WORK_DIR, model)):
-                        os.remove(os.path.join(WORK_DIR, model))
-                os.remove(os.path.join(WORK_DIR, "version"))
-                return
-            if os.path.exists("version"):
-                with open("version", "r") as f:
-                    VERSION = int(f.read())
-            if current > VERSION:
-                for model in modelFiles:
-                    res = requests.get("http://%s:%d/%s" % (L_SERVER, PORT, model))
-                    with open(os.path.join(WORK_DIR, model), "wb") as f:
-                        f.write(res.content)
-                while AI_USING:
-                    sleep(0.1)
-                AI_UPDATE_LOCK = True
-                model.model.load_weights(os.path.join(WORK_DIR, "model.h5"))
-                model.encoder.model.load_weights(os.path.join(WORK_DIR, "vae_e.h5"))
-                model.charencoder.model.load_weights(os.path.join(WORK_DIR, "char_e.h5"))
-                for c in model.nameChars:
-                    c.model.load_weights(os.path.join(WORK_DIR, "char_e.h5"))
-                model.keyboarddecoder.model.load_weights(os.path.join(WORK_DIR, "keyboard_d.h5"))
-                model.mousedecoder.model.load_weights(os.path.join(WORK_DIR, "mouse_d.h5"))
-                AI_UPDATE_LOCK = False
-                VERSION = current
-                with open("version", "w") as f:
-                    f.write(str(VERSION))
-                logger.info("AI Updated")
+        current = check_version()
+        if current == 0:
             DOWNLOAD_LOCK = False
-        except:
             for model in modelFiles:
                 if os.path.exists(os.path.join(WORK_DIR, model)):
                     os.remove(os.path.join(WORK_DIR, model))
-            if os.path.exists("version"):
-                subprocess.run(["rm", "version"])
+            os.remove(os.path.join(WORK_DIR, "version"))
+            return
+        if os.path.exists("version"):
+            with open("version", "r") as f:
+                VERSION = int(f.read())
+        if current > VERSION:
+            for model in modelFiles:
+                res = requests.get("http://%s:%d/%s" % (L_SERVER, PORT, model))
+                with open(os.path.join(WORK_DIR, model), "wb") as f:
+                    f.write(res.content)
+            while AI_USING:
+                sleep(0.1)
+            AI_UPDATE_LOCK = True
+            model.model.load_weights(os.path.join(WORK_DIR, "model.h5"))
+            model.encoder.model.load_weights(os.path.join(WORK_DIR, "vae_e.h5"))
+            model.charencoder.model.load_weights(os.path.join(WORK_DIR, "char_e.h5"))
+            for c in model.nameChars:
+                c.model.load_weights(os.path.join(WORK_DIR, "char_e.h5"))
+            model.keyboarddecoder.model.load_weights(os.path.join(WORK_DIR, "keyboard_d.h5"))
+            model.mousedecoder.model.load_weights(os.path.join(WORK_DIR, "mouse_d.h5"))
             AI_UPDATE_LOCK = False
-            VERSION = 0
-            DOWNLOAD_LOCK = False
-            logger.error("AI Update Failed")
+            VERSION = current
+            with open("version", "w") as f:
+                f.write(str(VERSION))
+            logger.info("AI Updated")
+        DOWNLOAD_LOCK = False
 
 def get_available_chat_name(name):
     res = requests.get("http://%s:%d/chat?hostname=%s" % (CENTRAL_IP, 8000, HOSTNAME))
