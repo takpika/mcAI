@@ -1,5 +1,11 @@
 name: Build container images
-on: push
+
+on:
+  push:
+    tags:
+      - v*
+  pull_request:
+    types: [closed]
 
 jobs:
   build:
