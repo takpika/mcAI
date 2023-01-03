@@ -29,10 +29,10 @@ class mcAI():
         clear_session()
 
     def nameEncoder(self):
-        name_chars = [self.charencoder.model for i in range(6)]
+        name_chars = [self.charencoder for i in range(6)]
         name_chars_o = [c.model.output for c in name_chars]
         name_chars_i = [c.model.input for c in name_chars]
-        hid = Concatenate()(name_chars)
+        hid = Concatenate()(name_chars_o)
         out = Dense(16, activation="relu")(hid)
         return Model(name_chars_i, out)
 
