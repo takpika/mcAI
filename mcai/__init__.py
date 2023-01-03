@@ -19,7 +19,7 @@ class mcAI():
         self.encoder.model.trainable = False
         self.charencoder = text.CharEncoder(CHARS_COUNT)
         self.charencoder.model.trainable = False
-        self.nameChars = [self.charencoder for i in range(6)]
+        self.nameChars = [text.CharEncoder(CHARS_COUNT) for i in range(6)]
         for c in self.nameChars:
             c.model.trainable = False
         self.keyboarddecoder = control.KeyboardDecoder()
