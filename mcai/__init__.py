@@ -60,8 +60,8 @@ class mcAI():
         mem = self.memEncoder()
         chat = self.chatEncoder()
         seed = Input(shape=(100))
-        video_hid = Flatten()(video)
-        hid = Concatenate()([video_hid, mem, chat, seed])
+        video_hid = Flatten()(video.output)
+        hid = Concatenate()([video_hid, mem.output, chat.output, seed])
         hid = Dropout(0.2)(hid)
         hid = Dense(64, activation="relu")(hid)
         hid = Dense(32, activation="relu")(hid)
@@ -87,10 +87,10 @@ class mcAI():
 
     def build_Model(self):
         hid = self.build_hidden()
-        ctrl = self.keyboarddecoder.model(hid)
-        mouse = self.mousedecoder.model(hid)
-        mem = self.build_memDecoder()(hid)
-        chat = self.build_chatDecoder()(hid)
+        ctrl = self.keyboarddecoder.model(hid.output)
+        mouse = self.mousedecoder.model(hid.output)
+        mem = self.build_memDecoder()(hid.output)
+        chat = self.build_chatDecoder()(hid.output)
         return Model([hid.input], [ctrl, mouse, mem, chat])
 
     def make_model(self):
