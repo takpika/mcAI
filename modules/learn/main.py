@@ -341,9 +341,9 @@ def check():
                 x_dir = np.random.random((10, 2))
                 x_btn = np.random.random((10, 2))
                 x_btn = np.where(x_btn >= 0.5, 1, 0)
-                mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
+                loss = mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
                 if iter % 10 == 0:
-                    logger.debug("Mouse VAE Loss: %d epochs, %3d" % (epoch, iter))
+                    logger.debug("Mouse VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
         mouseVAE.encoder.model.save("models/mouse_e.h5")
         mouseVAE.decoder.model.save("models/mouse_d.h5")
         model.clearSession()
@@ -426,7 +426,38 @@ def check():
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if not self.path == "/model.h5":
+        status = 500
+        if ".h5" in self.path:
+            if MODEL_WRITING:
+                response = {
+                    'status': 'ng',
+                    'message': 'Writing model...'
+                }
+                status = 503
+            else:
+                fileName = self.path[1:]
+                if os.path.exists("models/%s" % fileName):
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/octet-stream')
+                    self.end_headers()
+                    with open("models/%s" % fileName, "rb") as f:
+                        self.wfile.write(f.read())
+                    return
+                else:
+                    response = {
+                        'status': 'ng',
+                        'message': 'File not found'
+                    }
+                    status = 404
+        elif self.path == "/hello":
+            response = {
+                "status": "ok",
+                "info": {
+                    "type": "learn"
+                }
+            }
+            status = 200
+        else:
             version = 0
             if os.path.exists('models/version'):
                 with open("models/version", "r") as f:
@@ -435,50 +466,12 @@ class Handler(BaseHTTPRequestHandler):
                 'status': 'ok',
                 'version': version
             }
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            responseBody = json.dumps(response)
-            self.wfile.write(responseBody.encode('utf-8'))
-        elif self.path == "/hello":
-            response = {
-                "status": "ok",
-                "info": {
-                    "type": "learn"
-                }
-            }
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            responseBody = json.dumps(response)
-            self.wfile.write(responseBody.encode('utf-8'))
-        else:
-            if MODEL_WRITING:
-                response = {
-                    'status': 'ng', 
-                    'error': 'training'
-                }
-                self.send_response(500)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                responseBody = json.dumps(response)
-                self.wfile.write(responseBody.encode('utf-8'))
-            else:
-                if os.path.exists("models/model.h5"):
-                    self.send_response(200)
-                    self.send_header('Content-type', 'application/octet-stream')
-                    self.end_headers()
-                    self.wfile.write(open("models/model.h5", "rb").read())
-                else:
-                    response = {
-                        'status': 'ng', 
-                        'msg': 'not found'
-                    }
-                    self.send_response(404)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    responseBody = json.dumps(response)
-                    self.wfile.write(responseBody.encode('utf-8'))
+            status = 200
+        self.send_response(status)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        responseBody = json.dumps(response)
+        self.wfile.write(responseBody.encode('utf-8'))
 
 
     def do_POST(self):
