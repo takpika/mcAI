@@ -40,7 +40,7 @@ class mcAI():
 
     def chatEncoder(self):
         name = self.nameEncoder()
-        hid = Concatenate()([name, self.charencoder.model])
+        hid = Concatenate()([name.output, self.charencoder.model.output])
         out = Dense(16, activation="relu")(hid)
         return Model([name.input, self.charencoder.model.input], out)
 
