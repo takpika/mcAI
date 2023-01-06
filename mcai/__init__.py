@@ -19,9 +19,8 @@ class mcAI():
         self.encoder.model.trainable = False
         self.charencoder = text.CharEncoder(CHARS_COUNT)
         self.charencoder.model.trainable = False
-        self.nameChars = [text.CharEncoder(CHARS_COUNT) for i in range(6)]
-        for c in self.nameChars:
-            c.model.trainable = False
+        self.nameencoder = text.NameEncoder(CHARS_COUNT)
+        self.nameencoder.model.trainable = False
         self.keyboarddecoder = control.KeyboardDecoder()
         self.keyboarddecoder.model.trainable = False
         self.mousedecoder = control.MouseDecoder()
@@ -31,15 +30,8 @@ class mcAI():
     def clearSession(self):
         clear_session()
 
-    def nameEncoder(self):
-        name_chars_o = [c.model.output for c in self.nameChars]
-        name_chars_i = [c.model.input for c in self.nameChars]
-        hid = Concatenate()(name_chars_o)
-        out = Dense(16, activation="relu")(hid)
-        return Model(name_chars_i, out)
-
     def chatEncoder(self):
-        name = self.nameEncoder()
+        name = self.nameencoder.model
         hid = Concatenate()([name.output, self.charencoder.model.output])
         out = Dense(16, activation="relu")(hid)
         return Model([name.input, self.charencoder.model.input], out)
@@ -87,10 +79,10 @@ class mcAI():
 
     def build_Model(self):
         hid = self.build_hidden()
-        ctrl = self.keyboarddecoder.model(hid.output)
-        mouse = self.mousedecoder.model(hid.output)
-        mem = self.build_memDecoder()(hid.output)
-        chat = self.build_chatDecoder()(hid.output)
+        ctrl = self.keyboarddecoder.model(Dense(16, activation="relu")(hid.output))
+        mouse = self.mousedecoder.model(Dense(16, activation="relu")(hid.output))
+        mem = self.build_memDecoder()(Dense(16, activation="relu")(hid.output))
+        chat = self.build_chatDecoder()(Dense(16, activation="relu")(hid.output))
         return Model([hid.input], [ctrl, mouse, mem, chat])
 
     def make_model(self):
