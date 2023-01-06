@@ -363,7 +363,7 @@ def check():
         total_count *= EPOCHS
         model.encoder.model.load_weights("models/vae_e.h5")
         model.charencoder.model.load_weights("models/char_e.h5")
-        for c in model.nameChars:
+        for c in model.nameencoder.chars:
             c.model.load_weights("models/char_e.h5")
         model.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
         model.mousedecoder.model.load_weights("models/mouse_d.h5")
