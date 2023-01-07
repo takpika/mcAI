@@ -574,7 +574,7 @@ if __name__ == "__main__":
                                         pass
                                     sleep(1)
                                 continue
-                            if time() - last_change_pos > 60 and last_change_pos != -1 and len(learn_data[hash_id]) >= 2:
+                            if time() - last_change_pos > 30 and last_change_pos != -1 and len(learn_data[hash_id]) >= 2:
                                 logger.info("No Walking")
                                 for _ in range(10):
                                     try:
