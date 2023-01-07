@@ -559,9 +559,8 @@ if __name__ == "__main__":
                         pos = (int(data["player"]["pos"]["x"]), int(data["player"]["pos"]["y"]), int(data["player"]["pos"]["z"]))
                         dir = (int(data["player"]["direction"]["x"]), int(data["player"]["direction"]["y"]))
                         if pos != last_pos or last_change_pos == -1:
-                            if pos_distance(pos, last_pos) <= 1:
-                                last_change_pos = time()
-                                last_pos = pos
+                            last_change_pos = time()
+                            last_pos = pos
                         else:
                             if time() - last_change_pos > 10 and last_change_pos != -1 and len(learn_data[hash_id]) >= 2:
                                 logger.info("No Walking")
