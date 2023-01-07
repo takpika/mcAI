@@ -434,7 +434,7 @@ if __name__ == "__main__":
                 inscreen = False
                 before_key = [False for _ in KEYS]
                 head_topbtm_time = -1
-                last_pos, last_dir, last_change = (-1, -1, -1), (-1, -1), -1
+                last_pos, last_dir, last_change, last_change_pos = (-1, -1, -1), (-1, -1), -1, -1
                 while True:
                     if not hash_id in learn_data:
                         learn_data[hash_id] = []
@@ -554,13 +554,26 @@ if __name__ == "__main__":
                             head_topbtm_time = -1
                         pos = (int(data["player"]["pos"]["x"]), int(data["player"]["pos"]["y"]), int(data["player"]["pos"]["z"]))
                         dir = (int(data["player"]["direction"]["x"]), int(data["player"]["direction"]["y"]))
-                        if pos != last_pos or dir != last_dir or last_change == -1:
+                        if pos != last_pos or dir != last_dir or last_change == -1 or last_change_pos == -1:
                             last_change = time()
+                            last_change_pos = time()
                             last_pos = pos
                             last_dir = dir
                         else:
                             if time() - last_change > 10 and last_change != -1 and len(learn_data[hash_id]) >= 2:
                                 logger.info("Stuck")
+                                for _ in range(10):
+                                    try:
+                                        data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
+                                        if data["status"] == "ok":
+                                            sleep(1)
+                                            break
+                                    except:
+                                        pass
+                                    sleep(1)
+                                continue
+                            if time() - last_change_pos > 60 and last_change_pos != -1 and len(learn_data[hash_id]) >= 2:
+                                logger.info("No Walking")
                                 for _ in range(10):
                                     try:
                                         data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)

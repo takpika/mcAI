@@ -270,6 +270,46 @@ def check():
         learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
         logger.debug("First Run, current total frames: %d" % (sum(learn_counts)))
         CHECK_FIRSTRUN = False
+        if not os.path.exists("models/char_e.h5") or not os.path.exists("models/char_d.h5"):
+            logger.debug("Start: Char VAE Learning")
+            for epoch in range(1000):
+                for iter in range(100):
+                    x = np.random.random((10, CHARS_COUNT))
+                    x = np.where(x == x.max(axis=1, keepdims=True), 1, 0)
+                    loss = charVAE.model.train_on_batch(x, x)
+                    if iter % 10 == 0:
+                        logger.debug("Char VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
+            charVAE.encoder.model.save("models/char_e.h5")
+            charVAE.decoder.model.save("models/char_d.h5")
+            model.clearSession()
+            logger.debug("End: Char VAE Learning")
+        if not os.path.exists("models/keyboard_e.h5") or not os.path.exists("models/keyboard_d.h5"):
+            logger.debug("Start: Keyboard VAE Learning")
+            for epoch in range(1000):
+                for iter in range(100):
+                    x = np.random.random((10, 17))
+                    x = np.where(x >= 0.5, 1, 0)
+                    loss = keyboardVAE.model.train_on_batch(x, x)
+                    if iter % 10 == 0:
+                        logger.debug("Keyboard VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
+            keyboardVAE.encoder.model.save("models/keyboard_e.h5")
+            keyboardVAE.decoder.model.save("models/keyboard_d.h5")
+            model.clearSession()
+            logger.debug("End: Keyboard VAE Learning")
+        if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
+            logger.debug("Start: Mouse VAE Learning")
+            for epoch in range(1000):
+                for iter in range(100):
+                    x_dir = np.random.random((10, 2))
+                    x_btn = np.random.random((10, 2))
+                    x_btn = np.where(x_btn >= 0.5, 1, 0)
+                    loss = mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
+                    if iter % 10 == 0:
+                        logger.debug("Mouse VAE Loss: %.6f, %d epochs, %3d" % (loss[0], epoch, iter))
+            mouseVAE.encoder.model.save("models/mouse_e.h5")
+            mouseVAE.decoder.model.save("models/mouse_d.h5")
+            model.clearSession()
+            logger.debug("End: Mouse VAE Learning")
     if sum(learn_counts) >= 1000 and not training:
         training = True
         logger.info("Start Learning")
@@ -311,46 +351,6 @@ def check():
         vae.decoder.model.save("models/vae_d.h5")
         model.clearSession()
         logger.debug("End: Image VAE Learning")
-        if not os.path.exists("models/char_e.h5") or not os.path.exists("models/char_d.h5"):
-            logger.debug("Start: Char VAE Learning")
-            for epoch in range(1000):
-                for iter in range(100):
-                    x = np.random.random((10, CHARS_COUNT))
-                    x = np.where(x == x.max(axis=1, keepdims=True), 1, 0)
-                    loss = charVAE.model.train_on_batch(x, x)
-                    if iter % 10 == 0:
-                        logger.debug("Char VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
-            charVAE.encoder.model.save("models/char_e.h5")
-            charVAE.decoder.model.save("models/char_d.h5")
-            model.clearSession()
-            logger.debug("End: Char VAE Learning")
-        if not os.path.exists("models/keyboard_e.h5") or not os.path.exists("models/keyboard_d.h5"):
-            logger.debug("Start: Keyboard VAE Learning")
-            for epoch in range(1000):
-                for iter in range(100):
-                    x = np.random.random((10, 17))
-                    x = np.where(x >= 0.5, 1, 0)
-                    loss = keyboardVAE.model.train_on_batch(x, x)
-                    if iter % 10 == 0:
-                        logger.debug("Keyboard VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
-            keyboardVAE.encoder.model.save("models/keyboard_e.h5")
-            keyboardVAE.decoder.model.save("models/keyboard_d.h5")
-            model.clearSession()
-            logger.debug("End: Keyboard VAE Learning")
-        if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
-            logger.debug("Start: Mouse VAE Learning")
-            for epoch in range(1000):
-                for iter in range(100):
-                    x_dir = np.random.random((10, 2))
-                    x_btn = np.random.random((10, 2))
-                    x_btn = np.where(x_btn >= 0.5, 1, 0)
-                    loss = mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
-                    if iter % 10 == 0:
-                        logger.debug("Mouse VAE Loss: %.6f, %d epochs, %3d" % (loss[0], epoch, iter))
-            mouseVAE.encoder.model.save("models/mouse_e.h5")
-            mouseVAE.decoder.model.save("models/mouse_d.h5")
-            model.clearSession()
-            logger.debug("End: Mouse VAE Learning")
         total_count = 0
         now_count = 0
         mx = max(learn_counts)
