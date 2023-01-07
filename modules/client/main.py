@@ -554,9 +554,11 @@ if __name__ == "__main__":
                             head_topbtm_time = -1
                         pos = (int(data["player"]["pos"]["x"]), int(data["player"]["pos"]["y"]), int(data["player"]["pos"]["z"]))
                         dir = (int(data["player"]["direction"]["x"]), int(data["player"]["direction"]["y"]))
-                        if pos != last_pos or dir != last_dir or last_change == -1 or last_change_pos == -1:
-                            last_change = time()
+                        if pos != last_pos or last_change_pos == -1:
                             last_change_pos = time()
+                            last_pos = pos
+                        if pos != last_pos or dir != last_dir or last_change == -1:
+                            last_change = time()
                             last_pos = pos
                             last_dir = dir
                         else:
