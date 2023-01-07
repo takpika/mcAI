@@ -562,13 +562,9 @@ if __name__ == "__main__":
                             if pos_distance(pos, last_pos) <= 1:
                                 last_change_pos = time()
                                 last_pos = pos
-                        if pos != last_pos or dir != last_dir or last_change == -1:
-                            last_change = time()
-                            last_pos = pos
-                            last_dir = dir
                         else:
-                            if time() - last_change > 10 and last_change != -1 and len(learn_data[hash_id]) >= 2:
-                                logger.info("Stuck")
+                            if time() - last_change_pos > 10 and last_change_pos != -1 and len(learn_data[hash_id]) >= 2:
+                                logger.info("No Walking")
                                 for _ in range(10):
                                     try:
                                         data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
@@ -579,8 +575,13 @@ if __name__ == "__main__":
                                         pass
                                     sleep(1)
                                 continue
-                            if time() - last_change_pos > 30 and last_change_pos != -1 and len(learn_data[hash_id]) >= 2:
-                                logger.info("No Walking")
+                        if pos != last_pos or dir != last_dir or last_change == -1:
+                            last_change = time()
+                            last_pos = pos
+                            last_dir = dir
+                        else:
+                            if time() - last_change > 10 and last_change != -1 and len(learn_data[hash_id]) >= 2:
+                                logger.info("Stuck")
                                 for _ in range(10):
                                     try:
                                         data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
