@@ -270,6 +270,7 @@ def check():
         learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
         logger.debug("First Run, current total frames: %d" % (sum(learn_counts)))
         CHECK_FIRSTRUN = False
+        training = True
         if not os.path.exists("models/char_e.h5") or not os.path.exists("models/char_d.h5"):
             logger.debug("Start: Char VAE Learning")
             for epoch in range(100000):
@@ -307,6 +308,7 @@ def check():
             mouseVAE.decoder.model.save("models/mouse_d.h5")
             model.clearSession()
             logger.debug("End: Mouse VAE Learning")
+        training = False
     if sum(learn_counts) >= 1000 and not training:
         training = True
         logger.info("Start Learning")
