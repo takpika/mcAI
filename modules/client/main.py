@@ -1,3 +1,4 @@
+from math import sqrt
 import subprocess, requests, json, pynput, screeninfo, urllib.parse, os, argparse, threading, mcai, psutil, socket, cv2, random, pyautogui
 from mss import mss
 from PIL import ImageDraw, Image
@@ -390,6 +391,9 @@ def force_quit():
     except:
         pass
 
+def pos_distance(pos1, pos2):
+    return sqrt((pos1[0]-pos2[0])**2+(pos1[1]-pos2[1])**2+(pos1[2]-pos2[2])**2)
+
 video = None
 
 model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
@@ -555,8 +559,9 @@ if __name__ == "__main__":
                         pos = (int(data["player"]["pos"]["x"]), int(data["player"]["pos"]["y"]), int(data["player"]["pos"]["z"]))
                         dir = (int(data["player"]["direction"]["x"]), int(data["player"]["direction"]["y"]))
                         if pos != last_pos or last_change_pos == -1:
-                            last_change_pos = time()
-                            last_pos = pos
+                            if pos_distance(pos, last_pos) <= 1:
+                                last_change_pos = time()
+                                last_pos = pos
                         if pos != last_pos or dir != last_dir or last_change == -1:
                             last_change = time()
                             last_pos = pos
