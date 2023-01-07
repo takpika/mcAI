@@ -103,6 +103,7 @@ with open(config["char_file"], "r") as f:
     chars = json.loads(f.read())
 
 CHARS_COUNT = len(chars["chars"])
+LEARN_LIMIT = 1000
 
 data = []
 learn_data = []
@@ -236,7 +237,7 @@ CHECK_FIRSTRUN = True
 
 def check():
     global training, learn_data, data
-    global CHECK_PROCESSING, CHECK_FIRSTRUN, MODEL_WRITING
+    global CHECK_PROCESSING, CHECK_FIRSTRUN, MODEL_WRITING, LEARN_LIMIT
     global model, vae
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
@@ -309,7 +310,7 @@ def check():
             model.clearSession()
             logger.debug("End: Mouse VAE Learning")
         training = False
-    if sum(learn_counts) >= 1000 and not training:
+    if sum(learn_counts) >= LEARN_LIMIT and not training:
         training = True
         logger.info("Start Learning")
         logger.debug("Start: Image VAE Learning")
@@ -353,8 +354,11 @@ def check():
         total_count = 0
         now_count = 0
         mx = max(learn_counts)
-        ave = sum(learn_counts) / len(learn_counts)
-        mx_dis = mx - ave
+        if mx * 10 > LEARN_LIMIT:
+            LEARN_LIMIT = mx * 10
+            if LEARN_LIMIT % 100 != 0:
+                LEARN_LIMIT += 100 - LEARN_LIMIT % 100
+            logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
         for count in learn_counts:
             if (count / mx) < 0.9:
                 continue
