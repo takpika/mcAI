@@ -12,7 +12,7 @@ class CharVAE():
         model = Sequential()
         model.add(self.encoder.model)
         model.add(self.decoder.model)
-        model.compile(optimizer="Adam", loss="mae")
+        model.compile(optimizer="Adam", loss="binary_crossentropy")
         return model
 
 class CharEncoder():
