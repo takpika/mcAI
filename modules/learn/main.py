@@ -86,13 +86,10 @@ for key in config.keys():
 
 SAVE_FOLDER = config["save_folder"]
 DATA_FOLDER = config["data_folder"]
-VIDEO_FOLDER = config["video_folder"]
 if not os.path.exists(SAVE_FOLDER):
     os.makedirs(SAVE_FOLDER)
 if not os.path.exists(DATA_FOLDER):
     os.makedirs(DATA_FOLDER)
-if not os.path.exists(VIDEO_FOLDER):
-    os.makedirs(VIDEO_FOLDER)
 
 WIDTH = config["resolution"]["x"]
 HEIGHT = config["resolution"]["y"]
@@ -248,7 +245,6 @@ def check():
         if len(counts) > 0:
             for id in ids:
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                shutil.copy(os.path.join(DATA_FOLDER, "%s.mp4" % (id)), os.path.join(VIDEO_FOLDER, "%s.mp4" % (id)))
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.json" % (id)), os.path.join(DATA_FOLDER, "%s.json" % (id)))
                 with open(os.path.join(DATA_FOLDER, "%s.json" % (id)), "r") as f:
                     data = json.loads(f.read())
@@ -317,11 +313,11 @@ def check():
         if os.path.exists("models/vae_d.h5") and os.path.exists("models/vae_e.h5"):
             vae.decoder.model.load_weights("models/vae_d.h5")
             vae.encoder.model.load_weights("models/vae_e.h5")
-        video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
+        video_ids = [file.replace(".mp4", "") for file in os.listdir(DATA_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
         for epoch in range(2):
             i = 0
             count = 0
-            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (video_ids[i])))
             frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
             while True:
                 ret, frame = video.read()
@@ -329,7 +325,7 @@ def check():
                     video.release()
                     if i < len(video_ids) - 1:
                         i += 1
-                        video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
+                        video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (video_ids[i])))
                         continue
                     else:
                         vae.model.train_on_batch(frames/255, frames/255)
