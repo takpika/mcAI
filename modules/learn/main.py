@@ -350,13 +350,17 @@ def check():
         total_count = 0
         now_count = 0
         mx = max(learn_counts)
+        ave = sum(learn_counts) / len(learn_counts)
+        LEARN_THRESHOLD = mx * 0.9
+        if ave + (mx - ave) * 0.5 > LEARN_THRESHOLD:
+            LEARN_THRESHOLD = ave + (mx - ave) * 0.75
         if mx * 10 > LEARN_LIMIT:
             LEARN_LIMIT = mx * 10
             if LEARN_LIMIT % 100 != 0:
                 LEARN_LIMIT += 100 - LEARN_LIMIT % 100
             logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
         for count in learn_counts:
-            if (count / mx) < 0.9:
+            if count < LEARN_THRESHOLD:
                 continue
             a, b = int(count / 30), count % 30
             if b > 0:
@@ -375,7 +379,7 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                     l_data = pickle.load(f)
                 count = len(l_data)
-                if (count / mx) < 0.9:
+                if count < LEARN_THRESHOLD:
                     if epoch == EPOCHS - 1:
                         os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                         os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
