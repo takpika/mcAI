@@ -353,7 +353,7 @@ def check():
         ave = sum(learn_counts) / len(learn_counts)
         LEARN_THRESHOLD = mx * 0.9
         if ave + (mx - ave) * 0.5 > LEARN_THRESHOLD:
-            LEARN_THRESHOLD = ave + (mx - ave) * 0.75
+            LEARN_THRESHOLD = ave + (mx - ave) * 0.5
         if mx * 10 > LEARN_LIMIT:
             LEARN_LIMIT = mx * 10
             if LEARN_LIMIT % 100 != 0:
