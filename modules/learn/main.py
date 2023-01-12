@@ -154,12 +154,6 @@ def conv_all():
         ai_mem_3 = np.append(ai_mem_3, ld[12].reshape((1,8)), axis=0)
         ai_mem_4 = np.append(ai_mem_4, ld[13].reshape((1,8)), axis=0)
         ai_chat = np.append(ai_chat, ld[14].reshape((1,CHARS_COUNT)), axis=0)
-    if random.random() < 0.1:
-        ai_k += (np.random.random(ai_k.shape)-0.5)
-    if random.random() < 0.1:
-        ai_m_1 += (np.random.random(ai_m_1.shape)-0.5)
-    if random.random() < 0.1:
-        ai_m_2 += (np.random.random(ai_m_2.shape)-0.5)
     ai_k = limit(ai_k)
     ai_m_1 = limit(ai_m_1)
     ai_m_2 = limit(ai_m_2)

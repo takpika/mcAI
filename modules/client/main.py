@@ -629,8 +629,8 @@ if __name__ == "__main__":
                             if before_key[i] != res:
                                 handle_keyboard(KEYS[i], ai_k[0][i] >= 0.5)
                             before_key[i] = res
-                        x = (min(max(ai_m[0][0][0], 0.0), 1.0) - 0.5) * 20
-                        y = (min(max(ai_m[0][0][1], 0.0), 1.0) - 0.5) * 20
+                        x = ai_m[0][0][0] * 20
+                        y = ai_m[0][0][1] * 20
                         handle_mouse("left", ai_m[1][0][0] >= 0.5)
                         handle_mouse("right", ai_m[1][0][1] >= 0.5)
                         save_reg = convBit(ai_mem[0][0])

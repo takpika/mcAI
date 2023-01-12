@@ -32,7 +32,7 @@ class KeyboardDecoder():
     def build_model(self):
         inp = Input(shape=(16))
         hid = Dense(32, activation="relu")(inp)
-        out = Dense(17, activation="relu")(hid)
+        out = Dense(17, activation="sigmoid")(hid)
         return Model(inp, out, name="keyboard_decoder")
 
 class MouseVAE():
@@ -66,6 +66,6 @@ class MouseDecoder():
     def build_model(self):
         inp = Input(shape=(16))
         hid = Dense(32, activation="relu")(inp)
-        out_dir = Dense(2, activation="relu")(hid)
-        out_btn = Dense(2, activation="relu")(hid)
+        out_dir = Dense(2, activation="tanh")(hid)
+        out_btn = Dense(2, activation="sigmoid")(hid)
         return Model(inp, [out_dir, out_btn], name="mouse_decoder")
