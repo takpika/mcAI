@@ -289,7 +289,7 @@ def check():
         if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
             logger.debug("Start: Mouse VAE Learning")
             for epoch in range(100000):
-                x_dir = np.random.random((100, 2))
+                x_dir = np.random.random((100, 2)) * 2 - 1
                 x_btn = np.random.random((100, 2))
                 x_btn = np.where(x_btn >= 0.5, 1, 0)
                 loss = mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
