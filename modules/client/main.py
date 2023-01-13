@@ -561,7 +561,7 @@ if __name__ == "__main__":
                         pos_float = (data["player"]["pos"]["x"], data["player"]["pos"]["y"], data["player"]["pos"]["z"])
                         dir = (int(data["player"]["direction"]["x"]), int(data["player"]["direction"]["y"]))
                         position_history.append(pos_float)
-                        if len(position_history) > 100:
+                        if len(position_history) > 10000:
                             position_history.pop(0)
                         average_pos = (0, 0, 0)
                         for p in position_history:
