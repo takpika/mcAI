@@ -410,7 +410,7 @@ def check():
                         except:
                             break
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)) / 255)
-                        f_ctrls = l_data[i*30+x]
+                        f_ctrls = l_data["data"][i*30+x]
                         for v in range(8):
                             f_ctrls[6+v] = (f_ctrls[6+v] - 0.5) * point + 0.5
                             f_ctrls[6+v] = np.where(f_ctrls[6+v] < 0.5, 0, 1)
