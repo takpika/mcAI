@@ -362,7 +362,7 @@ def check():
             logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
         for i in range(len(learn_frames)):
             frames, count = learn_frames[i], learn_counts[i]
-            if frames[i] < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
+            if frames < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
                 continue
             a, b = int(frames / 30), frames % 30
             if b > 0:
