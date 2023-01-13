@@ -568,17 +568,18 @@ if __name__ == "__main__":
                             average_pos = (average_pos[0] + p[0], average_pos[1] + p[1], average_pos[2] + p[2])
                         average_pos = (average_pos[0] / len(position_history), average_pos[1] / len(position_history), average_pos[2] / len(position_history))
                         if pos_distance(average_pos, pos_float) <= 0.5 and len(position_history) >= 50:
-                            logger.info("No Walking")
-                            for _ in range(10):
-                                try:
-                                    data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
-                                    if data["status"] == "ok":
-                                        sleep(1)
-                                        break
-                                except:
-                                    pass
-                                sleep(1)
-                            continue
+                            if pos_distance(position_history[-1], position_history[-11]) <= 1:
+                                logger.info("No Walking")
+                                for _ in range(10):
+                                    try:
+                                        data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
+                                        if data["status"] == "ok":
+                                            sleep(1)
+                                            break
+                                    except:
+                                        pass
+                                    sleep(1)
+                                continue
                         if pos != last_pos or dir != last_dir or last_change == -1:
                             last_change = time()
                             last_pos = pos
