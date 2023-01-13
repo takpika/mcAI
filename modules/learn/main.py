@@ -101,6 +101,7 @@ with open(config["char_file"], "r") as f:
 
 CHARS_COUNT = len(chars["chars"])
 LEARN_LIMIT = 1000
+USE_LEARN_LIMIT = 10
 
 data = []
 learn_data = []
@@ -232,7 +233,7 @@ def check():
     global model, vae
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
-    learn_counts = [0]
+    learn_frames = [0]
     if len(ids) >= 10 and not CHECK_PROCESSING:
         CHECK_PROCESSING = True
         counts = [len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) for id in ids if len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) >= 2]
@@ -246,20 +247,26 @@ def check():
                 for d in data["data"]:
                     daf = conv_frame(d)
                     c_data.append(daf)
+                allData = {
+                    "count": 0,
+                    "data": c_data
+                }
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
-                    pickle.dump(c_data, f)
+                    pickle.dump(allData, f)
                 os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
         learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
         learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
-        learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
+        learn_frames = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["data"]) for id in learn_ids]
+        learn_counts = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["count"] for id in learn_ids]
         CHECK_FIRSTRUN = False
-        logger.debug("Check done, current total frames: %d" % (sum(learn_counts)))
+        logger.debug("Check done, current total frames: %d" % (sum(learn_frames)))
         CHECK_PROCESSING = False
     if CHECK_FIRSTRUN:
         learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
         learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
-        learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
-        logger.debug("First Run, current total frames: %d" % (sum(learn_counts)))
+        learn_frames = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["data"]) for id in learn_ids]
+        learn_counts = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["count"] for id in learn_ids]
+        logger.debug("First Run, current total frames: %d" % (sum(learn_frames)))
         CHECK_FIRSTRUN = False
         training = True
         if not os.path.exists("models/char_e.h5") or not os.path.exists("models/char_d.h5"):
@@ -300,7 +307,7 @@ def check():
             model.clearSession()
             logger.debug("End: Mouse VAE Learning")
         training = False
-    if sum(learn_counts) >= LEARN_LIMIT and not training:
+    if sum(learn_frames) >= LEARN_LIMIT and not training:
         training = True
         logger.info("Start Learning")
         logger.debug("Start: Image VAE Learning")
@@ -343,8 +350,8 @@ def check():
         logger.debug("End: Image VAE Learning")
         total_count = 0
         now_count = 0
-        mx = max(learn_counts)
-        ave = sum(learn_counts) / len(learn_counts)
+        mx = max(learn_frames)
+        ave = sum(learn_frames) / len(learn_frames)
         LEARN_THRESHOLD = mx * 0.9
         if ave + (mx - ave) * 0.5 > LEARN_THRESHOLD:
             LEARN_THRESHOLD = ave + (mx - ave) * 0.5
@@ -353,10 +360,11 @@ def check():
             if LEARN_LIMIT % 100 != 0:
                 LEARN_LIMIT += 100 - LEARN_LIMIT % 100
             logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
-        for count in learn_counts:
-            if count < LEARN_THRESHOLD:
+        for i in range(len(learn_frames)):
+            frames, count = learn_frames[i], learn_counts[i]
+            if frames[i] < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
                 continue
-            a, b = int(count / 30), count % 30
+            a, b = int(frames / 30), frames % 30
             if b > 0:
                 a += 1
             total_count += a
@@ -372,8 +380,12 @@ def check():
             for id in learn_ids:
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                     l_data = pickle.load(f)
-                count = len(l_data)
-                if count < LEARN_THRESHOLD:
+                count = len(l_data["data"])
+                if epoch == 0:
+                    l_data["count"] += 1
+                    with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
+                        pickle.dump(l_data, f)
+                if count < LEARN_THRESHOLD or l_data["count"] > USE_LEARN_LIMIT:
                     if epoch == EPOCHS - 1:
                         os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                         os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
