@@ -310,6 +310,8 @@ def check():
     if sum(learn_frames) >= LEARN_LIMIT and not training:
         training = True
         logger.info("Start Learning")
+        mx = max(learn_frames)
+        ave = sum(learn_frames) / len(learn_frames)
         beforeLimit = LEARN_LIMIT
         LEARN_LIMIT = mx * 10
         if LEARN_LIMIT < 1000:
@@ -358,8 +360,6 @@ def check():
         logger.debug("End: Image VAE Learning")
         total_count = 0
         now_count = 0
-        mx = max(learn_frames)
-        ave = sum(learn_frames) / len(learn_frames)
         LEARN_THRESHOLD = mx * 0.9
         if ave + (mx - ave) * 0.5 > LEARN_THRESHOLD:
             LEARN_THRESHOLD = ave + (mx - ave) * 0.5
