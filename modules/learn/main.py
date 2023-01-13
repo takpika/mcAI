@@ -355,10 +355,13 @@ def check():
         LEARN_THRESHOLD = mx * 0.9
         if ave + (mx - ave) * 0.5 > LEARN_THRESHOLD:
             LEARN_THRESHOLD = ave + (mx - ave) * 0.5
-        if mx * 10 > LEARN_LIMIT:
-            LEARN_LIMIT = mx * 10
-            if LEARN_LIMIT % 100 != 0:
-                LEARN_LIMIT += 100 - LEARN_LIMIT % 100
+        beforeLimit = LEARN_LIMIT
+        LEARN_LIMIT = mx * 10
+        if LEARN_LIMIT < 1000:
+            LEARN_LIMIT = 1000
+        if LEARN_LIMIT % 100 != 0:
+            LEARN_LIMIT += 100 - LEARN_LIMIT % 100
+        if LEARN_LIMIT != beforeLimit:
             logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
         for i in range(len(learn_frames)):
             frames, count = learn_frames[i], learn_counts[i]
