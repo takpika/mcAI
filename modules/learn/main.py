@@ -360,9 +360,7 @@ def check():
         logger.debug("End: Image VAE Learning")
         total_count = 0
         now_count = 0
-        LEARN_THRESHOLD = mx * 0.9
-        if ave + (mx - ave) * 0.5 > LEARN_THRESHOLD:
-            LEARN_THRESHOLD = ave + (mx - ave) * 0.5
+        LEARN_THRESHOLD = ave + (mx - ave) * 0.5
         for i in range(len(learn_frames)):
             frames, count = learn_frames[i], learn_counts[i]
             if frames < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
