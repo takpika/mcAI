@@ -491,7 +491,7 @@ if __name__ == "__main__":
                         if data["player"]["death"]:
                             logger.info("Dead")
                             end_session(hash_id)
-                            for _ in range(10):
+                            for _ in range(100):
                                 data = json.loads(requests.get(url).text)
                                 if data["playing"]:
                                     if data["player"]["death"]:
