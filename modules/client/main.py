@@ -491,7 +491,7 @@ if __name__ == "__main__":
                         if data["player"]["death"]:
                             logger.info("Dead")
                             end_session(hash_id)
-                            while True:
+                            for _ in range(10):
                                 data = json.loads(requests.get(url).text)
                                 if data["playing"]:
                                     if data["player"]["death"]:
@@ -505,6 +505,9 @@ if __name__ == "__main__":
                                         continue
                                 sleep(0.1)
                                 break
+                            if data["playing"]:
+                                logger.error("Failed to respawn")
+                                force_quit()
                             break
                         if data["screen"]:
                             if data["screenInfo"]["pause"]:
