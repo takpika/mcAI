@@ -506,8 +506,9 @@ if __name__ == "__main__":
                                 sleep(0.1)
                                 break
                             if data["playing"]:
-                                logger.error("Failed to respawn")
-                                force_quit()
+                                if data["player"]["death"]:
+                                    logger.error("Failed to respawn")
+                                    force_quit()
                             break
                         if data["screen"]:
                             if data["screenInfo"]["pause"]:
