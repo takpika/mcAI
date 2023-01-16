@@ -92,7 +92,7 @@ while True:
     if res.status_code == 200:
         config = json.loads(res.text)["config"]
         break
-    sleep(0.1)
+    sleep(10)
 
 PORT = config["port"]
 

@@ -94,7 +94,7 @@ while True:
     if res.status_code == 200:
         config = json.loads(res.text)["config"]
         break
-    sleep(0.5)
+    sleep(10)
 
 for key in config.keys():
     if type(config[key]) == str:
