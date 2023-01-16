@@ -24,6 +24,7 @@ logger.info("Searching for Central Server...")
 def search_central():
     global CENTRAL_IP
     env = os.environ
+    logger.debug(env)
     if "CENTRAL_SERVICE_HOST" in env:
         CENTRAL_IP = env["CENTRAL_SERVICE_HOST"]
         try:
