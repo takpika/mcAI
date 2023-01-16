@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - "**.sh"
-      - "Dockerfile"
+      - "**/Dockerfile"
       - "**.yml"
   pull_request:
     types: [closed]
