@@ -16,7 +16,6 @@ jobs:
       contents: read
       packages: write
 
-    # 複数のDockerfileが配置されたディレクトリを列挙
     strategy:
       matrix:
         target: ["central", "client", "server", "learn", "learn-gpu"]
