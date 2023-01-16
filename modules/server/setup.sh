@@ -94,8 +94,11 @@ rm -rf ~/server
 sudo tee /init << EOF
 #!/bin/bash
 cd $HOME
-chown -R $USERNAME:$USERNAME ~/server
-chown -R $USERNAME:$USERNAME ~/world
+if [ -n \$CENTRAL_SERVICE_HOST ]; then
+echo \$CENTRAL_SERVICE_HOST > $HOME/central_host
+fi
+chown -R $USERNAME:$USERNAME $HOME/server
+chown -R $USERNAME:$USERNAME $HOME/world
 sudo -u $USERNAME bash $HOME/startmcai.sh
 EOF
 sudo chmod +x /init

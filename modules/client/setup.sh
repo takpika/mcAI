@@ -148,6 +148,9 @@ sudo tee /init << EOF
 #!/bin/bash
 rm /tmp/.X0-lock
 cd $HOME
+if [ -n \$CENTRAL_SERVICE_HOST ]; then
+echo \$CENTRAL_SERVICE_HOST > $HOME/central_host
+fi
 sudo -u $USERNAME /usr/bin/xinit
 EOF
 sudo chmod +x /init

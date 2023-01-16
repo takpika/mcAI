@@ -71,7 +71,10 @@ else
 sudo tee /init << EOF
 #!/bin/bash
 cd $HOME
-chown -R $USERNAME:$USERNAME ~/models
+if [ -n \$CENTRAL_SERVICE_HOST ]; then
+echo \$CENTRAL_SERVICE_HOST > $HOME/central_host
+fi
+chown -R $USERNAME:$USERNAME $HOME/models
 sudo -u $USERNAME bash $HOME/startmcai.sh
 EOF
 sudo chmod +x /init

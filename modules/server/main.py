@@ -43,9 +43,9 @@ logger.info("Searching for Central Server...")
 
 def search_central():
     global CENTRAL_IP
-    env = os.environ
-    if "CENTRAL_SERVICE_HOST" in env:
-        CENTRAL_IP = env["CENTRAL_SERVICE_HOST"]
+    if os.path.exists("central_host"):
+        with open("central_host", "r") as f:
+            CENTRAL_IP = f.read()
         try:
             data = json.loads(requests.get("http://%s:%d/hello" % (CENTRAL_IP, 8000)).text)
             if data["status"] == "ok" and data["info"]["type"] == "central":
