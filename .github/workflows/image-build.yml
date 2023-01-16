@@ -5,7 +5,7 @@ on:
     paths:
       - "**.sh"
       - "Dockerfile"
-      - "image-build.yml"
+      - "**.yml"
   pull_request:
     types: [closed]
 
