@@ -43,6 +43,17 @@ logger.info("Searching for Central Server...")
 
 def search_central():
     global CENTRAL_IP
+    env = os.environ
+    if "CENTRAL_SERVICE_HOST" in env:
+        CENTRAL_IP = env["CENTRAL_SERVICE_HOST"]
+        try:
+            data = json.loads(requests.get("http://%s:%d/hello" % (CENTRAL_IP, 8000)).text)
+            if data["status"] == "ok" and data["info"]["type"] == "central":
+                return
+            else:
+                CENTRAL_IP = None
+        except:
+            CENTRAL_IP = None
     sendData = {
         "type": "hello"
     }
@@ -63,6 +74,7 @@ def search_central():
         if CENTRAL_IP != None:
             break
     sock.close()
+        
 
 search_central()
 
