@@ -31,7 +31,7 @@ def search_central():
     global CENTRAL_IP
     if os.path.exists("central_host"):
         with open("central_host", "r") as f:
-            CENTRAL_IP = f.read()
+            CENTRAL_IP = f.read().replace("\n","")
         try:
             data = json.loads(requests.get("http://%s:%d/hello" % (CENTRAL_IP, 8000)).text)
             if data["status"] == "ok" and data["info"]["type"] == "central":
