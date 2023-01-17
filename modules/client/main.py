@@ -1,5 +1,5 @@
 from math import sqrt
-import subprocess, requests, json, pynput, screeninfo, urllib.parse, os, argparse, threading, mcai, psutil, socket, cv2, random, pyautogui
+import subprocess, requests, json, pynput, screeninfo, urllib.parse, os, argparse, threading, mcai, psutil, socket, cv2, random, pyautogui, hashlib
 from mss import mss
 from PIL import ImageDraw, Image
 from time import sleep, time
@@ -16,7 +16,7 @@ logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
 SERV_TYPE = "client"
-HOSTNAME = os.uname()[1].replace("-","")[-16:]
+HOSTNAME = hashlib.md5(os.uname()[1].encode()).hexdigest()[:16]
 
 CENTRAL_IP = None
 logger.info("Searching for Central Server...")
