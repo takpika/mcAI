@@ -16,7 +16,7 @@ logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
 SERV_TYPE = "client"
-HOSTNAME = os.uname()[1]
+HOSTNAME = os.uname()[1].replace("-","")
 
 CENTRAL_IP = None
 logger.info("Searching for Central Server...")
