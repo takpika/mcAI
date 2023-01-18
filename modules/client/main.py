@@ -251,21 +251,28 @@ def convBit(value):
     return data
 
 def send_learnData(hash_id):
-    global learn_data
+    global learn_data, config, L_SERVER, SERVER
     if hash_id in learn_data:
         if len(learn_data[hash_id]) >= 2:
-            headers = {
-                'content-type': 'video/mp4',
-                'id': hash_id
-            }
-            with open(os.path.join(WORK_DIR, "%s.mp4" % (hash_id)), "rb") as f:
-                requests.post("http://%s:%d/video" % (L_SERVER, PORT), data=f.read(), headers=headers)
-            headers['content-type'] = 'application/json'
-            sendData = {
-                "health": hp,
-                "data": learn_data[hash_id]
-            }
-            requests.post("http://%s:%d/" % (L_SERVER, PORT), json=sendData, headers=headers)
+            try:
+                headers = {
+                    'content-type': 'video/mp4',
+                    'id': hash_id
+                }
+                with open(os.path.join(WORK_DIR, "%s.mp4" % (hash_id)), "rb") as f:
+                    requests.post("http://%s:%d/video" % (L_SERVER, PORT), data=f.read(), headers=headers)
+                headers['content-type'] = 'application/json'
+                sendData = {
+                    "health": hp,
+                    "data": learn_data[hash_id]
+                }
+                requests.post("http://%s:%d/" % (L_SERVER, PORT), json=sendData, headers=headers)
+            except ConnectionError:
+                res = requests.get("http://%s:%d/config?type=%s" % (CENTRAL_IP, 8000, SERV_TYPE))
+                if res.status_code == 200:
+                    config = json.loads(res.text)["config"]
+                    L_SERVER = config["learn_server"]
+                    SERVER = config["mc_server"]
         os.remove(os.path.join(WORK_DIR, "%s.mp4" % (hash_id)))
     files = os.listdir(WORK_DIR)
     for file in files:
