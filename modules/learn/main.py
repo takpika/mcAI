@@ -248,6 +248,7 @@ def check():
     if len(ids) >= 10 and not CHECK_PROCESSING:
         CHECK_PROCESSING = True
         counts = []
+        ids_copy = ids.copy()
         for i in range(len(ids)):
             id = ids[i]
             try:
@@ -258,6 +259,8 @@ def check():
                 pass
             os.remove(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)))
             os.remove(os.path.join(SAVE_FOLDER, "%s.json" % (id)))
+            ids_copy.remove(id)
+        ids = ids_copy
         if len(counts) > 0:
             for id in ids:
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
