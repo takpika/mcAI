@@ -247,7 +247,17 @@ def check():
     learn_frames = [0]
     if len(ids) >= 10 and not CHECK_PROCESSING:
         CHECK_PROCESSING = True
-        counts = [len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) for id in ids if len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) >= 2]
+        counts = []
+        for i in range(len(ids)):
+            id = ids[i]
+            try:
+                if len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) >= 2:
+                    counts.append(i)
+                    continue
+            except:
+                pass
+            os.remove(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)))
+            os.remove(os.path.join(SAVE_FOLDER, "%s.json" % (id)))
         if len(counts) > 0:
             for id in ids:
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
