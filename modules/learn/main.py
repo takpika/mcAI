@@ -2,7 +2,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import shutil
 from socketserver import ThreadingMixIn
 import threading
-import json, mcai, argparse, os, psutil, socket, requests, subprocess, random, pickle, cv2
+import json, mcai, argparse, os, psutil, socket, requests, subprocess, random, pickle, cv2, shutil
 from time import sleep
 import numpy as np
 from datetime import datetime
@@ -332,9 +332,9 @@ def check():
         if LEARN_LIMIT != beforeLimit:
             logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
         logger.debug("Start: Image VAE Learning")
-        if os.path.exists("models/vae_d.h5") and os.path.exists("models/vae_e.h5"):
-            vae.decoder.model.load_weights("models/vae_d.h5")
-            vae.encoder.model.load_weights("models/vae_e.h5")
+        if os.path.exists("models/vae_d_latest.h5") and os.path.exists("models/vae_e_latest.h5"):
+            vae.decoder.model.load_weights("models/vae_d_latest.h5")
+            vae.encoder.model.load_weights("models/vae_e_latest.h5")
         video_ids = [file.replace(".mp4", "") for file in os.listdir(DATA_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
         for epoch in range(2):
             i = 0
@@ -365,8 +365,12 @@ def check():
                     if count % 10 == 0:
                         logger.debug("Image VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, count))
                     frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
-        vae.encoder.model.save("models/vae_e.h5")
-        vae.decoder.model.save("models/vae_d.h5")
+        vae.encoder.model.save("models/vae_e_latest.h5")
+        vae.decoder.model.save("models/vae_d_latest.h5")
+        vae_override = random.random() < 0.01
+        if not os.path.exists("models/vae_e.h5") or not os.path.exists("models/vae_d.h5") or vae_override:
+            shutil.copy("models/vae_e_latest.h5", "models/vae_e.h5")
+            shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
         model.clearSession()
         logger.debug("End: Image VAE Learning")
         total_count = 0
@@ -388,7 +392,10 @@ def check():
         model.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
         model.mousedecoder.model.load_weights("models/mouse_d.h5")
         learn_data.clear()
-        for epoch in range(EPOCHS):
+        this_epochs = EPOCHS
+        if vae_override:
+            this_epochs = 500
+        for epoch in range(this_epochs):
             for id in learn_ids:
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                     l_data = pickle.load(f)
