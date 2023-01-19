@@ -267,7 +267,7 @@ def send_learnData(hash_id):
                     "data": learn_data[hash_id]
                 }
                 requests.post("http://%s:%d/" % (L_SERVER, PORT), json=sendData, headers=headers)
-            except:
+            except requests.exceptions.ConnectionError:
                 res = requests.get("http://%s:%d/config?type=%s" % (CENTRAL_IP, 8000, SERV_TYPE))
                 if res.status_code == 200:
                     config = json.loads(res.text)["config"]
