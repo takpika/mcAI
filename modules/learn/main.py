@@ -392,16 +392,19 @@ def check():
         total_count = 0
         now_count = 0
         LEARN_THRESHOLD = ave + (mx - ave) * 0.5
+        learn_ids_copy = learn_ids.copy()
         for i in range(len(learn_ids)):
             id, frames, count = learn_ids[i], learn_frames[i], learn_counts[i]
             if frames < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
                 os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
+                learn_ids_copy.remove(id)
                 continue
             a, b = int(frames / 30), frames % 30
             if b > 0:
                 a += 1
             total_count += a
+        learn_ids = learn_ids_copy.copy()
         total_count *= EPOCHS
         model.encoder.model.load_weights("models/vae_e.h5")
         model.charencoder.model.load_weights("models/char_e.h5")
