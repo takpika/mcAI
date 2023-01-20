@@ -252,7 +252,7 @@ def check():
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
     learn_frames = [0]
-    if len(ids) >= 10 and not CHECK_PROCESSING:
+    if len(ids) >= 10 and not CHECK_PROCESSING and not training:
         CHECK_PROCESSING = True
         counts = []
         ids_copy = ids.copy()
