@@ -238,6 +238,13 @@ CHECK_PROCESSING = False
 MODEL_WRITING = False
 CHECK_FIRSTRUN = True
 
+def check_count():
+    learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
+    learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
+    learn_frames = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["data"]) for id in learn_ids]
+    learn_counts = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["count"] for id in learn_ids]
+    return learn_ids, learn_frames, learn_counts
+
 def check():
     global training, learn_data, data
     global CHECK_PROCESSING, CHECK_FIRSTRUN, MODEL_WRITING, LEARN_LIMIT
@@ -249,18 +256,19 @@ def check():
         CHECK_PROCESSING = True
         counts = []
         ids_copy = ids.copy()
-        for i in range(len(ids)):
-            id = ids[i]
+        for i in range(len(ids_copy)):
+            id = ids_copy[i]
             try:
-                if len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) >= 2:
-                    counts.append(i)
+                count = len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"])
+                if count >= 2:
+                    counts.append(count)
                     continue
             except:
                 pass
             os.remove(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)))
             os.remove(os.path.join(SAVE_FOLDER, "%s.json" % (id)))
             ids_copy.remove(id)
-        ids = ids_copy
+        ids = ids_copy.copy()
         if len(counts) > 0:
             for id in ids:
                 shutil.move(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
@@ -278,18 +286,12 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                     pickle.dump(allData, f)
                 os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
-        learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
-        learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
-        learn_frames = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["data"]) for id in learn_ids]
-        learn_counts = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["count"] for id in learn_ids]
+        learn_ids, learn_frames, learn_counts = check_count()
         CHECK_FIRSTRUN = False
         logger.debug("Check done, current total frames: %d" % (sum(learn_frames)))
         CHECK_PROCESSING = False
     if CHECK_FIRSTRUN:
-        learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
-        learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
-        learn_frames = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["data"]) for id in learn_ids]
-        learn_counts = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["count"] for id in learn_ids]
+        learn_ids, learn_frames, learn_counts = check_count()
         logger.debug("First Run, current total frames: %d" % (sum(learn_frames)))
         CHECK_FIRSTRUN = False
         training = True
