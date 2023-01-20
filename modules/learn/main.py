@@ -392,9 +392,11 @@ def check():
         total_count = 0
         now_count = 0
         LEARN_THRESHOLD = ave + (mx - ave) * 0.5
-        for i in range(len(learn_frames)):
-            frames, count = learn_frames[i], learn_counts[i]
+        for i in range(len(learn_ids)):
+            id, frames, count = learn_ids[i], learn_frames[i], learn_counts[i]
             if frames < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
+                os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+                os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
                 continue
             a, b = int(frames / 30), frames % 30
             if b > 0:
@@ -413,6 +415,8 @@ def check():
             this_epochs = 500
         for epoch in range(this_epochs):
             for id in learn_ids:
+                if not os.path.exists(os.path.join(DATA_FOLDER, "%s.pkl" % (id))):
+                    continue
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
                     l_data = pickle.load(f)
                 count = len(l_data["data"])
@@ -420,11 +424,6 @@ def check():
                     l_data["count"] += 1
                     with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                         pickle.dump(l_data, f)
-                if count < LEARN_THRESHOLD or l_data["count"] > USE_LEARN_LIMIT:
-                    if epoch == EPOCHS - 1:
-                        os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                        os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
-                    continue
                 point = count / mx
                 a, b = int(count / 30), count % 30
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
