@@ -405,7 +405,10 @@ def check():
                 a += 1
             total_count += a
         learn_ids = learn_ids_copy.copy()
-        total_count *= EPOCHS
+        this_epochs = EPOCHS
+        if vae_override:
+            this_epochs = 500
+        total_count *= this_epochs
         model.encoder.model.load_weights("models/vae_e.h5")
         model.charencoder.model.load_weights("models/char_e.h5")
         for c in model.nameencoder.chars:
@@ -413,9 +416,6 @@ def check():
         model.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
         model.mousedecoder.model.load_weights("models/mouse_d.h5")
         learn_data.clear()
-        this_epochs = EPOCHS
-        if vae_override:
-            this_epochs = 500
         for epoch in range(this_epochs):
             for id in learn_ids:
                 if not os.path.exists(os.path.join(DATA_FOLDER, "%s.pkl" % (id))):
