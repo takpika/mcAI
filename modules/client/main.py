@@ -666,6 +666,7 @@ if __name__ == "__main__":
                                 edit_char = mes_char
                         if len(send_message_data) > CHARS_LIMIT:
                             send_message_data = send_message_data[:CHARS_LIMIT]
+                        random.seed(time())
                         if random.random() < 0.1:
                             frame = cv2.cvtColor((x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8"), cv2.COLOR_RGB2BGR)
                             video.write(frame)
