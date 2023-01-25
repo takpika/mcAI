@@ -589,26 +589,9 @@ if __name__ == "__main__":
                         for p in position_history:
                             average_pos = (average_pos[0] + p[0], average_pos[1] + p[1], average_pos[2] + p[2])
                         average_pos = (average_pos[0] / len(position_history), average_pos[1] / len(position_history), average_pos[2] / len(position_history))
-                        if pos_distance(average_pos, pos_float) <= 0.5 and len(position_history) >= 50:
-                            if pos_distance(position_history[-1], position_history[-11]) <= 1:
+                        if pos_distance(average_pos, pos_float) <= 0.5 and len(position_history) >= 20:
+                            if pos_distance(position_history[-1], position_history[-11]) <= 1 and len(learn_data[hash_id]) >= 2:
                                 logger.info("No Walking")
-                                for _ in range(10):
-                                    try:
-                                        data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
-                                        if data["status"] == "ok":
-                                            sleep(1)
-                                            break
-                                    except:
-                                        pass
-                                    sleep(1)
-                                continue
-                        if pos != last_pos or dir != last_dir or last_change == -1:
-                            last_change = time()
-                            last_pos = pos
-                            last_dir = dir
-                        else:
-                            if time() - last_change > 10 and last_change != -1 and len(learn_data[hash_id]) >= 2:
-                                logger.info("Stuck")
                                 for _ in range(10):
                                     try:
                                         data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
