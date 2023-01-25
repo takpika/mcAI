@@ -112,7 +112,7 @@ with open(config["char_file"], "r") as f:
 
 CHARS_COUNT = len(chars["chars"])
 LEARN_LIMIT = 1000
-USE_LEARN_LIMIT = 10
+USE_LEARN_LIMIT = 3
 
 data = []
 learn_data = []
