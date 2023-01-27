@@ -628,16 +628,16 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
-                        random.seed(random_seed)
-                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * (random.random() ** 4)
-                        for i in ai_m:
-                            i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 4)
-                        for i in ai_mem:
-                            i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 4)
-                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 4)
+                        #random.seed(random_seed)
+                        #ai_k += (np.random.random(ai_k.shape) * 2 - 1) * (random.random() ** 4)
+                        #for i in ai_m:
+                        #    i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 4)
+                        #for i in ai_mem:
+                        #    i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 4)
+                        #ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 4)
                         AI_USING = False
-                        ai_k = np.where(ai_k < 0.5, 0, 1)
-                        ai_m[1] = np.where(ai_m[1] < 0.5, 0, 1)
+                        #ai_k = np.where(ai_k < 0.5, 0, 1)
+                        #ai_m[1] = np.where(ai_m[1] < 0.5, 0, 1)
                         for i in range(len(KEYS)):
                             res = ai_k[0][i] >= 0.5
                             if before_key[i] != res:
@@ -668,7 +668,7 @@ if __name__ == "__main__":
                                 edit_char = mes_char
                         if len(send_message_data) > CHARS_LIMIT:
                             send_message_data = send_message_data[:CHARS_LIMIT]
-                        random.seed(time())
+                        #random.seed(time())
                         if random.random() < 0.1:
                             frame = cv2.cvtColor((x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8"), cv2.COLOR_RGB2BGR)
                             video.write(frame)
