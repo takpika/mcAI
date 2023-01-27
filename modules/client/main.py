@@ -636,6 +636,8 @@ if __name__ == "__main__":
                             i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 4)
                         ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 4)
                         AI_USING = False
+                        ai_k = np.where(ai_k < 0.5, 0, 1)
+                        ai_m[1] = np.where(ai_m[1] < 0.5, 0, 1)
                         for i in range(len(KEYS)):
                             res = ai_k[0][i] >= 0.5
                             if before_key[i] != res:
