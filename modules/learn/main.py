@@ -391,7 +391,7 @@ def check():
         logger.debug("End: Image VAE Learning")
         total_count = 0
         now_count = 0
-        LEARN_THRESHOLD = ave + (mx - ave) * 0.5
+        LEARN_THRESHOLD = ave + (mx - ave) * 0.75
         learn_ids_copy = learn_ids.copy()
         for i in range(len(learn_ids)):
             id, frames, count = learn_ids[i], learn_frames[i], learn_counts[i]
