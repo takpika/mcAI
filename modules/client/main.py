@@ -523,6 +523,7 @@ if __name__ == "__main__":
                                             logger.debug("Failed to add effect: %s" % (effect))
                                             continue
                                     break
+                                break
                             newbie = False
                         if data["player"]["death"]:
                             logger.info("Dead")
