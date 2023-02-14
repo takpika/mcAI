@@ -511,21 +511,18 @@ if __name__ == "__main__":
                             continue
                         if newbie:
                             for _ in range(10):
-                                try:
-                                    data = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true" % (SERVER, PORT, HOSTNAME)).text)
-                                    if data["status"] != "ok":
-                                        logger.debug("Failed to clear effects")
-                                        continue
-                                    for effect in effects:
-                                        if random.random() < 0.01:
-                                            level = int((random.random() ** 2) * 10)
-                                            data = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
-                                            if data["status"] != "ok":
-                                                logger.debug("Failed to add effect: %s" % (effect))
-                                                continue
+                                data = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true" % (SERVER, PORT, HOSTNAME)).text)
+                                if data["status"] != "ok":
+                                    logger.debug("Failed to clear effects")
+                                    continue
+                                for effect in effects:
+                                    if random.random() < 0.01:
+                                        level = int((random.random() ** 2) * 10)
+                                        data = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
+                                        if data["status"] != "ok":
+                                            logger.debug("Failed to add effect: %s" % (effect))
+                                            continue
                                     break
-                                except:
-                                    pass
                             newbie = False
                         if data["player"]["death"]:
                             logger.info("Dead")
