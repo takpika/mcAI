@@ -513,7 +513,6 @@ if __name__ == "__main__":
                         if newbie:
                             for _ in range(10):
                                 data = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true&effect=toughasnails:climate_clemency" % (SERVER, PORT, HOSTNAME)).text)
-                                logger.debug(data)
                                 if data["status"] != "ok":
                                     logger.debug("Failed to clear effects")
                                     continue
@@ -521,11 +520,11 @@ if __name__ == "__main__":
                                     if random.random() < 0.01:
                                         level = int((random.random() ** 2) * 10)
                                         data = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
-                                        logger.debug(data)
                                         if data["status"] != "ok":
                                             logger.debug("Failed to add effect: %s" % (effect))
                                             continue
                                 break
+                            logger.debug(newbie)
                             newbie = False
                         if data["player"]["death"]:
                             logger.info("Dead")
