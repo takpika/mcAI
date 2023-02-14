@@ -512,21 +512,19 @@ if __name__ == "__main__":
                             continue
                         if newbie:
                             for _ in range(10):
-                                data = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true&effect=toughasnails:climate_clemency" % (SERVER, PORT, HOSTNAME)).text)
-                                if data["status"] != "ok":
+                                dataa = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true&effect=toughasnails:climate_clemency" % (SERVER, PORT, HOSTNAME)).text)
+                                if dataa["status"] != "ok":
                                     logger.debug("Failed to clear effects")
                                     continue
                                 for effect in effects:
                                     if random.random() < 0.01:
                                         level = int((random.random() ** 2) * 10)
-                                        data = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
-                                        if data["status"] != "ok":
+                                        dataa = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
+                                        if dataa["status"] != "ok":
                                             logger.debug("Failed to add effect: %s" % (effect))
                                             continue
                                 break
                             newbie = False
-                            logger.debug(newbie)
-                        logger.debug("check death")
                         if data["player"]["death"]:
                             logger.info("Dead")
                             end_session(hash_id)
@@ -549,7 +547,6 @@ if __name__ == "__main__":
                                     logger.error("Failed to respawn")
                                     force_quit()
                             break
-                        logger.debug("check screen")
                         if data["screen"]:
                             if data["screenInfo"]["pause"]:
                                 logger.info("Pause")
