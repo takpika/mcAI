@@ -157,6 +157,9 @@ class Handler(BaseHTTPRequestHandler):
                 playerName = query["name"][0]
                 effect = query["effect"][0] if "effect" in query else ""
                 subprocess.run("/usr/bin/screen -S minecraft -X eval 'stuff \"effect clear %s %s\"'\015" % (playerName, effect), shell=True)
+                status_code = 200
+                response["status"] = "ok"
+                response["msg"] = "Success"
             else:
                 status_code = 400
                 response["msg"] = "Bad Request"
