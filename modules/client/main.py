@@ -138,6 +138,8 @@ if os.path.exists(vfp):
 KEYS = ["q", "w", "e", "a", "s", "d", "shift", "space", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 pyautogui.PAUSE = 0.0
 
+effects = ["slowness", "blindness", "hunger", "weakness", "poison", "wither"]
+
 screen = screeninfo.get_monitors()[0]
 mouse = pynput.mouse.Controller()
 mbt = pynput.mouse.Button
@@ -458,6 +460,7 @@ if __name__ == "__main__":
                 head_topbtm_time = -1
                 last_pos, last_dir, last_change, last_change_pos = (-1, -1, -1), (-1, -1), -1, -1
                 position_history = []
+                newbie = True
                 while True:
                     if not hash_id in learn_data:
                         learn_data[hash_id] = []
@@ -506,6 +509,23 @@ if __name__ == "__main__":
                                     pass
                             sleep(1)
                             continue
+                        if newbie:
+                            for _ in range(10):
+                                try:
+                                    data = json.loads(requests.get("http://%s:%s/effect?name=%s&clear=true" % (SERVER, PORT, HOSTNAME)).text)
+                                    if data["status"] != "ok":
+                                        logger.debug("Failed to clear effects")
+                                        continue
+                                    for effect in effects:
+                                        if random.random() < 0.01:
+                                            level = int((random.random() ** 2) * 10)
+                                            data = json.loads(requests.get("http://%s:%s/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
+                                            if data["status"] != "ok":
+                                                logger.debug("Failed to add effect: %s" % (effect))
+                                                break
+                                except:
+                                    pass
+                            newbie = False
                         if data["player"]["death"]:
                             logger.info("Dead")
                             end_session(hash_id)
@@ -583,7 +603,7 @@ if __name__ == "__main__":
                         pos_float = (data["player"]["pos"]["x"], data["player"]["pos"]["y"], data["player"]["pos"]["z"])
                         dir = (int(data["player"]["direction"]["x"]), int(data["player"]["direction"]["y"]))
                         position_history.append(pos_float)
-                        if len(position_history) > 10000:
+                        if len(position_history) > 1000:
                             position_history.pop(0)
                         average_pos = (0, 0, 0)
                         for p in position_history:
@@ -636,8 +656,6 @@ if __name__ == "__main__":
                             i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
                         ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 10)
                         AI_USING = False
-                        #ai_k = np.where(ai_k < 0.5, 0, 1)
-                        #ai_m[1] = np.where(ai_m[1] < 0.5, 0, 1)
                         for i in range(len(KEYS)):
                             res = ai_k[0][i] >= 0.5
                             if before_key[i] != res:

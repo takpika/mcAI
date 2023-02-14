@@ -143,6 +143,23 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 status_code = 400
                 response["msg"] = "Bad Request"
+        elif path == "/effect":
+            if "name" in query and "effect" in query:
+                playerName = query["name"][0]
+                effectName = query["effect"][0]
+                level = int(query["level"][0]) if "level" in query else 1
+                duration = int(query["duration"][0]) if "duration" in query else 999999
+                subprocess.run("/usr/bin/screen -S minecraft -X eval 'stuff \"effect give %s %s %d %d true\"'\015" % (playerName, effectName, duration, level), shell=True)
+                status_code = 200
+                response["status"] = "ok"
+                response["msg"] = "Success"
+            elif "name" in query and "clear" in query:
+                playerName = query["name"][0]
+                effect = query["effect"][0] if "effect" in query else ""
+                subprocess.run("/usr/bin/screen -S minecraft -X eval 'stuff \"effect clear %s %s\"'\015" % (playerName, effect), shell=True)
+            else:
+                status_code = 400
+                response["msg"] = "Bad Request"
         self.send_response(status_code)
         self.send_header("Content-type", "application/json")
         self.end_headers()
