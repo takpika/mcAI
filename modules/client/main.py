@@ -509,7 +509,7 @@ if __name__ == "__main__":
                                     pass
                             sleep(1)
                             continue
-                        if newbie:
+                        '''if newbie:
                             for _ in range(10):
                                 try:
                                     data = json.loads(requests.get("http://%s:%s/effect?name=%s&clear=true" % (SERVER, PORT, HOSTNAME)).text)
@@ -526,7 +526,7 @@ if __name__ == "__main__":
                                     break
                                 except:
                                     pass
-                            newbie = False
+                            newbie = False'''
                         if data["player"]["death"]:
                             logger.info("Dead")
                             end_session(hash_id)
