@@ -400,6 +400,7 @@ def hostname2name(hostname):
 def force_quit():
     global FORCE_QUIT
     FORCE_QUIT = True
+    logger.debug("Force Quit")
     try:
         while True:
             res = requests.get("http://localhost:%d/?close=true" % (PORT))
@@ -510,24 +511,20 @@ if __name__ == "__main__":
                             sleep(1)
                             continue
                         if newbie:
-                            if len(learn_data) > 0:
-                                for _ in range(10):
-                                    data = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true&effect=toughasnails:climate_clemency" % (SERVER, PORT, HOSTNAME)).text)
-                                    sleep(0.1)
-                                    if data["status"] != "ok":
-                                        logger.debug("Failed to clear effects")
-                                        continue
-                                    for effect in effects:
-                                        if random.random() < 0.01:
-                                            level = int((random.random() ** 2) * 10)
-                                            data = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
-                                            sleep(0.1)
-                                            if data["status"] != "ok":
-                                                logger.debug("Failed to add effect: %s" % (effect))
-                                                continue
-                                        break
-                                    break
-                                newbie = False
+                            for _ in range(10):
+                                data = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true&effect=toughasnails:climate_clemency" % (SERVER, PORT, HOSTNAME)).text)
+                                if data["status"] != "ok":
+                                    logger.debug("Failed to clear effects")
+                                    continue
+                                for effect in effects:
+                                    if random.random() < 0.01:
+                                        level = int((random.random() ** 2) * 10)
+                                        data = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
+                                        if data["status"] != "ok":
+                                            logger.debug("Failed to add effect: %s" % (effect))
+                                            continue
+                                break
+                            newbie = False
                         if data["player"]["death"]:
                             logger.info("Dead")
                             end_session(hash_id)
