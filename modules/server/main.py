@@ -144,7 +144,7 @@ class Handler(BaseHTTPRequestHandler):
                 status_code = 400
                 response["msg"] = "Bad Request"
         elif path == "/effect":
-            if "name" in query and "effect" in query:
+            if "name" in query and "effect" in query and not "clear" in query:
                 playerName = query["name"][0]
                 effectName = query["effect"][0]
                 level = int(query["level"][0]) if "level" in query else 1
