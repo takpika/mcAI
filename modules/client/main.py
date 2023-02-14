@@ -524,8 +524,9 @@ if __name__ == "__main__":
                                             logger.debug("Failed to add effect: %s" % (effect))
                                             continue
                                 break
-                            logger.debug(newbie)
                             newbie = False
+                            logger.debug(newbie)
+                        logger.debug("check death")
                         if data["player"]["death"]:
                             logger.info("Dead")
                             end_session(hash_id)
@@ -548,6 +549,7 @@ if __name__ == "__main__":
                                     logger.error("Failed to respawn")
                                     force_quit()
                             break
+                        logger.debug("check screen")
                         if data["screen"]:
                             if data["screenInfo"]["pause"]:
                                 logger.info("Pause")
