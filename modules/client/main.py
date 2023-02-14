@@ -138,7 +138,7 @@ if os.path.exists(vfp):
 KEYS = ["q", "w", "e", "a", "s", "d", "shift", "space", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 pyautogui.PAUSE = 0.0
 
-effects = ["slowness", "blindness", "hunger", "weakness", "poison", "wither"]
+effects = ["slowness", "blindness", "hunger", "weakness", "poison", "wither", "toughasnails:thirst"]
 
 screen = screeninfo.get_monitors()[0]
 mouse = pynput.mouse.Controller()
@@ -511,7 +511,7 @@ if __name__ == "__main__":
                             continue
                         if newbie:
                             for _ in range(10):
-                                data = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true" % (SERVER, PORT, HOSTNAME)).text)
+                                data = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true&effect=toughasnails:climate_clemency" % (SERVER, PORT, HOSTNAME)).text)
                                 if data["status"] != "ok":
                                     logger.debug("Failed to clear effects")
                                     continue
