@@ -522,7 +522,8 @@ if __name__ == "__main__":
                                             data = json.loads(requests.get("http://%s:%s/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
                                             if data["status"] != "ok":
                                                 logger.debug("Failed to add effect: %s" % (effect))
-                                                break
+                                                continue
+                                    break
                                 except:
                                     pass
                             newbie = False
