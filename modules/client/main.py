@@ -740,6 +740,7 @@ if __name__ == "__main__":
                         mes_id = int(data["message"][0]["id"])
                     threading.Thread(target=register).start()
     finally:
+        logger.error("Something went wrong")
         if not (hash_id == "" or hash_id == None):
             end_session(hash_id)
         force_quit()
