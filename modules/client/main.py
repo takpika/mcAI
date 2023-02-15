@@ -512,7 +512,7 @@ if __name__ == "__main__":
                             continue
                         if newbie:
                             for _ in range(10):
-                                dataa = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true&effect=toughasnails:climate_clemency" % (SERVER, PORT, HOSTNAME)).text)
+                                dataa = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true" % (SERVER, PORT, HOSTNAME)).text)
                                 if dataa["status"] != "ok":
                                     logger.debug("Failed to clear effects")
                                     continue
