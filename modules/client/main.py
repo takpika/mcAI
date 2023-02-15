@@ -1,5 +1,5 @@
 from math import sqrt
-import subprocess, requests, json, pynput, screeninfo, urllib.parse, os, argparse, threading, mcai, psutil, socket, cv2, random, pyautogui, hashlib
+import subprocess, requests, json, pynput, screeninfo, urllib.parse, os, argparse, threading, mcai, psutil, socket, cv2, random, pyautogui, hashlib, traceback
 from mss import mss
 from PIL import ImageDraw, Image
 from time import sleep, time
@@ -739,8 +739,11 @@ if __name__ == "__main__":
                         logger.info("A message from " + data["message"][0]["author"] + " : " + data["message"][0]["message"])
                         mes_id = int(data["message"][0]["id"])
                     threading.Thread(target=register).start()
+    except Exception as e:
+        t = list(traceback.TracebackException.from_exception(e).format())
+        for i in t:
+            logger.error(i)
     finally:
-        logger.error("Something went wrong")
         if not (hash_id == "" or hash_id == None):
             end_session(hash_id)
         force_quit()
