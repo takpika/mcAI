@@ -690,6 +690,7 @@ if __name__ == "__main__":
                             frame = cv2.cvtColor((x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8"), cv2.COLOR_RGB2BGR)
                             video.write(frame)
                             this_frame = {
+                                "health": data["player"]["health"],
                                 "input": {
                                     "mem": {
                                         "reg": convBit(x_reg),
