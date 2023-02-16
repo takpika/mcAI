@@ -292,7 +292,7 @@ def check():
                 os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
         learn_ids, learn_frames, learn_counts, rewards = check_count()
         CHECK_FIRSTRUN = False
-        logger.debug("Check done, current total frames: %d/%d" % (sum(learn_frames, LEARN_LIMIT)))
+        logger.debug("Check done, current total frames: %d/%d" % (sum(learn_frames), LEARN_LIMIT))
         CHECK_PROCESSING = False
     if CHECK_FIRSTRUN:
         learn_ids, learn_frames, learn_counts, rewards = check_count()
