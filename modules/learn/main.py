@@ -292,7 +292,7 @@ def check():
                 os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
         learn_ids, learn_frames, learn_counts, rewards = check_count()
         CHECK_FIRSTRUN = False
-        logger.debug("Check done, current total frames: %d" % (sum(learn_frames)))
+        logger.debug("Check done, current total frames: %d/%d" % (sum(learn_frames, LEARN_LIMIT)))
         CHECK_PROCESSING = False
     if CHECK_FIRSTRUN:
         learn_ids, learn_frames, learn_counts, rewards = check_count()
@@ -466,7 +466,7 @@ def check():
                         logger.error("Training failure, skipped...")
                     now_count += 1
                     if now_count % 10 == 0:
-                        logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f" % (now_count, total_count, now_count/total_count*100, loss[0]))
+                        logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f rewards: %d/%d/%d" % (now_count, total_count, now_count/total_count*100, loss[0], min(rewards), ave, max(rewards)))
                 video.release()
         logger.info("Finish Learning")
         MODEL_WRITING = True
