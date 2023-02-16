@@ -276,11 +276,14 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.json" % (id)), "r") as f:
                     data = json.loads(f.read())
                 c_data = []
-                for d in data["data"]:
-                    daf = conv_frame(d)
+                reward = 0.0
+                for i in range(len(data["data"])):
+                    daf = conv_frame(data["data"][i])
                     c_data.append(daf)
+                    reward += data["data"][i]["health"] * ( 0.95 ** i )
                 allData = {
                     "count": 0,
+                    "reward": reward,
                     "data": c_data
                 }
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
@@ -391,11 +394,15 @@ def check():
         logger.debug("End: Image VAE Learning")
         total_count = 0
         now_count = 0
+        rewards = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id))))["reward"] for id in learn_ids]
+        ave = sum(rewards) / len(rewards)
+        mx = max(rewards)
         LEARN_THRESHOLD = ave + (mx - ave) * 0.75
         learn_ids_copy = learn_ids.copy()
         for i in range(len(learn_ids)):
             id, frames, count = learn_ids[i], learn_frames[i], learn_counts[i]
-            if frames < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
+            reward = pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id))))["reward"]
+            if reward < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
                 os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
                 learn_ids_copy.remove(id)
@@ -427,7 +434,6 @@ def check():
                     l_data["count"] += 1
                     with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                         pickle.dump(l_data, f)
-                point = count / mx
                 a, b = int(count / 30), count % 30
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 all_count = a
@@ -449,7 +455,6 @@ def check():
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)) / 255)
                         f_ctrls = l_data["data"][i*30+x]
                         for v in range(8):
-                            f_ctrls[6+v] = (f_ctrls[6+v] - 0.5) * point + 0.5
                             f_ctrls[6+v] = np.where(f_ctrls[6+v] < 0.5, 0, 1)
                         for f_ctrl in f_ctrls:
                             f.append(f_ctrl)
