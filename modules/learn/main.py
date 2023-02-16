@@ -243,7 +243,8 @@ def check_count():
     learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
     learn_frames = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["data"]) for id in learn_ids]
     learn_counts = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["count"] for id in learn_ids]
-    return learn_ids, learn_frames, learn_counts
+    rewards = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["reward"] for id in learn_ids]
+    return learn_ids, learn_frames, learn_counts, rewards
 
 def check():
     global training, learn_data, data
@@ -289,12 +290,12 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                     pickle.dump(allData, f)
                 os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
-        learn_ids, learn_frames, learn_counts = check_count()
+        learn_ids, learn_frames, learn_counts, rewards = check_count()
         CHECK_FIRSTRUN = False
         logger.debug("Check done, current total frames: %d" % (sum(learn_frames)))
         CHECK_PROCESSING = False
     if CHECK_FIRSTRUN:
-        learn_ids, learn_frames, learn_counts = check_count()
+        learn_ids, learn_frames, learn_counts, rewards = check_count()
         logger.debug("First Run, current total frames: %d" % (sum(learn_frames)))
         CHECK_FIRSTRUN = False
         training = True
@@ -394,14 +395,12 @@ def check():
         logger.debug("End: Image VAE Learning")
         total_count = 0
         now_count = 0
-        rewards = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id))))["reward"] for id in learn_ids]
         ave = sum(rewards) / len(rewards)
         mx = max(rewards)
         LEARN_THRESHOLD = ave + (mx - ave) * 0.75
         learn_ids_copy = learn_ids.copy()
         for i in range(len(learn_ids)):
-            id, frames, count = learn_ids[i], learn_frames[i], learn_counts[i]
-            reward = pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id))))["reward"]
+            id, frames, count, reward = learn_ids[i], learn_frames[i], learn_counts[i], rewards[i]
             if reward < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
                 os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
