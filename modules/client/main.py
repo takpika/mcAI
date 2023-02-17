@@ -721,9 +721,9 @@ if __name__ == "__main__":
                             learn_data[hash_id].append(this_frame)
                         if not hash_id in learn_data:
                             hash_id = start_recording()
-                        elif len(learn_data[hash_id]) > FRAME_LIMIT:
-                            stop_recording(hash_id)
-                            hash_id = start_recording()
+                        #elif len(learn_data[hash_id]) > FRAME_LIMIT:
+                        #    stop_recording(hash_id)
+                        #    hash_id = start_recording()
                     else:
                         if played:
                             logger.warning("Logged out. Auto restart...")

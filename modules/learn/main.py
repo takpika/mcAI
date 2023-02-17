@@ -281,7 +281,7 @@ def check():
                 for i in range(len(data["data"])):
                     daf = conv_frame(data["data"][i])
                     c_data.append(daf)
-                    reward += data["data"][i]["health"] * ( 0.95 ** i )
+                    reward += data["data"][i]["health"] * ( 0.99 ** i )
                 allData = {
                     "count": 0,
                     "reward": reward,
@@ -466,7 +466,7 @@ def check():
                         logger.error("Training failure, skipped...")
                     now_count += 1
                     if now_count % 10 == 0:
-                        logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f rewards: %d/%d/%d" % (now_count, total_count, now_count/total_count*100, loss[0], min(rewards), ave, max(rewards)))
+                        logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f rewards: %.2f/%.2f/%.2f" % (now_count, total_count, now_count/total_count*100, loss[0], min(rewards), ave, max(rewards)))
                 video.release()
         logger.info("Finish Learning")
         MODEL_WRITING = True
