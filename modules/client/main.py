@@ -686,7 +686,7 @@ if __name__ == "__main__":
                         if len(send_message_data) > CHARS_LIMIT:
                             send_message_data = send_message_data[:CHARS_LIMIT]
                         random.seed(time())
-                        if random.random() < 1.1: # for temp
+                        if random.random() < 0.1: # for temp
                             frame = cv2.cvtColor((x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8"), cv2.COLOR_RGB2BGR)
                             video.write(frame)
                             this_frame = {
