@@ -343,7 +343,7 @@ def check():
         mx = max(learn_frames)
         ave = sum(learn_frames) / len(learn_frames)
         beforeLimit = LEARN_LIMIT
-        LEARN_LIMIT = mx * 10
+        LEARN_LIMIT = mx * 100
         if LEARN_LIMIT < 1000:
             LEARN_LIMIT = 1000
         if LEARN_LIMIT % 100 != 0:
