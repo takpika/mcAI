@@ -138,7 +138,7 @@ if os.path.exists(vfp):
 KEYS = ["q", "w", "e", "a", "s", "d", "shift", "space", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 pyautogui.PAUSE = 0.0
 
-effects = ["slowness", "blindness", "hunger", "weakness", "poison", "wither"]
+effects = ["slowness", "blindness", "weakness", "poison", "wither"]
 
 screen = screeninfo.get_monitors()[0]
 mouse = pynput.mouse.Controller()
@@ -455,6 +455,7 @@ if __name__ == "__main__":
                 mem_reg, mem_reg2 = 0x0, 0x0
                 char_at = 0
                 hp = 0.0
+                nextHunger = time()
                 edit_char = ""
                 inscreen = False
                 before_key = [False for _ in KEYS]
@@ -516,10 +517,11 @@ if __name__ == "__main__":
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to clear effects")
                                     continue
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 5)).text)
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 6)).text)
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: hunger")
                                     continue
+                                nextHunger += 120
                                 datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=1" % (SERVER, PORT, HOSTNAME, "instant_damage", 1)).text)
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: instant_damage")
@@ -533,6 +535,10 @@ if __name__ == "__main__":
                                             continue
                                 break
                             newbie = False
+                        if time() > nextHunger:
+                            datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 7, 5)).text)
+                            if datae["status"] == "ok":
+                                nextHunger += 120
                         if data["player"]["death"]:
                             logger.info("Dead")
                             end_session(hash_id)
