@@ -138,7 +138,7 @@ if os.path.exists(vfp):
 KEYS = ["q", "w", "e", "a", "s", "d", "shift", "space", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 pyautogui.PAUSE = 0.0
 
-effects = ["slowness", "blindness", "hunger", "weakness", "poison", "wither", "toughasnails:thirst"]
+effects = ["slowness", "blindness", "hunger", "weakness", "poison", "wither"]
 
 screen = screeninfo.get_monitors()[0]
 mouse = pynput.mouse.Controller()
@@ -512,15 +512,23 @@ if __name__ == "__main__":
                             continue
                         if newbie:
                             for _ in range(10):
-                                dataa = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true" % (SERVER, PORT, HOSTNAME)).text)
-                                if dataa["status"] != "ok":
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true" % (SERVER, PORT, HOSTNAME)).text)
+                                if datae["status"] != "ok":
                                     logger.debug("Failed to clear effects")
+                                    continue
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 6)).text)
+                                if datae["status"] != "ok":
+                                    logger.debug("Failed to add effect: hunger")
+                                    continue
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=1" % (SERVER, PORT, HOSTNAME, "instant_damage", 1)).text)
+                                if datae["status"] != "ok":
+                                    logger.debug("Failed to add effect: instant_damage")
                                     continue
                                 for effect in effects:
                                     if random.random() < 0.01:
                                         level = int((random.random() ** 2) * 10)
-                                        dataa = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
-                                        if dataa["status"] != "ok":
+                                        datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=999999" % (SERVER, PORT, HOSTNAME, effect, level)).text)
+                                        if datae["status"] != "ok":
                                             logger.debug("Failed to add effect: %s" % (effect))
                                             continue
                                 break
