@@ -516,7 +516,7 @@ if __name__ == "__main__":
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to clear effects")
                                     continue
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 6)).text)
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 5)).text)
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: hunger")
                                     continue
