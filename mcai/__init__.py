@@ -1,5 +1,5 @@
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Input, Conv2D, Flatten, Concatenate, MaxPooling2D, BatchNormalization, Dropout
+from tensorflow.keras.layers import Dense, Input, Conv2D, Flatten, Concatenate, MaxPooling2D, BatchNormalization
 from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.backend import clear_session
@@ -54,10 +54,10 @@ class mcAI():
         seed = Input(shape=(100))
         video_hid = Flatten()(video.output)
         hid = Concatenate()([video_hid, mem.output, chat.output, seed])
-        hid = Dropout(0.2)(hid)
-        hid = Dense(64, activation="relu")(hid)
         hid = Dense(32, activation="relu")(hid)
-        out = Dense(16, activation="relu")(hid)
+        hid = Dense(64, activation="relu")(hid)
+        hid = Dense(64, activation="relu")(hid)
+        out = Dense(32, activation="relu")(hid)
         return Model([video.input, mem.input, chat.input, seed], out)
 
     def build_memDecoder(self):
