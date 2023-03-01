@@ -635,8 +635,8 @@ if __name__ == "__main__":
                         for p in position_history:
                             average_pos = (average_pos[0] + p[0], average_pos[1] + p[1], average_pos[2] + p[2])
                         average_pos = (average_pos[0] / len(position_history), average_pos[1] / len(position_history), average_pos[2] / len(position_history))
-                        if pos_distance(average_pos, pos_float) <= 0.5 and len(position_history) >= 20:
-                            if pos_distance(position_history[-1], position_history[-11]) <= 1 and len(learn_data[hash_id]) >= 2:
+                        if pos_distance(average_pos, pos_float) <= 0.5 and len(position_history) >= 10:
+                            if pos_distance(position_history[-1], position_history[-6]) <= 1 and len(learn_data[hash_id]) >= 2:
                                 logger.info("No Walking")
                                 for _ in range(10):
                                     try:
