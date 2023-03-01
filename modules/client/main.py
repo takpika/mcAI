@@ -536,7 +536,7 @@ if __name__ == "__main__":
                                 break
                             newbie = False
                         if newbieDamage and not newbieDamageChecked:
-                            if data["player"]["health"] < 8:
+                            if data["player"]["health"] <= 8:
                                 newbieDamageChecked = True
                             else:
                                 newbieDamage = False
