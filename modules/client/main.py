@@ -549,7 +549,7 @@ if __name__ == "__main__":
                             sleep(1)
                             continue
                         if time() > nextHunger:
-                            datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 7, 5)).text)
+                            datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 39, 1)).text)
                             if datae["status"] == "ok":
                                 nextHunger += 120
                         if data["player"]["death"]:
