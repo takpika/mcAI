@@ -462,7 +462,7 @@ if __name__ == "__main__":
                 head_topbtm_time = -1
                 last_pos, last_dir, last_change, last_change_pos = (-1, -1, -1), (-1, -1), -1, -1
                 position_history = []
-                newbie = True
+                newbie, newbieDamage, newbieDamageChecked = True, False, False
                 while True:
                     if not hash_id in learn_data:
                         learn_data[hash_id] = []
@@ -526,11 +526,6 @@ if __name__ == "__main__":
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: toughasnails:thirst")
                                     continue
-                                sleep(3)
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "instant_damage", 1, 1)).text)
-                                if datae["status"] != "ok":
-                                    logger.debug("Failed to add effect: instant_damage")
-                                    continue
                                 for effect in effects:
                                     if random.random() < 0.01:
                                         level = int((random.random() ** 2) * 10)
@@ -540,6 +535,17 @@ if __name__ == "__main__":
                                             continue
                                 break
                             newbie = False
+                        if newbieDamage and not newbieDamageChecked:
+                            if data["player"]["health"] < 8:
+                                newbieDamageChecked = True
+                            else:
+                                newbieDamage = False
+                        if data["player"]["health"] > 8 and not newbieDamage:
+                            datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "instant_damage", 1, 1)).text)
+                            if datae["status"] != "ok":
+                                logger.debug("Failed to add effect: instant_damage")
+                                continue
+                            newbieDamage = True
                         if time() > nextHunger:
                             datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 7, 5)).text)
                             if datae["status"] == "ok":
