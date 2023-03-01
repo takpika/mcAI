@@ -526,9 +526,9 @@ if __name__ == "__main__":
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: toughasnails:thirst")
                                     continue
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=1" % (SERVER, PORT, HOSTNAME, "instant_damage", 1)).text)
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "poison", 5, 6)).text)
                                 if datae["status"] != "ok":
-                                    logger.debug("Failed to add effect: instant_damage")
+                                    logger.debug("Failed to add effect: poison")
                                     continue
                                 for effect in effects:
                                     if random.random() < 0.01:
