@@ -546,6 +546,7 @@ if __name__ == "__main__":
                                 logger.debug("Failed to add effect: instant_damage")
                                 continue
                             newbieDamage = True
+                            sleep(1)
                         if time() > nextHunger:
                             datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 7, 5)).text)
                             if datae["status"] == "ok":
