@@ -453,8 +453,6 @@ def check():
                             break
                         f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)) / 255)
                         f_ctrls = l_data["data"][i*30+x]
-                        for v in range(8):
-                            f_ctrls[6+v] = np.where(f_ctrls[6+v] < 0.5, 0, 1)
                         for f_ctrl in f_ctrls:
                             f.append(f_ctrl)
                         learn_data.append(f)
