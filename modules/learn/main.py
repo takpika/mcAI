@@ -257,8 +257,8 @@ def check():
         CHECK_PROCESSING = True
         counts = []
         ids_copy = ids.copy()
-        for i in range(len(ids_copy)):
-            id = ids_copy[i]
+        for i in range(len(ids)):
+            id = ids[i]
             try:
                 count = len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"])
                 if count >= 2:
