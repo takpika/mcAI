@@ -166,21 +166,20 @@ def conv_all():
         ai_mem_3 = np.append(ai_mem_3, ld[12].reshape((1,8)), axis=0)
         ai_mem_4 = np.append(ai_mem_4, ld[13].reshape((1,8)), axis=0)
         ai_chat = np.append(ai_chat, ld[14].reshape((1,CHARS_COUNT)), axis=0)
-    ai_k = limit(ai_k)
-    ai_m_1 = limit(ai_m_1)
-    ai_m_2 = limit(ai_m_2)
-    ai_mem_1 = nichi(ai_mem_1)
-    ai_mem_2 = nichi(ai_mem_2)
-    ai_mem_3 = nichi(ai_mem_3)
-    ai_mem_4 = nichi(ai_mem_4)
-    ai_chat = limit(ai_chat)
+    ai_k = np.clip(ai_k, 0, 1)
+    ai_m_1 = np.clip(ai_m_1, -1, 1)
+    ai_m_2 = np.clip(ai_m_2, 0, 1)
+    ai_mem_1 = np.where(ai_mem_1<0.5, 0, 1)
+    ai_mem_2 = np.where(ai_mem_2<0.5, 0, 1)
+    ai_mem_3 = np.where(ai_mem_3<0.5, 0, 1)
+    ai_mem_4 = np.where(ai_mem_4<0.5, 0, 1)
+    ai_chat = np.clip(ai_chat, 0, 1)
     input_data = model.make_input(
         x_img, x_reg, x_mem, x_reg2, x_mem2, np.transpose(x_name, (1,0,2)), x_mes, x_img.shape[0]
     )
     output_data = [
         ai_k, [ai_m_1, ai_m_2], [ai_mem_1, ai_mem_2, ai_mem_3, ai_mem_4], ai_chat
     ]
-    logger.debug(ai_k)
     learn_data.clear()
     return input_data, output_data
 
