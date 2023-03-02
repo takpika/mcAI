@@ -180,6 +180,7 @@ def conv_all():
     output_data = [
         ai_k, [ai_m_1, ai_m_2], [ai_mem_1, ai_mem_2, ai_mem_3, ai_mem_4], ai_chat
     ]
+    logger.debug(ai_k)
     learn_data.clear()
     return input_data, output_data
 
