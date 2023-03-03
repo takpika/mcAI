@@ -150,7 +150,7 @@ def conv_all():
     ai_mem_2 = np.empty((learnDataLength, 8))
     ai_mem_3 = np.empty((learnDataLength, 8))
     ai_mem_4 = np.empty((learnDataLength, 8))
-    ai_chat = np.empty((0, CHARS_COUNT))
+    ai_chat = np.empty((learnDataLength, CHARS_COUNT))
     for i in range(learnDataLength):
         x_img[i] = learn_data[i][0].reshape((HEIGHT,WIDTH,3))
         x_reg[i] = learn_data[i][1].reshape((8))
