@@ -93,7 +93,7 @@ class mcAI():
 
     def make_input(self, x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, count):
         return [
-            x_img.reshape((count,self.HEIGHT,self.WIDTH,3)).astype("uint8"),
+            x_img.reshape((count,self.HEIGHT,self.WIDTH,3)),
             x_reg.reshape((count,8)),
             x_mem.reshape((count,8)),
             x_reg2.reshape((count,8)),
