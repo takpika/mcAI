@@ -401,6 +401,8 @@ def check():
         ave = sum(rewards) / len(rewards)
         mx = max(rewards)
         LEARN_THRESHOLD = ave + (mx - ave) * 0.75
+        if mx * 0.8 > LEARN_THRESHOLD:
+            LEARN_THRESHOLD = mx * 0.8
         learn_ids_copy = learn_ids.copy()
         for i in range(len(learn_ids)):
             id, frames, count, reward = learn_ids[i], learn_frames[i], learn_counts[i], rewards[i]
