@@ -687,10 +687,7 @@ if __name__ == "__main__":
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
                         random.seed(time())
-                        if AI_COUNT > 0:
-                            randomThreshold = 1
-                        else:
-                            randomThreshold = 1 / AI_COUNT
+                        randomThreshold = 1 / math.exp(AI_COUNT/100)
                         if random.random() < randomThreshold:
                             ai_k = np.random.random(ai_k.shape)
                             ai_m[0] = np.random.random(ai_m[0].shape) * 2 - 1
