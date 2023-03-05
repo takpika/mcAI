@@ -2,7 +2,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import shutil
 from socketserver import ThreadingMixIn
 import threading
-import json, mcai, argparse, os, psutil, socket, requests, subprocess, random, pickle, cv2, shutil
+import json, mcai, argparse, os, psutil, socket, requests, subprocess, random, pickle, cv2, shutil, time
 from time import sleep
 import numpy as np
 from datetime import datetime
@@ -502,8 +502,17 @@ def check():
         model.model.save("models/model.h5")
         MODEL_WRITING = False
         model.clearSession()
-        with open("models/version", "w") as f:
-            f.write(str(int(datetime.now().timestamp())))
+        version = {
+            "version": time.time(),
+            "count": 1
+        }
+        if os.path.exists("models/version.json"):
+            with open("models/version.json", "r") as f:
+                beforeVersion = json.load(f)
+            if "count" in beforeVersion:
+                version["count"] = beforeVersion["count"] + 1
+        with open("models/version.json", "w") as f:
+            json.dump(version, f)
         training = False
 
 class Handler(BaseHTTPRequestHandler):
@@ -540,13 +549,17 @@ class Handler(BaseHTTPRequestHandler):
             }
             status = 200
         else:
-            version = 0
-            if os.path.exists('models/version'):
-                with open("models/version", "r") as f:
-                    version = int(f.read())
+            currentVersion = {
+                "version": 0,
+                "count": 0
+            }
+            if os.path.exists('models/version.json'):
+                with open("models/version.json", "r") as f:
+                    currentVersion = json.load(f)
             response = {
                 'status': 'ok',
-                'version': version
+                'version': currentVersion["version"],
+                'count': currentVersion["count"]
             }
             status = 200
         self.send_response(status)

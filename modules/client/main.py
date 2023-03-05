@@ -1,5 +1,5 @@
 from math import sqrt
-import subprocess, requests, json, pynput, screeninfo, urllib.parse, os, argparse, threading, mcai, psutil, socket, cv2, random, pyautogui, hashlib, traceback
+import subprocess, requests, json, pynput, screeninfo, urllib.parse, os, argparse, threading, mcai, psutil, socket, cv2, random, pyautogui, hashlib, traceback, math
 from mss import mss
 from PIL import ImageDraw, Image
 from time import sleep, time
@@ -125,15 +125,18 @@ HEIGHT = config["resolution"]["y"]
 sct = mss()
 
 VERSION = 0
+AI_COUNT = 0
 AI_USING = False
 DOWNLOAD_LOCK = False
 AI_UPDATE_LOCK = False
 FORCE_QUIT = False
 
-vfp = os.path.join(WORK_DIR, "version")
+vfp = os.path.join(WORK_DIR, "version.json")
 if os.path.exists(vfp):
     with open(vfp, "r") as f:
-        VERSION = int(f.read())
+        version = json.loads(f.read())
+        VERSION = version["version"]
+        AI_COUNT = version["count"]
 
 KEYS = ["q", "w", "e", "a", "s", "d", "shift", "space", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 pyautogui.PAUSE = 0.0
@@ -299,29 +302,33 @@ def stop_recording(hash_id):
 
 def check_version():
     data = json.loads(requests.get("http://%s:%d/" % (L_SERVER, PORT)).text)
-    current = int(data["version"])
-    return current
+    current = data["version"]
+    count = data["count"]
+    return current, count
 
 def download_update():
     global DOWNLOAD_LOCK
     global AI_UPDATE_LOCK
-    global VERSION
+    global VERSION, AI_COUNT
     modelFiles = ["model.h5", "vae_e.h5", "char_e.h5", "keyboard_d.h5", "mouse_d.h5"]
     if not DOWNLOAD_LOCK:
         DOWNLOAD_LOCK = True
         try:
-            current = check_version()
-            if current == 0:
+            currentVersion, currentCount = check_version()
+            if currentVersion <= 0:
                 DOWNLOAD_LOCK = False
                 for modelfile in modelFiles:
                     if os.path.exists(os.path.join(WORK_DIR, modelfile)):
                         os.remove(os.path.join(WORK_DIR, modelfile))
-                os.remove(os.path.join(WORK_DIR, "version"))
+                if os.path.exists(os.path.join(WORK_DIR, "version.json")):
+                    os.remove(os.path.join(WORK_DIR, "version.json"))
                 return
-            if os.path.exists("version"):
-                with open("version", "r") as f:
-                    VERSION = int(f.read())
-            if current > VERSION:
+            if os.path.exists("version.json"):
+                with open("version.json", "r") as f:
+                    versionData = json.loads(f.read())
+                    VERSION = versionData["version"]
+                    AI_COUNT = versionData["count"]
+            if currentVersion > VERSION:
                 logger.info("AI Model New Version Available!")
                 for modelfile in modelFiles:
                     res = requests.get("http://%s:%d/%s" % (L_SERVER, PORT, modelfile))
@@ -338,19 +345,24 @@ def download_update():
                 model.keyboarddecoder.model.load_weights(os.path.join(WORK_DIR, "keyboard_d.h5"))
                 model.mousedecoder.model.load_weights(os.path.join(WORK_DIR, "mouse_d.h5"))
                 AI_UPDATE_LOCK = False
-                VERSION = current
-                with open("version", "w") as f:
-                    f.write(str(VERSION))
+                VERSION = currentVersion
+                AI_COUNT = currentCount
+                with open("version.json", "w") as f:
+                    f.write(json.dumps({
+                        "version": VERSION,
+                        "count": AI_COUNT
+                    }))
                 logger.info("AI Updated")
             DOWNLOAD_LOCK = False
         except:
             for modelfile in modelFiles:
                 if os.path.exists(os.path.join(WORK_DIR, modelfile)):
                     os.remove(os.path.join(WORK_DIR, modelfile))
-            if os.path.exists("version"):
-                subprocess.run(["rm", "version"])
+            if os.path.exists("version.json"):
+                subprocess.run(["rm", "version.json"])
             AI_UPDATE_LOCK = False
             VERSION = 0
+            AI_COUNT = 0
             DOWNLOAD_LOCK = False
             logger.error("AI Update Failed")
 
@@ -674,13 +686,26 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
-                        random.seed(random_seed)
-                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * (random.random() ** 10)
-                        for i in ai_m:
-                            i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
-                        for i in ai_mem:
-                            i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
-                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 10)
+                        random.seed(time())
+                        if AI_COUNT > 0:
+                            randomThreshold = 1
+                        else:
+                            randomThreshold = 1 / AI_COUNT
+                        if random.random() < randomThreshold:
+                            ai_k = np.random.random(ai_k.shape)
+                            ai_m[0] = np.random.random(ai_m[0].shape) * 2 - 1
+                            ai_m[1] = np.random.random(ai_m[1].shape)
+                            for i in ai_mem:
+                                i = np.random.random(i.shape)
+                            ai_chat = np.random.random(ai_chat.shape)
+                        else:
+                            random.seed(random_seed)
+                            ai_k += (np.random.random(ai_k.shape) * 2 - 1) * (random.random() ** 10)
+                            for i in ai_m:
+                                i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
+                            for i in ai_mem:
+                                i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
+                            ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 10)
                         AI_USING = False
                         ai_k = np.clip(ai_k, 0, 1)
                         ai_m[0] = np.clip(ai_m[0], -1, 1)

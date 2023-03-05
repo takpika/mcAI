@@ -1,7 +1,5 @@
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Input, Conv2D, Flatten, Concatenate, MaxPooling2D, BatchNormalization
-from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Dense, Input, Flatten, Concatenate
 from tensorflow.keras.backend import clear_session
 import numpy as np
 from random import random
@@ -87,9 +85,7 @@ class mcAI():
 
     def make_model(self):
         self.model = self.build_Model()
-        self.loss = CategoricalCrossentropy()
-        self.optimizer = Adam()
-        self.model.compile(optimizer=self.optimizer, loss="mae", metrics=["accuracy"])
+        self.model.compile(optimizer="Adam", loss="mae", metrics=["accuracy"])
 
     def make_input(self, x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, count):
         return [
