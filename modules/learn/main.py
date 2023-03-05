@@ -282,7 +282,7 @@ def check():
                 for i in range(len(data["data"])):
                     daf = conv_frame(data["data"][i])
                     c_data.append(daf)
-                    reward += data["data"][i]["health"] * ( 0.9 ** i )
+                    reward += data["data"][i]["health"] * ( 0.999 ** i )
                 allData = {
                     "count": 0,
                     "reward": reward,
