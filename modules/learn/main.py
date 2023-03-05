@@ -358,7 +358,7 @@ def check():
         video_ids = [file.replace(".mp4", "") for file in os.listdir(DATA_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
         if sum(learn_frames) <= 10000:
             logger.debug("Start: Image VAE Learning (Small Data)")
-            frames = np.empty((10000, 256, 256, 3), dtype=np.uint8)
+            vaeFrames = np.empty((10000, 256, 256, 3), dtype=np.uint8)
             i = 0
             for id in video_ids:
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
@@ -369,19 +369,19 @@ def check():
                         break
                     try:
                         frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256, 256))
-                        frames[i] = np.array(frame)
+                        vaeFrames[i] = np.array(frame)
                         i += 1
                     except:
                         pass
             iters = i // 30
             for epoch in range(2):
                 for iter in range(iters):
-                    vae.model.train_on_batch(frames[iter*30:(iter+1)*30]/255, frames[iter*30:(iter+1)*30]/255)
+                    loss = vae.model.train_on_batch(vaeFrames[iter*30:(iter+1)*30]/255, vaeFrames[iter*30:(iter+1)*30]/255)
                     if iter % 10 == 0:
                         logger.debug("Image VAE Loss: %.6f, %d epochs, %d iters" % (loss, epoch, iter))
         else:
             logger.debug("Start: Image VAE Learning (Large Data)")
-            frames = np.empty((30, 256, 256, 3), dtype=np.uint8)
+            vaeFrames = np.empty((30, 256, 256, 3), dtype=np.uint8)
             for epoch in range(2):
                 i = 0
                 count = 0
@@ -401,7 +401,7 @@ def check():
                             break
                     try:
                         frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
-                        frames[framesCount] = np.array(frame).astype("uint8").reshape(256,256,3)
+                        vaeFrames[framesCount] = np.array(frame).astype("uint8").reshape(256,256,3)
                         framesCount += 1
                     except:
                         logger.warning("Frame Skipped")
@@ -409,9 +409,10 @@ def check():
                     if framesCount >= 30:
                         count += 1
                         framesCount = 0
-                        loss = vae.model.train_on_batch(frames/255, frames/255)
+                        loss = vae.model.train_on_batch(vaeFrames/255, vaeFrames/255)
                         if count % 10 == 0:
                             logger.debug("Image VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, count))
+        del vaeFrames
         vae.encoder.model.save("models/vae_e_latest.h5")
         vae.decoder.model.save("models/vae_d_latest.h5")
         vae_override = random.random() < 0.01
