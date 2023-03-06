@@ -254,6 +254,9 @@ def check():
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
     learn_frames = [0]
+    batchSize = 128
+    if GPU_AVAIL:
+        batchSize = 32
     if len(ids) >= 10 and not CHECK_PROCESSING and not training:
         CHECK_PROCESSING = True
         counts = []
@@ -373,15 +376,15 @@ def check():
                         i += 1
                     except:
                         pass
-            iters = i // 30
+            iters = i // batchSize
             for epoch in range(2):
                 for iter in range(iters):
-                    loss = vae.model.train_on_batch(vaeFrames[iter*30:(iter+1)*30]/255, vaeFrames[iter*30:(iter+1)*30]/255)
+                    loss = vae.model.train_on_batch(vaeFrames[iter*batchSize:(iter+1)*batchSize]/255, vaeFrames[iter*batchSize:(iter+1)*batchSize]/255)
                     if iter % 10 == 0:
                         logger.debug("Image VAE Loss: %.6f, %d epochs, %d iters" % (loss, epoch, iter))
         else:
             logger.debug("Start: Image VAE Learning (Large Data)")
-            vaeFrames = np.empty((30, 256, 256, 3), dtype=np.uint8)
+            vaeFrames = np.empty((batchSize, 256, 256, 3), dtype=np.uint8)
             for epoch in range(2):
                 i = 0
                 count = 0
@@ -406,7 +409,7 @@ def check():
                     except:
                         logger.warning("Frame Skipped")
                         logger.warning(frame)
-                    if framesCount >= 30:
+                    if framesCount >= batchSize:
                         count += 1
                         framesCount = 0
                         loss = vae.model.train_on_batch(vaeFrames/255, vaeFrames/255)
@@ -437,7 +440,7 @@ def check():
                 os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
                 learn_ids_copy.remove(id)
                 continue
-            a, b = int(frames / 30), frames % 30
+            a, b = int(frames / batchSize), frames % batchSize
             if b > 0:
                 a += 1
             total_count += a
@@ -464,7 +467,7 @@ def check():
                     l_data["count"] += 1
                     with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                         pickle.dump(l_data, f)
-                a, b = int(count / 30), count % 30
+                a, b = int(count / batchSize), count % batchSize
                 video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
                 all_count = a
                 if b > 0:
@@ -473,7 +476,7 @@ def check():
                 for i in range(all_count):
                     c = b
                     if i != a:
-                        c = 30
+                        c = batchSize
                     learn_data = []
                     for x in range(c):
                         f = []
