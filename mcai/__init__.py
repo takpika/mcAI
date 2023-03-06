@@ -62,10 +62,10 @@ class mcAI():
         inp = Input(shape=(16))
         hid = Dense(64, activation="relu")(inp)
         hid = Dense(32, activation="relu")(hid)
-        out_save_reg = Dense(8, activation="relu")(hid)
+        out_save_reg = Dense(8, activation="sigmoid")(hid)
         out_data = Dense(8, activation="relu")(hid)
-        out_set_reg = Dense(8, activation="relu")(hid)
-        out_set_reg2 = Dense(8, activation="relu")(hid)
+        out_set_reg = Dense(8, activation="sigmoid")(hid)
+        out_set_reg2 = Dense(8, activation="sigmoid")(hid)
         return Model([inp], [out_save_reg, out_data, out_set_reg, out_set_reg2])
 
     def build_chatDecoder(self):

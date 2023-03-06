@@ -687,7 +687,7 @@ if __name__ == "__main__":
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
                         random.seed(time())
-                        randomThreshold = 1 / math.exp(AI_COUNT/100)
+                        randomThreshold = 1 / math.exp(AI_COUNT/1000)
                         if random.random() < randomThreshold:
                             ai_k = np.random.random(ai_k.shape)
                             ai_m[0] = np.random.random(ai_m[0].shape) * 2 - 1
@@ -704,9 +704,14 @@ if __name__ == "__main__":
                                 i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
                             ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 10)
                         AI_USING = False
-                        ai_k = np.clip(ai_k, 0, 1)
+                        ai_k = np.where(ai_k >= 0.5, 1, 0)
                         ai_m[0] = np.clip(ai_m[0], -1, 1)
-                        ai_m[1] = np.clip(ai_m[1], 0, 1)
+                        ai_m[1] = np.where(ai_m[1] >= 0.5, 1, 0)
+                        for i in range(len(ai_mem)):
+                            if i == 1:
+                                ai_mem[i] = np.clip(ai_mem[i], 0, 1)
+                            ai_mem[i] = np.where(ai_mem[i] >= 0.5, 1, 0)
+                        ai_chat = np.where(ai_chat == np.max(ai_chat), 1, 0)
                         for i in range(len(KEYS)):
                             res = ai_k[0][i] >= 0.5
                             if before_key[i] != res:
