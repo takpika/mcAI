@@ -116,7 +116,7 @@ USE_LEARN_LIMIT = 3
 
 data = []
 learn_data = []
-training = False
+TRAINING = False
 vae = mcai.image.ImageVAE()
 charVAE = mcai.text.CharVAE(CHARS_COUNT)
 keyboardVAE = mcai.control.KeyboardVAE()
@@ -133,7 +133,7 @@ def nichi(i):
     i[i<0.5]=0
     return i
 
-def conv_all():
+def convAll():
     global learn_data
     learnDataLength = len(learn_data)
     x_img = np.empty((learnDataLength, HEIGHT, WIDTH, 3))
@@ -239,7 +239,7 @@ CHECK_PROCESSING = False
 MODEL_WRITING = False
 CHECK_FIRSTRUN = True
 
-def check_count():
+def checkCount():
     learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
     learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
     learn_frames = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["data"]) for id in learn_ids]
@@ -248,14 +248,12 @@ def check_count():
     return learn_ids, learn_frames, learn_counts, rewards
 
 def check():
-    global training, learn_data, data
-    global CHECK_PROCESSING, CHECK_FIRSTRUN, MODEL_WRITING, LEARN_LIMIT
-    global model, vae
+    global data
+    global CHECK_PROCESSING, CHECK_FIRSTRUN, LEARN_LIMIT, TRAINING
     list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
     learn_frames = [0]
-    batchSize = 32
-    if len(ids) >= 10 and not CHECK_PROCESSING and not training:
+    if len(ids) >= 10 and not CHECK_PROCESSING and not TRAINING:
         CHECK_PROCESSING = True
         counts = []
         ids_copy = ids.copy()
@@ -292,229 +290,227 @@ def check():
                 with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
                     pickle.dump(allData, f)
                 os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
-        learn_ids, learn_frames, learn_counts, rewards = check_count()
+        learn_ids, learn_frames, learn_counts, rewards = checkCount()
         CHECK_FIRSTRUN = False
         logger.debug("Check done, current total frames: %d/%d" % (sum(learn_frames), LEARN_LIMIT))
         CHECK_PROCESSING = False
     if CHECK_FIRSTRUN:
-        learn_ids, learn_frames, learn_counts, rewards = check_count()
+        learn_ids, learn_frames, learn_counts, rewards = checkCount()
         logger.debug("First Run, current total frames: %d" % (sum(learn_frames)))
         CHECK_FIRSTRUN = False
-        training = True
+        TRAINING = True
         if not os.path.exists("models/char_e.h5") or not os.path.exists("models/char_d.h5"):
-            logger.debug("Start: Char VAE Learning")
-            for epoch in range(100000):
-                x = np.random.random((100, CHARS_COUNT))
-                x = np.where(x == x.max(axis=1, keepdims=True), 1, 0)
-                loss = charVAE.model.train_on_batch(x, x)
-                if epoch % 1000 == 0:
-                    logger.debug("Char VAE Loss: %.6f, %d epochs" % (loss, epoch))
-            charVAE.encoder.model.save("models/char_e.h5")
-            charVAE.decoder.model.save("models/char_d.h5")
-            model.clearSession()
-            logger.debug("End: Char VAE Learning")
+            charVAELearn()
         if not os.path.exists("models/keyboard_e.h5") or not os.path.exists("models/keyboard_d.h5"):
-            logger.debug("Start: Keyboard VAE Learning")
-            for epoch in range(100000):
-                x = np.random.random((100, 17))
-                x = np.where(x >= 0.5, 1, 0)
-                loss = keyboardVAE.model.train_on_batch(x, x)
-                if epoch % 1000 == 0:
-                    logger.debug("Keyboard VAE Loss: %.6f, %d epochs" % (loss, epoch))
-            keyboardVAE.encoder.model.save("models/keyboard_e.h5")
-            keyboardVAE.decoder.model.save("models/keyboard_d.h5")
-            model.clearSession()
-            logger.debug("End: Keyboard VAE Learning")
+            keyboardVAELearn()
         if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
-            logger.debug("Start: Mouse VAE Learning")
-            for epoch in range(100000):
-                x_dir = np.random.random((100, 2)) * 2 - 1
-                x_btn = np.random.random((100, 2))
-                x_btn = np.where(x_btn >= 0.5, 1, 0)
-                loss = mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
-                if epoch % 1000 == 0:
-                    logger.debug("Mouse VAE Loss: %.6f, %d epochs" % (loss[0], epoch))
-            mouseVAE.encoder.model.save("models/mouse_e.h5")
-            mouseVAE.decoder.model.save("models/mouse_d.h5")
-            model.clearSession()
-            logger.debug("End: Mouse VAE Learning")
-        training = False
-    if sum(learn_frames) >= LEARN_LIMIT and not training:
-        training = True
-        logger.info("Start Learning")
-        mx = max(learn_frames)
-        ave = sum(learn_frames) / len(learn_frames)
-        beforeLimit = LEARN_LIMIT
-        LEARN_LIMIT = mx * 100
-        if LEARN_LIMIT < 1000:
-            LEARN_LIMIT = 1000
-        if LEARN_LIMIT % 100 != 0:
-            LEARN_LIMIT += 100 - LEARN_LIMIT % 100
-        if LEARN_LIMIT != beforeLimit:
-            logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
-        logger.debug("Start: Image VAE Learning")
-        if os.path.exists("models/vae_d_latest.h5") and os.path.exists("models/vae_e_latest.h5"):
-            vae.decoder.model.load_weights("models/vae_d_latest.h5")
-            vae.encoder.model.load_weights("models/vae_e_latest.h5")
-        video_ids = [file.replace(".mp4", "") for file in os.listdir(DATA_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
-        if sum(learn_frames) <= 10000:
-            logger.debug("Start: Image VAE Learning (Small Data)")
-            vaeFrames = np.empty((10000, 256, 256, 3), dtype=np.uint8)
+            mouseVAELearn()
+        TRAINING = False
+    if sum(learn_frames) >= LEARN_LIMIT and not TRAINING:
+        learn(learn_ids, learn_frames, learn_counts, rewards)
+
+def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards: list):
+    global LEARN_LIMIT, TRAINING, MODEL_WRITING
+    global model, vae
+    batchSize = 32
+    if TRAINING:
+        return
+    TRAINING = True
+    logger.info("Start Learning")
+    mx = max(learn_frames)
+    ave = sum(learn_frames) / len(learn_frames)
+    beforeLimit = LEARN_LIMIT
+    LEARN_LIMIT = min(mx * 100, 1000)
+    if LEARN_LIMIT != beforeLimit:
+        logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
+    logger.debug("Start: Image VAE Learning")
+    if os.path.exists("models/vae_d_latest.h5") and os.path.exists("models/vae_e_latest.h5"):
+        vae.decoder.model.load_weights("models/vae_d_latest.h5")
+        vae.encoder.model.load_weights("models/vae_e_latest.h5")
+    video_ids = [file.replace(".mp4", "") for file in os.listdir(DATA_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
+    if sum(learn_frames) <= 10000:
+        logger.debug("Start: Image VAE Learning (Small Data)")
+        vaeFrames = np.empty((sum(learn_frames), 256, 256, 3), dtype=np.uint8)
+        i = 0
+        for id in video_ids:
+            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+            while True:
+                ret, frame = video.read()
+                if not ret:
+                    video.release()
+                    break
+                try:
+                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256, 256))
+                    vaeFrames[i] = np.array(frame)
+                    i += 1
+                except:
+                    pass
+        iters = i // batchSize
+        for epoch in range(2):
+            for iter in range(iters):
+                loss = vae.model.train_on_batch(vaeFrames[iter*batchSize:(iter+1)*batchSize]/255, vaeFrames[iter*batchSize:(iter+1)*batchSize]/255)
+                if iter % 10 == 0:
+                    logger.debug("Image VAE Loss: %.6f, %d epochs, %d iters" % (loss, epoch, iter))
+    else:
+        logger.debug("Start: Image VAE Learning (Large Data)")
+        vaeFrames = np.empty((batchSize, 256, 256, 3), dtype=np.uint8)
+        for epoch in range(2):
             i = 0
-            for id in video_ids:
-                video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                while True:
-                    ret, frame = video.read()
-                    if not ret:
-                        video.release()
-                        break
-                    try:
-                        frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256, 256))
-                        vaeFrames[i] = np.array(frame)
+            iter = 0
+            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (video_ids[i])))
+            framesCount = 0
+            while True:
+                ret, frame = video.read()
+                if not ret:
+                    video.release()
+                    if i < len(video_ids) - 1:
                         i += 1
-                    except:
-                        pass
-            iters = i // batchSize
-            for epoch in range(2):
-                for iter in range(iters):
-                    loss = vae.model.train_on_batch(vaeFrames[iter*batchSize:(iter+1)*batchSize]/255, vaeFrames[iter*batchSize:(iter+1)*batchSize]/255)
+                        video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (video_ids[i])))
+                        continue
+                    else:
+                        vae.model.train_on_batch(frames[0:framesCount]/255, frames[0:framesCount]/255)
+                        framesCount = 0
+                        break
+                try:
+                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
+                    vaeFrames[framesCount] = np.array(frame).astype("uint8").reshape(256,256,3)
+                    framesCount += 1
+                except:
+                    logger.warning("Frame Skipped")
+                    logger.warning(frame)
+                if framesCount >= batchSize:
+                    iter += 1
+                    framesCount = 0
+                    loss = vae.model.train_on_batch(vaeFrames/255, vaeFrames/255)
                     if iter % 10 == 0:
-                        logger.debug("Image VAE Loss: %.6f, %d epochs, %d iters" % (loss, epoch, iter))
-        else:
-            logger.debug("Start: Image VAE Learning (Large Data)")
-            vaeFrames = np.empty((batchSize, 256, 256, 3), dtype=np.uint8)
-            for epoch in range(2):
-                i = 0
-                count = 0
-                video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (video_ids[i])))
-                framesCount = 0
-                while True:
+                        logger.debug("Image VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
+    del vaeFrames
+    vae.encoder.model.save("models/vae_e_latest.h5")
+    vae.decoder.model.save("models/vae_d_latest.h5")
+    vaeOverride = random.random() < 0.01
+    if not os.path.exists("models/vae_e.h5") or not os.path.exists("models/vae_d.h5") or vaeOverride:
+        logger.debug("Image VAE Model Updated")
+        shutil.copy("models/vae_e_latest.h5", "models/vae_e.h5")
+        shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
+    model.clearSession()
+    logger.debug("End: Image VAE Learning")
+    total_count = 0
+    now_count = 0
+    ave = sum(rewards) / len(rewards)
+    mx = max(rewards)
+    LEARN_THRESHOLD = ave + (mx - ave) * 0.75
+    if mx * 0.8 > LEARN_THRESHOLD:
+        LEARN_THRESHOLD = mx * 0.8
+    learn_ids_copy = learn_ids.copy()
+    for i in range(len(learn_ids)):
+        id, frames, count, reward = learn_ids[i], learn_frames[i], learn_counts[i], rewards[i]
+        if reward < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
+            os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+            os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
+            learn_ids_copy.remove(id)
+            continue
+        total_count += frames // batchSize + 1 if frames % batchSize > 0 else 0
+    learn_ids = learn_ids_copy.copy()
+    this_epochs = EPOCHS if not vaeOverride else 500
+    total_count *= this_epochs
+    model.encoder.model.load_weights("models/vae_e.h5")
+    model.charencoder.model.load_weights("models/char_e.h5")
+    for c in model.nameencoder.chars:
+        c.model.load_weights("models/char_e.h5")
+    model.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
+    model.mousedecoder.model.load_weights("models/mouse_d.h5")
+    learn_data.clear()
+    for epoch in range(this_epochs):
+        for id in learn_ids:
+            if not os.path.exists(os.path.join(DATA_FOLDER, "%s.pkl" % (id))):
+                continue
+            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
+                l_data = pickle.load(f)
+            count = len(l_data["data"])
+            if epoch == 0:
+                l_data["count"] += 1
+                with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
+                    pickle.dump(l_data, f)
+            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+            all_count = count // batchSize + 1 if count % batchSize > 0 else 0
+            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            for i in range(all_count):
+                learn_data = []
+                for x in range(batchSize if i < all_count - 1 else count % batchSize):
                     ret, frame = video.read()
                     if not ret:
-                        video.release()
-                        if i < len(video_ids) - 1:
-                            i += 1
-                            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (video_ids[i])))
-                            continue
-                        else:
-                            vae.model.train_on_batch(frames[0:framesCount]/255, frames[0:framesCount]/255)
-                            framesCount = 0
-                            break
-                    try:
-                        frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
-                        vaeFrames[framesCount] = np.array(frame).astype("uint8").reshape(256,256,3)
-                        framesCount += 1
-                    except:
-                        logger.warning("Frame Skipped")
-                        logger.warning(frame)
-                    if framesCount >= batchSize:
-                        count += 1
-                        framesCount = 0
-                        loss = vae.model.train_on_batch(vaeFrames/255, vaeFrames/255)
-                        if count % 10 == 0:
-                            logger.debug("Image VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, count))
-        del vaeFrames
-        vae.encoder.model.save("models/vae_e_latest.h5")
-        vae.decoder.model.save("models/vae_d_latest.h5")
-        vae_override = random.random() < 0.01
-        if not os.path.exists("models/vae_e.h5") or not os.path.exists("models/vae_d.h5") or vae_override:
-            logger.debug("Image VAE Model Updated")
-            shutil.copy("models/vae_e_latest.h5", "models/vae_e.h5")
-            shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
-        model.clearSession()
-        logger.debug("End: Image VAE Learning")
-        total_count = 0
-        now_count = 0
-        ave = sum(rewards) / len(rewards)
-        mx = max(rewards)
-        LEARN_THRESHOLD = ave + (mx - ave) * 0.75
-        if mx * 0.8 > LEARN_THRESHOLD:
-            LEARN_THRESHOLD = mx * 0.8
-        learn_ids_copy = learn_ids.copy()
-        for i in range(len(learn_ids)):
-            id, frames, count, reward = learn_ids[i], learn_frames[i], learn_counts[i], rewards[i]
-            if reward < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
-                os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
-                learn_ids_copy.remove(id)
-                continue
-            a, b = int(frames / batchSize), frames % batchSize
-            if b > 0:
-                a += 1
-            total_count += a
-        learn_ids = learn_ids_copy.copy()
-        this_epochs = EPOCHS
-        if vae_override:
-            this_epochs = 500
-        total_count *= this_epochs
-        model.encoder.model.load_weights("models/vae_e.h5")
-        model.charencoder.model.load_weights("models/char_e.h5")
-        for c in model.nameencoder.chars:
-            c.model.load_weights("models/char_e.h5")
-        model.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
-        model.mousedecoder.model.load_weights("models/mouse_d.h5")
-        learn_data.clear()
-        for epoch in range(this_epochs):
-            for id in learn_ids:
-                if not os.path.exists(os.path.join(DATA_FOLDER, "%s.pkl" % (id))):
-                    continue
-                with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
-                    l_data = pickle.load(f)
-                count = len(l_data["data"])
-                if epoch == 0:
-                    l_data["count"] += 1
-                    with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
-                        pickle.dump(l_data, f)
-                a, b = int(count / batchSize), count % batchSize
-                video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                all_count = a
-                if b > 0:
-                    all_count += 1
-                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                for i in range(all_count):
-                    c = b
-                    if i != a:
-                        c = batchSize
-                    learn_data = []
-                    for x in range(c):
-                        f = []
-                        try:
-                            _, frame = video.read()
-                            frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
-                        except:
-                            break
-                        f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)) / 255)
-                        f_ctrls = l_data["data"][i*30+x]
-                        for f_ctrl in f_ctrls:
-                            f.append(f_ctrl)
-                        learn_data.append(f)
-                    x, y = conv_all()
-                    loss = -1
-                    try:
-                        loss = model.model.train_on_batch(x, y)
-                    except:
-                        logger.error("Training failure, skipped...")
-                    now_count += 1
-                    if now_count % 10 == 0:
-                        logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f rewards: %.2f/%.2f/%.2f" % (now_count, total_count, now_count/total_count*100, loss[0], min(rewards), ave, max(rewards)))
-                video.release()
-        logger.info("Finish Learning")
-        MODEL_WRITING = True
-        model.model.save("models/model.h5")
-        MODEL_WRITING = False
-        model.clearSession()
-        version = {
-            "version": time.time(),
-            "count": 1
-        }
-        if os.path.exists("models/version.json"):
-            with open("models/version.json", "r") as f:
-                beforeVersion = json.load(f)
-            if "count" in beforeVersion:
-                version["count"] = beforeVersion["count"] + 1
-        with open("models/version.json", "w") as f:
-            json.dump(version, f)
-        training = False
+                        break
+                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
+                    f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)) / 255)
+                    f_ctrls = l_data["data"][i*30+x]
+                    learn_data.append(f_ctrls)
+                x, y = convAll()
+                loss = -1
+                try:
+                    loss = model.model.train_on_batch(x, y)
+                except:
+                    logger.error("Training failure, skipped...")
+                now_count += 1
+                if now_count % 10 == 0:
+                    logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f rewards: %.2f/%.2f/%.2f" % (now_count, total_count, now_count/total_count*100, loss[0], min(rewards), ave, max(rewards)))
+            video.release()
+    logger.info("Finish Learning")
+    MODEL_WRITING = True
+    model.model.save("models/model.h5")
+    MODEL_WRITING = False
+    model.clearSession()
+    version = {
+        "version": time.time(),
+        "count": 1
+    }
+    if os.path.exists("models/version.json"):
+        with open("models/version.json", "r") as f:
+            beforeVersion = json.load(f)
+        if "count" in beforeVersion:
+            version["count"] = beforeVersion["count"] + 1
+    with open("models/version.json", "w") as f:
+        json.dump(version, f)
+    TRAINING = False
+
+def charVAELearn():
+    logger.debug("Start: Char VAE Learning")
+    for epoch in range(100000):
+        x = np.random.random((100, CHARS_COUNT))
+        x = np.where(x == x.max(axis=1, keepdims=True), 1, 0)
+        loss = charVAE.model.train_on_batch(x, x)
+        if epoch % 1000 == 0:
+            logger.debug("Char VAE Loss: %.6f, %d epochs" % (loss, epoch))
+    charVAE.encoder.model.save("models/char_e.h5")
+    charVAE.decoder.model.save("models/char_d.h5")
+    model.clearSession()
+    logger.debug("End: Char VAE Learning")
+
+def keyboardVAELearn():
+    logger.debug("Start: Keyboard VAE Learning")
+    for epoch in range(100000):
+        x = np.random.random((100, 17))
+        x = np.where(x >= 0.5, 1, 0)
+        loss = keyboardVAE.model.train_on_batch(x, x)
+        if epoch % 1000 == 0:
+            logger.debug("Keyboard VAE Loss: %.6f, %d epochs" % (loss, epoch))
+    keyboardVAE.encoder.model.save("models/keyboard_e.h5")
+    keyboardVAE.decoder.model.save("models/keyboard_d.h5")
+    model.clearSession()
+    logger.debug("End: Keyboard VAE Learning")
+
+def mouseVAELearn():
+    logger.debug("Start: Mouse VAE Learning")
+    for epoch in range(100000):
+        x_dir = np.random.random((100, 2)) * 2 - 1
+        x_btn = np.random.random((100, 2))
+        x_btn = np.where(x_btn >= 0.5, 1, 0)
+        loss = mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
+        if epoch % 1000 == 0:
+            logger.debug("Mouse VAE Loss: %.6f, %d epochs" % (loss[0], epoch))
+    mouseVAE.encoder.model.save("models/mouse_e.h5")
+    mouseVAE.decoder.model.save("models/mouse_d.h5")
+    model.clearSession()
+    logger.debug("End: Mouse VAE Learning")
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -587,9 +583,6 @@ class Handler(BaseHTTPRequestHandler):
                     if len(requestBody["data"]) > 0:
                         with open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "w") as f:
                             json.dump(requestBody, f, indent=4)
-                #    if len(requestBody["data"]) > 0:
-                #        data.append(requestBody)
-                #        threading.Thread(target=check).start()
                 status_code = 200
                 response = {
                     'status' : "ok",
