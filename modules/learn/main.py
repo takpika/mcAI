@@ -445,7 +445,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
             x, y = convAll()
             x = x[:-1]
             x.extend(y)
-            y = np.array([rewardAve for _ in range(x[0][0].shape[0])])
+            y = np.array([rewardAve for _ in range(len(data["data"]))])
             loss = critic.model.train_on_batch(x, y)
             logger.info("Critic Loss: %.6f, %d epochs" % (loss, epoch))
     logger.debug("End: Critic Learning")
@@ -469,10 +469,13 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
                 learn_data.append(frameData)
             video.release()
             x, _ = convAll()
-            y = np.array([mx for _ in range(x[0][0].shape[0])])
+            y = np.array([mx for _ in range(len(data["data"]))])
             loss = combined.train_on_batch(x, y)
             logger.info("Actor Loss: %.6f, %d epochs" % (loss, epoch))
     logger.debug("End: Actor Learning")
+    for id in learn_ids:
+        os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
+        os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
     logger.info("Finish Learning")
     MODEL_WRITING = True
     actor.model.save("models/model.h5")
