@@ -85,7 +85,7 @@ class Actor():
 
     def make_model(self):
         self.model = self.build_Model()
-        self.model.compile(optimizer="Adam", loss="mae", metrics=["accuracy"])
+        self.model.compile(optimizer="Adam", loss="mae")
 
     def make_input(self, x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, count):
         return [

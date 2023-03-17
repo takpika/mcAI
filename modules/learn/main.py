@@ -427,6 +427,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     critic.actorcharencoder.model.load_weights("models/char_e.h5")
     logger.debug("Start: Critic Learning")
     for epoch in range(this_epochs):
+        loss_history = []
         for i in range(len(learn_ids)):
             with open(os.path.join(DATA_FOLDER, "%s.pkl" % (learn_ids[i])), "rb") as f:
                 data = pickle.load(f)
@@ -448,10 +449,12 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
             x.extend(y)
             y = np.array([rewardAve for _ in range(len(data["data"]))])
             loss = critic.model.train_on_batch(x, y)
-            logger.info("Critic Loss: %.6f, %d epochs" % (loss, epoch))
+            loss_history.append(loss)
+        logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
     logger.debug("End: Critic Learning")
     logger.debug("Start: Actor Learning")
     for epoch in range(this_epochs):
+        loss_history = []
         for i in range(len(learn_ids)):
             with open(os.path.join(DATA_FOLDER, "%s.pkl" % (learn_ids[i])), "rb") as f:
                 data = pickle.load(f)
@@ -472,7 +475,8 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
             x, _ = convAll()
             y = np.array([mx for _ in range(len(data["data"]))])
             loss = combined.train_on_batch(x, y)
-            logger.info("Actor Loss: %.6f, %d epochs" % (loss, epoch))
+            loss_history.append(loss)
+        logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
     logger.debug("End: Actor Learning")
     for id in learn_ids:
         os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
