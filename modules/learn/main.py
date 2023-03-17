@@ -9,6 +9,8 @@ from datetime import datetime
 from logging import getLogger, DEBUG, StreamHandler, Formatter
 from PIL import Image
 import tensorflow as tf
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -121,7 +123,20 @@ vae = mcai.image.ImageVAE()
 charVAE = mcai.text.CharVAE(CHARS_COUNT)
 keyboardVAE = mcai.control.KeyboardVAE()
 mouseVAE = mcai.control.MouseVAE()
-model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
+actor = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
+critic = mcai.Critic(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
+critic.model.trainable = False
+imgIn = Input(shape=(256, 256, 3))
+regIn = Input(shape=(8))
+memIn = Input(shape=(8))
+reg2In = Input(shape=(8))
+mem2In = Input(shape=(8))
+nameIn = [Input(shape=(CHARS_COUNT)) for _ in range(6)]
+mesIn = Input(shape=(CHARS_COUNT))
+seedIn = Input(shape=(100))
+actorAction = actor.model([imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn])
+valid = critic.model([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], actorAction])
+combined = Model(inputs=[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn], outputs=[valid])
 
 def limit(i):
     i[i>1]=1
@@ -175,7 +190,7 @@ def convAll():
     ai_mem_3 = np.where(ai_mem_3<0.5, 0, 1)
     ai_mem_4 = np.where(ai_mem_4<0.5, 0, 1)
     ai_chat = np.clip(ai_chat, 0, 1)
-    input_data = model.make_input(
+    input_data = actor.make_input(
         x_img, x_reg, x_mem, x_reg2, x_mem2, np.transpose(x_name, (1,0,2)), x_mes, x_img.shape[0]
     )
     output_data = [
@@ -368,7 +383,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
                         video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (video_ids[i])))
                         continue
                     else:
-                        vae.model.train_on_batch(frames[0:framesCount]/255, frames[0:framesCount]/255)
+                        vae.model.train_on_batch(vaeFrames[0:framesCount]/255, vaeFrames[0:framesCount]/255)
                         framesCount = 0
                         break
                 try:
@@ -392,73 +407,77 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
         logger.debug("Image VAE Model Updated")
         shutil.copy("models/vae_e_latest.h5", "models/vae_e.h5")
         shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
-    model.clearSession()
+    mcai.clearSession()
     logger.debug("End: Image VAE Learning")
-    total_count = 0
-    now_count = 0
-    ave = sum(rewards) / len(rewards)
     mx = max(rewards)
-    LEARN_THRESHOLD = ave + (mx - ave) * 0.75
-    if mx * 0.8 > LEARN_THRESHOLD:
-        LEARN_THRESHOLD = mx * 0.8
-    learn_ids_copy = learn_ids.copy()
-    for i in range(len(learn_ids)):
-        id, frames, count, reward = learn_ids[i], learn_frames[i], learn_counts[i], rewards[i]
-        if reward < LEARN_THRESHOLD or count >= USE_LEARN_LIMIT:
-            os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-            os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
-            learn_ids_copy.remove(id)
-            continue
-        total_count += frames // batchSize + 1 if frames % batchSize > 0 else 0
-    learn_ids = learn_ids_copy.copy()
     this_epochs = EPOCHS if not vaeOverride else 500
-    total_count *= this_epochs
-    model.encoder.model.load_weights("models/vae_e.h5")
-    model.charencoder.model.load_weights("models/char_e.h5")
-    for c in model.nameencoder.chars:
+    actor.encoder.model.load_weights("models/vae_e.h5")
+    actor.charencoder.model.load_weights("models/char_e.h5")
+    for c in actor.nameencoder.chars:
         c.model.load_weights("models/char_e.h5")
-    model.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
-    model.mousedecoder.model.load_weights("models/mouse_d.h5")
-    learn_data.clear()
+    actor.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
+    actor.mousedecoder.model.load_weights("models/mouse_d.h5")
+    critic.encoder.model.load_weights("models/vae_e.h5")
+    critic.charencoder.model.load_weights("models/char_e.h5")
+    for c in critic.nameencoder.chars:
+        c.model.load_weights("models/char_e.h5")
+    critic.keyboardencoder.model.load_weights("models/keyboard_e.h5")
+    critic.mouseencoder.model.load_weights("models/mouse_e.h5")
+    critic.actorcharencoder.model.load_weights("models/char_e.h5")
+    logger.debug("Start: Critic Learning")
     for epoch in range(this_epochs):
-        for id in learn_ids:
-            if not os.path.exists(os.path.join(DATA_FOLDER, "%s.pkl" % (id))):
-                continue
-            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
-                l_data = pickle.load(f)
-            count = len(l_data["data"])
-            if epoch == 0:
-                l_data["count"] += 1
-                with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
-                    pickle.dump(l_data, f)
-            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-            all_count = count // batchSize + 1 if count % batchSize > 0 else 0
-            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            for i in range(all_count):
-                learn_data = []
-                for x in range(batchSize if i < all_count - 1 else count % batchSize):
-                    ret, frame = video.read()
-                    if not ret:
-                        break
-                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
-                    f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)) / 255)
-                    f_ctrls = l_data["data"][i*30+x]
-                    learn_data.append(f_ctrls)
-                x, y = convAll()
-                loss = -1
-                try:
-                    loss = model.model.train_on_batch(x, y)
-                except:
-                    logger.error("Training failure, skipped...")
-                now_count += 1
-                if now_count % 10 == 0:
-                    logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f rewards: %.2f/%.2f/%.2f" % (now_count, total_count, now_count/total_count*100, loss[0], min(rewards), ave, max(rewards)))
+        for i in range(len(learn_ids)):
+            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (learn_ids[i])), "rb") as f:
+                data = pickle.load(f)
+            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (learn_ids[i])))
+            rewardAve = rewards[i] / len(data["data"])
+            for frame in data["data"]:
+                ret, frame = video.read()
+                frameData = []
+                if not ret:
+                    break
+                frameImg = Image.fromarray(cv2.cvtColor(frameImg, cv2.COLOR_BGR2RGB)).resize((256, 256))
+                frameImg = np.array(frameImg).astype("uint8").reshape(1, 256, 256, 3) / 255
+                frameData.append(frameImg)
+                frameData.extend(frame)
+                learn_data.append(frameData)
             video.release()
+            x, y = convAll()
+            x = x[:-1]
+            x.extend(y)
+            y = np.array([rewardAve for _ in range(x[0][0].shape[0])])
+            loss = critic.model.train_on_batch(x, y)
+            logger.info("Critic Loss: %.6f, %d epochs" % (loss, epoch))
+    logger.debug("End: Critic Learning")
+    logger.debug("Start: Actor Learning")
+    for epoch in range(this_epochs):
+        for i in range(len(learn_ids)):
+            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (learn_ids[i])), "rb") as f:
+                data = pickle.load(f)
+            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (learn_ids[i])))
+            rewardAve = rewards[i] / len(data["data"])
+            for frame in data["data"]:
+                ret, frame = video.read()
+                frameData = []
+                if not ret:
+                    break
+                frameImg = Image.fromarray(cv2.cvtColor(frameImg, cv2.COLOR_BGR2RGB)).resize((256, 256))
+                frameImg = np.array(frameImg).astype("uint8").reshape(1, 256, 256, 3) / 255
+                frameData.append(frameImg)
+                frameData.extend(frame)
+                frameData.append(rewardAve)
+                learn_data.append(frameData)
+            video.release()
+            x, _ = convAll()
+            y = np.array([mx for _ in range(x[0][0].shape[0])])
+            loss = combined.train_on_batch(x, y)
+            logger.info("Actor Loss: %.6f, %d epochs" % (loss, epoch))
+    logger.debug("End: Actor Learning")
     logger.info("Finish Learning")
     MODEL_WRITING = True
-    model.model.save("models/model.h5")
+    actor.model.save("models/model.h5")
     MODEL_WRITING = False
-    model.clearSession()
+    mcai.clearSession()
     version = {
         "version": time.time(),
         "count": 1
@@ -482,7 +501,7 @@ def charVAELearn():
             logger.debug("Char VAE Loss: %.6f, %d epochs" % (loss, epoch))
     charVAE.encoder.model.save("models/char_e.h5")
     charVAE.decoder.model.save("models/char_d.h5")
-    model.clearSession()
+    mcai.clearSession()
     logger.debug("End: Char VAE Learning")
 
 def keyboardVAELearn():
@@ -495,7 +514,7 @@ def keyboardVAELearn():
             logger.debug("Keyboard VAE Loss: %.6f, %d epochs" % (loss, epoch))
     keyboardVAE.encoder.model.save("models/keyboard_e.h5")
     keyboardVAE.decoder.model.save("models/keyboard_d.h5")
-    model.clearSession()
+    mcai.clearSession()
     logger.debug("End: Keyboard VAE Learning")
 
 def mouseVAELearn():
@@ -509,7 +528,7 @@ def mouseVAELearn():
             logger.debug("Mouse VAE Loss: %.6f, %d epochs" % (loss[0], epoch))
     mouseVAE.encoder.model.save("models/mouse_e.h5")
     mouseVAE.decoder.model.save("models/mouse_d.h5")
-    model.clearSession()
+    mcai.clearSession()
     logger.debug("End: Mouse VAE Learning")
 
 class Handler(BaseHTTPRequestHandler):

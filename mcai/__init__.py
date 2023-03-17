@@ -6,7 +6,10 @@ from random import random
 import os
 from . import image, text, control
 
-class mcAI():
+def clearSession():
+    clear_session()
+
+class Actor():
     def __init__(self, WIDTH, HEIGHT, CHARS_COUNT, logger):
         os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
         self.WIDTH = WIDTH
@@ -24,9 +27,6 @@ class mcAI():
         self.mousedecoder = control.MouseDecoder()
         self.mousedecoder.model.trainable = False
         self.make_model()
-
-    def clearSession(self):
-        clear_session()
 
     def chatEncoder(self):
         name = self.nameencoder.model
@@ -108,3 +108,73 @@ class mcAI():
         result = self.model.predict(args, kwargs, verbose=0)
         clear_session()
         return result
+    
+class Critic:
+    def __init__(self, WIDTH, HEIGHT, CHARS_COUNT, logger):
+        os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+        self.WIDTH = WIDTH
+        self.HEIGHT = HEIGHT
+        self.CHARS_COUNT = CHARS_COUNT
+        self.logger = logger
+        self.encoder = image.ImageEncoder()
+        self.encoder.model.trainable = False
+        self.charencoder = text.CharEncoder(CHARS_COUNT)
+        self.charencoder.model.trainable = False
+        self.nameencoder = text.NameEncoder(CHARS_COUNT)
+        self.nameencoder.model.trainable = False
+        self.keyboardencoder = control.KeyboardEncoder()
+        self.keyboardencoder.model.trainable = False
+        self.mouseencoder = control.MouseEncoder()
+        self.mouseencoder.model.trainable = False
+        self.actorcharencoder = text.CharEncoder(CHARS_COUNT)
+        self.actorcharencoder.model.trainable = False
+        self.make_model()
+
+    def chatEncoder(self):
+        name = self.nameencoder.model
+        hid = Concatenate()([name.output, self.charencoder.model.output])
+        out = Dense(16, activation="relu")(hid)
+        return Model([name.input, self.charencoder.model.input], out)
+
+    def memEncoder(self):
+        reg = Input(shape=(8))
+        data = Input(shape=(8))
+        reg2 = Input(shape=(8))
+        data2 = Input(shape=(8))
+        hid = Concatenate()([reg, data])
+        hid2 = Concatenate()([reg2, data2])
+        hid = Concatenate()([hid, hid2])
+        out = Dense(16, activation="relu")(hid)
+        return Model([reg, data, reg2, data2], out)
+    
+    def buildDataInput(self):
+        videoIn = self.encoder.model
+        memIn = self.memEncoder()
+        chatIn = self.chatEncoder()
+        videoHid = Flatten()(videoIn.output)
+        hid = Concatenate()([videoHid, memIn.output, chatIn.output])
+        hid = Dense(32, activation="relu")(hid)
+        return Model([videoIn.input, memIn.input, chatIn.input], hid)
+    
+    def buildActorInput(self):
+        ctrl = self.keyboardencoder.model
+        mouse = self.mouseencoder.model
+        mem = self.memEncoder()
+        char = self.actorcharencoder.model
+        hid = Concatenate()([ctrl.output, mouse.output, mem.output, char.output])
+        hid = Dense(32, activation="relu")(hid)
+        return Model([ctrl.input, mouse.input, mem.input, char.input], hid)
+    
+    def buildModel(self):
+        dataIn = self.buildDataInput()
+        actorIn = self.buildActorInput()
+        hid = Concatenate()([dataIn.output, actorIn.output])
+        hid = Dense(64, activation="relu")(hid)
+        hid = Dense(64, activation="relu")(hid)
+        hid = Dense(64, activation="relu")(hid)
+        out = Dense(1, activation="relu")(hid)
+        return Model([dataIn.input, actorIn.input], out)
+    
+    def make_model(self):
+        self.model = self.buildModel()
+        self.model.compile(optimizer="Adam", loss="mae", metrics=["accuracy"])

@@ -429,7 +429,7 @@ def pos_distance(pos1, pos2):
 
 video = None
 
-model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
+model = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
 ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%dx%d" % (WIDTH, HEIGHT), server=SERVER)
 
 learn_data = {}
