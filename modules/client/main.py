@@ -686,23 +686,13 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
-                        random.seed(time())
-                        randomThreshold = 1 / math.exp(AI_COUNT/1000)
-                        if random.random() < randomThreshold:
-                            ai_k = np.random.random(ai_k.shape)
-                            ai_m[0] = np.random.random(ai_m[0].shape) * 2 - 1
-                            ai_m[1] = np.random.random(ai_m[1].shape)
-                            for i in ai_mem:
-                                i = np.random.random(i.shape)
-                            ai_chat = np.random.random(ai_chat.shape)
-                        else:
-                            random.seed(random_seed)
-                            ai_k += (np.random.random(ai_k.shape) * 2 - 1) * (random.random() ** 10)
-                            for i in ai_m:
-                                i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
-                            for i in ai_mem:
-                                i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
-                            ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 10)
+                        random.seed(random_seed)
+                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * (random.random() ** 10)
+                        for i in ai_m:
+                            i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
+                        for i in ai_mem:
+                            i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
+                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 10)
                         AI_USING = False
                         ai_k = np.where(ai_k >= 0.5, 1, 0)
                         ai_m[0] = np.clip(ai_m[0], -1, 1)

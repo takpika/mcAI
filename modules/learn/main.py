@@ -412,6 +412,9 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     logger.debug("End: Image VAE Learning")
     mx = max(rewards)
     this_epochs = EPOCHS if not vaeOverride else 500
+    if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
+        actor.model.load_weights("models/model.h5")
+        critic.model.load_weights("models/critic.h5")
     actor.encoder.model.load_weights("models/vae_e.h5")
     actor.charencoder.model.load_weights("models/char_e.h5")
     for c in actor.nameencoder.chars:
@@ -485,6 +488,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     logger.info("Finish Learning")
     MODEL_WRITING = True
     actor.model.save("models/model.h5")
+    critic.model.save("models/critic.h5")
     MODEL_WRITING = False
     mcai.clearSession()
     version = {
