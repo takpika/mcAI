@@ -137,6 +137,7 @@ seedIn = Input(shape=(100))
 actorAction = actor.model([imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn])
 valid = critic.model([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], actorAction])
 combined = Model(inputs=[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn], outputs=[valid])
+combined.compile(loss="mse", optimizer="Adam")
 
 def limit(i):
     i[i>1]=1

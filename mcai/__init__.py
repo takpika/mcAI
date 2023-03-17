@@ -177,4 +177,4 @@ class Critic:
     
     def make_model(self):
         self.model = self.buildModel()
-        self.model.compile(optimizer="Adam", loss="mae", metrics=["accuracy"])
+        self.model.compile(optimizer="Adam", loss="mae")
