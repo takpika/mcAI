@@ -471,7 +471,6 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
                 frameImg = np.array(frameImg).astype("uint8").reshape(1, 256, 256, 3) / 255
                 frameData.append(frameImg)
                 frameData.extend(frame)
-                frameData.append(rewardAve)
                 learn_data.append(frameData)
             video.release()
             x, _ = convAll()
