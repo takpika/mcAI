@@ -396,7 +396,7 @@ def get_newName():
 
 def end_session(hash_id):
     global model
-    model.clearSession()
+    mcai.clearSession()
     gc.collect(2)
     clear_all()
     if hash_id in learn_data:
