@@ -463,7 +463,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
             video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (learn_ids[i])))
             rewardAve = rewards[i] / len(data["data"])
             for frame in data["data"]:
-                ret, frame = video.read()
+                ret, frameImg = video.read()
                 frameData = []
                 if not ret:
                     break
