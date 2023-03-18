@@ -333,10 +333,10 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
         return
     TRAINING = True
     logger.info("Start Learning")
-    mx = max(learn_frames)
-    ave = sum(learn_frames) / len(learn_frames)
+    maxFrames = max(learn_frames)
+    aveFrames = sum(learn_frames) / len(learn_frames)
     beforeLimit = LEARN_LIMIT
-    LEARN_LIMIT = min(mx * 100, 1000)
+    LEARN_LIMIT = min(maxFrames * 100, 1000)
     if LEARN_LIMIT != beforeLimit:
         logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
     logger.debug("Start: Image VAE Learning")
@@ -410,7 +410,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
         shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
     mcai.clearSession()
     logger.debug("End: Image VAE Learning")
-    mx = max(rewards)
+    maxReward = max(rewards)
     this_epochs = EPOCHS if not vaeOverride else 500
     if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
         actor.model.load_weights("models/model.h5")
@@ -429,15 +429,12 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     critic.mouseencoder.model.load_weights("models/mouse_e.h5")
     critic.actorcharencoder.model.load_weights("models/char_e.h5")
     logger.debug("Start: Critic Learning")
-    maxRewardAve = 0
     for epoch in range(this_epochs):
         loss_history = []
         for i in range(len(learn_ids)):
             with open(os.path.join(DATA_FOLDER, "%s.pkl" % (learn_ids[i])), "rb") as f:
                 data = pickle.load(f)
             video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (learn_ids[i])))
-            rewardAve = rewards[i] / len(data["data"])
-            maxRewardAve = max(maxRewardAve, rewardAve)
             for frame in data["data"]:
                 ret, frameImg = video.read()
                 frameData = []
@@ -452,7 +449,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
             x, y = convAll()
             x = x[:-1]
             x.extend(y)
-            y = np.array([rewardAve for _ in range(len(data["data"]))])
+            y = np.array([rewards[i] for _ in range(len(data["data"]))])
             loss = critic.model.train_on_batch(x, y)
             loss_history.append(loss)
         logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
@@ -477,7 +474,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
                 learn_data.append(frameData)
             video.release()
             x, _ = convAll()
-            y = np.array([maxRewardAve for _ in range(len(data["data"]))])
+            y = np.array([maxReward for _ in range(len(data["data"]))])
             loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
         logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
