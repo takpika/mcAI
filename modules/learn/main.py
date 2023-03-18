@@ -329,7 +329,7 @@ def check():
 
 def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards: list):
     global LEARN_LIMIT, TRAINING, MODEL_WRITING
-    global model, vae
+    global model, vae, allMaxReward
     batchSize = 32
     if TRAINING:
         return
