@@ -403,6 +403,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     del vaeFrames
     vae.encoder.model.save("models/vae_e_latest.h5")
     vae.decoder.model.save("models/vae_d_latest.h5")
+
     vaeOverride = random.random() < 0.01
     if not os.path.exists("models/vae_e.h5") or not os.path.exists("models/vae_d.h5") or vaeOverride:
         logger.debug("Image VAE Model Updated")
@@ -410,8 +411,10 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
         shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
     mcai.clearSession()
     logger.debug("End: Image VAE Learning")
+    
     minReward, maxReward, aveReward = min(rewards), max(rewards), sum(rewards)/len(rewards)
     this_epochs = EPOCHS if not vaeOverride else 500
+    
     if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
         actor.model.load_weights("models/model.h5")
         critic.model.load_weights("models/critic.h5")
@@ -428,6 +431,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     critic.keyboardencoder.model.load_weights("models/keyboard_e.h5")
     critic.mouseencoder.model.load_weights("models/mouse_e.h5")
     critic.actorcharencoder.model.load_weights("models/char_e.h5")
+
     logger.debug("Start: Critic Learning")
     for epoch in range(this_epochs):
         loss_history = []
@@ -454,14 +458,15 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
             loss_history.append(loss)
         logger.info("Critic Loss: %.6f, %d epochs %f/%f/%f" % (sum(loss_history)/len(loss_history), epoch, minReward, aveReward, maxReward))
     logger.debug("End: Critic Learning")
+
     logger.debug("Start: Actor Learning")
+    targetReward = aveReward + (maxReward - aveReward) * 0.5
     for epoch in range(this_epochs):
         loss_history = []
         for i in range(len(learn_ids)):
             with open(os.path.join(DATA_FOLDER, "%s.pkl" % (learn_ids[i])), "rb") as f:
                 data = pickle.load(f)
             video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (learn_ids[i])))
-            rewardAve = rewards[i] / len(data["data"])
             for frame in data["data"]:
                 ret, frameImg = video.read()
                 frameData = []
@@ -474,19 +479,23 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
                 learn_data.append(frameData)
             video.release()
             x, _ = convAll()
-            y = np.array([maxReward for _ in range(len(data["data"]))])
+            y = np.array([targetReward for _ in range(len(data["data"]))])
             loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
-        logger.info("Actor Loss: %.6f, %d epochs Reward: %f" % (sum(loss_history)/len(loss_history), epoch, maxReward))
+        logger.info("Actor Loss: %.6f, %d epochs Reward: %f" % (sum(loss_history)/len(loss_history), epoch, targetReward))
     logger.debug("End: Actor Learning")
+
     for id in learn_ids:
         os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
         os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+
     logger.info("Finish Learning")
+
     MODEL_WRITING = True
     actor.model.save("models/model.h5")
     critic.model.save("models/critic.h5")
     MODEL_WRITING = False
+
     mcai.clearSession()
     version = {
         "version": time.time(),
