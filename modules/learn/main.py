@@ -139,6 +139,8 @@ valid = critic.model([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], 
 combined = Model(inputs=[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn], outputs=[valid])
 combined.compile(loss="mse", optimizer="Adam")
 
+allMaxReward = 0
+
 def limit(i):
     i[i>1]=1
     i[i<0]=0
@@ -460,7 +462,9 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     logger.debug("End: Critic Learning")
 
     logger.debug("Start: Actor Learning")
-    targetReward = aveReward + (maxReward - aveReward) * 0.5
+    #targetReward = aveReward + (maxReward - aveReward) * 0.5
+    allMaxReward = max(allMaxReward, maxReward)
+    targetReward = allMaxReward
     for epoch in range(this_epochs):
         loss_history = []
         for i in range(len(learn_ids)):
