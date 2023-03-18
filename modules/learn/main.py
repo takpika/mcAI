@@ -410,7 +410,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
         shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
     mcai.clearSession()
     logger.debug("End: Image VAE Learning")
-    maxReward = max(rewards)
+    minReward, maxReward, aveReward = min(rewards), max(rewards), sum(rewards)/len(rewards)
     this_epochs = EPOCHS if not vaeOverride else 500
     if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
         actor.model.load_weights("models/model.h5")
@@ -452,7 +452,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
             y = np.array([rewards[i] for _ in range(len(data["data"]))])
             loss = critic.model.train_on_batch(x, y)
             loss_history.append(loss)
-        logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
+        logger.info("Critic Loss: %.6f, %d epochs %f/%f/%f" % (sum(loss_history)/len(loss_history), epoch, minReward, aveReward, maxReward))
     logger.debug("End: Critic Learning")
     logger.debug("Start: Actor Learning")
     for epoch in range(this_epochs):
@@ -477,7 +477,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
             y = np.array([maxReward for _ in range(len(data["data"]))])
             loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
-        logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
+        logger.info("Actor Loss: %.6f, %d epochs Reward: %f" % (sum(loss_history)/len(loss_history), epoch, maxReward))
     logger.debug("End: Actor Learning")
     for id in learn_ids:
         os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
