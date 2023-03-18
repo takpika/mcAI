@@ -336,7 +336,7 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     maxFrames = max(learn_frames)
     aveFrames = sum(learn_frames) / len(learn_frames)
     beforeLimit = LEARN_LIMIT
-    LEARN_LIMIT = min(maxFrames * 100, 1000)
+    LEARN_LIMIT = max(maxFrames * 100, 1000)
     if LEARN_LIMIT != beforeLimit:
         logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
     logger.debug("Start: Image VAE Learning")
