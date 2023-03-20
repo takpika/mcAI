@@ -287,9 +287,9 @@ def check():
                     continue
             except:
                 pass
-            videoFrames.remove(id)
-            moveFrames.remove(id)
-            ids_copy.remove(id)
+            videoFrames.pop(id)
+            moveFrames.pop(id)
+            ids_copy.pop(id)
         ids = ids_copy.copy()
         if len(counts) > 0:
             for id in ids:
@@ -305,7 +305,7 @@ def check():
                     "data": c_data
                 }
                 learnFrames[id] = allData
-                moveFrames.remove(id)
+                moveFrames.pop(id)
         learnIDs, learnFrameCount, rewards = checkCount()
         CHECK_FIRSTRUN = False
         logger.debug("Check done, current total frames: %d/%d" % (sum(learnFrameCount), LEARN_LIMIT))
@@ -432,10 +432,10 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     logger.debug("End: Actor Learning")
 
     for id in learnIDs:
-        videoFrames.remove(id)
-        learnFrames.remove(id)
+        videoFrames.pop(id)
+        learnFrames.pop(id)
         if id in moveFrames:
-            moveFrames.remove(id)
+            moveFrames.pop(id)
 
     logger.info("Finish Learning")
 
