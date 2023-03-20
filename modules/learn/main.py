@@ -279,13 +279,10 @@ def check():
         ids_copy = ids.copy()
         for i in range(len(ids)):
             id = ids[i]
-            try:
-                count = len(moveFrames[id]["data"])
-                if count >= 2:
-                    counts.append(count)
-                    continue
-            except:
-                pass
+            count = len(moveFrames[id]["data"])
+            if count >= 2:
+                counts.append(count)
+                continue
             videoFrames.pop(id)
             moveFrames.pop(id)
             ids_copy.remove(id)
