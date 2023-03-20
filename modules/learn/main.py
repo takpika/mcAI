@@ -260,6 +260,7 @@ MODEL_WRITING = False
 CHECK_FIRSTRUN = True
 
 def checkCount():
+    global learnFrames
     learnIDs = list(learnFrames.keys())
     learnFrameCount = [len(learnFrames[id]["data"]) for id in learnIDs]
     rewards = [learnFrames[id]["reward"] for id in learnIDs]
