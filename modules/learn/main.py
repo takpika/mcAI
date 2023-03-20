@@ -390,7 +390,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
         for i in range(len(learnIDs)):
             id = learnIDs[i]
             data = learnFrames[id]
-            for framePos in len(data["data"]):
+            for framePos in range(len(data["data"])):
                 frameImg = videoFrames[id][framePos].reshape(1, 256, 256, 3) / 255
                 frameData = []
                 frameData.append(frameImg)
@@ -414,7 +414,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
         for i in range(len(learnIDs)):
             id = learnIDs[i]
             data = learnFrames[id]
-            for framePos in len(data["data"]):
+            for framePos in range(len(data["data"])):
                 frameImg = videoFrames[id][framePos] / 255
                 frameData = []
                 frameData.append(frameImg)
