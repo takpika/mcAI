@@ -261,8 +261,6 @@ CHECK_FIRSTRUN = True
 
 def checkCount():
     learnIDs = list(learnFrames.keys())
-    learnIDs.extend(list(videoFrames.keys()))
-    learnIDs = [id for id in set(learnIDs) if learnIDs.count(id) == 2]
     learnFrameCount = [len(learnFrames[id]["data"]) for id in learnIDs]
     rewards = [learnFrames[id]["reward"] for id in learnIDs]
     return learnIDs, learnFrameCount, rewards
