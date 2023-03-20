@@ -569,7 +569,7 @@ class Handler(BaseHTTPRequestHandler):
                 requestBody = json.loads(self.rfile.read(content_len).decode('utf-8'))
                 if "data" in requestBody:
                     if len(requestBody["data"]) > 0:
-                        moveFrames[id] = requestBody["data"]
+                        moveFrames[id] = requestBody
                 status_code = 200
                 response = {
                     'status' : "ok",
