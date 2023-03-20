@@ -345,6 +345,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     for id in learnFrames.keys():
         videoLength = len(learnFrames[id]["data"])
         vaeFrames[i:i+videoLength] = videoFrames[id][:videoLength]
+        i += videoLength
     iters = i // batchSize
     for epoch in range(2):
         for iter in range(iters):
