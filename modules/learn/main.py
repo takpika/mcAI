@@ -560,7 +560,10 @@ class Handler(BaseHTTPRequestHandler):
                     'status': 'ok'
                 }
             elif self.path == "/videoND":
-                videoFrames[id] = np.frombuffer(self.rfile.read(content_len), dtype=np.uint8)
+                width = int(self.headers.get('width'))
+                height = int(self.headers.get('height'))
+                frameCount = int(self.headers.get('frameCount'))
+                videoFrames[id] = np.frombuffer(self.rfile.read(content_len), dtype=np.uint8).reshape((frameCount, height, width, 3))
                 status_code = 200
                 response = {
                     'status': 'ok'
