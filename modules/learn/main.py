@@ -266,7 +266,7 @@ def checkCount():
     return learnIDs, learnFrameCount, rewards
 
 def check():
-    global data
+    global data, videoFrames, moveFrames, learnFrames
     global CHECK_PROCESSING, CHECK_FIRSTRUN, LEARN_LIMIT, TRAINING
     list_ids = list(videoFrames.keys())
     list_ids.extend(list(moveFrames.keys()))
