@@ -289,7 +289,7 @@ def check():
                 pass
             videoFrames.pop(id)
             moveFrames.pop(id)
-            ids_copy.pop(id)
+            ids_copy.remove(id)
         ids = ids_copy.copy()
         if len(counts) > 0:
             for id in ids:
