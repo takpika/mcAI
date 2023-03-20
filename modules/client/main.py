@@ -117,7 +117,6 @@ SERVER = config["mc_server"]
 L_SERVER = config["learn_server"]
 MC_FOLDER = config["mc_folder"]
 WORK_DIR = config["work_dir"]
-VIDEO_FILE = config["video_file"]
 
 WIDTH = config["resolution"]["x"]
 HEIGHT = config["resolution"]["y"]
@@ -175,13 +174,13 @@ def clear_all():
     clear_keyboard()
     clear_mouse()
 
-def handle_keyboard(k, value):
+def handle_keyboard(k : str, value : bool):
     if value:
         pyautogui.keyDown(k)
     else:
         pyautogui.keyUp(k)
 
-def handle_mouse(k, value):
+def handle_mouse(k : str, value : bool):
     if k == "left":
         if value:
             mouse.press(mbt.left)
@@ -194,17 +193,17 @@ def handle_mouse(k, value):
             mouse.release(mbt.right)
 
 
-def conv_char(char):
+def conv_char(char : str):
     data = np.zeros((CHARS_COUNT))
     for i in range(CHARS_COUNT):
         if chars["chars"][i] == char:
             data[i] = 1
     return data
 
-def bin_to_char(bin):
+def bin_to_char(bin : np.ndarray):
     return chars["chars"][np.argmax(bin)]
 
-def bin_to_name(bin):
+def bin_to_name(bin : np.ndarray):
     name = ""
     for b in bin:
         char = bin_to_char(b)
@@ -214,7 +213,7 @@ def bin_to_name(bin):
             break
     return name
 
-def conv_name(name):
+def conv_name(name : str):
     remain = 6 - len(name)
     data = [conv_char(name[i]) for i in range(len(name))]
     for i in range(remain):
@@ -232,16 +231,16 @@ def check_mousecursor():
     if (pos[1] < screen.height/2-HEIGHT/2) or pos[1] > screen.height/2+HEIGHT/2:
         move_center()
 
-def drawPointer(img):
+def drawPointer(img : Image.Image):
     draw = ImageDraw.Draw(img)
     pos = mouse.position
     draw.point(((pos[0]-int(screen.width/2-WIDTH/2), pos[1]-int(screen.height/2-HEIGHT/2))), fill=(255,0,0))
     return img
 
-def getBit(value, bit):
+def getBit(value : int, bit : int):
     return value >> bit & 0b1
 
-def convBit(value):
+def convBit(value : float):
     value[value>=0.5] = 1
     value[value<0.5] = 0
     data = 0
@@ -255,21 +254,20 @@ def convBit(value):
             data = 0 << i | data
     return data
 
-def send_learnData(hash_id):
-    global learn_data, config, L_SERVER, SERVER
-    if hash_id in learn_data:
-        if len(learn_data[hash_id]) >= 2:
+def send_learnData(hashID : str, endFramePos : int):
+    global learn_data, config, videoFrames, L_SERVER, SERVER
+    if hashID in learn_data:
+        if len(learn_data[hashID]) >= 2:
             try:
                 headers = {
-                    'content-type': 'video/mp4',
-                    'id': hash_id
+                    'content-type': 'application/octet-stream',
+                    'id': hashID
                 }
-                with open(os.path.join(WORK_DIR, "%s.mp4" % (hash_id)), "rb") as f:
-                    requests.post("http://%s:%d/video" % (L_SERVER, PORT), data=f.read(), headers=headers)
+                requests.post("http://%s:%d/videoND" % (L_SERVER, PORT), data=videoFrames[:endFramePos+1].tobytes(), headers=headers)
                 headers['content-type'] = 'application/json'
                 sendData = {
                     "health": hp,
-                    "data": learn_data[hash_id]
+                    "data": learn_data[hashID]
                 }
                 requests.post("http://%s:%d/" % (L_SERVER, PORT), json=sendData, headers=headers)
             except requests.exceptions.ConnectionError:
@@ -278,27 +276,19 @@ def send_learnData(hash_id):
                     config = json.loads(res.text)["config"]
                     L_SERVER = config["learn_server"]
                     SERVER = config["mc_server"]
-        os.remove(os.path.join(WORK_DIR, "%s.mp4" % (hash_id)))
-    files = os.listdir(WORK_DIR)
-    for file in files:
-        if file.endswith(".mp4"):
-            os.remove(os.path.join(WORK_DIR, file))
     learn_data.clear()
 
 def start_recording():
-    global video
+    global videoFramePos
     global learn_data
     threading.Thread(target=download_update).start()
-    hash_id = json.loads(requests.get('http://%s:%d/id' % (CENTRAL_IP, PORT)).text)["info"]["id"]
-    fourcc = cv2.VideoWriter_fourcc('m','p','4','v')
-    video = cv2.VideoWriter(os.path.join(WORK_DIR, "%s.mp4" % (hash_id)), fourcc, 10, (WIDTH, HEIGHT))
-    learn_data[hash_id] = []
-    return hash_id
+    hashID = json.loads(requests.get('http://%s:%d/id' % (CENTRAL_IP, PORT)).text)["info"]["id"]
+    videoFramePos = 0
+    learn_data[hashID] = []
+    return hashID
 
-def stop_recording(hash_id):
-    global video
-    video.release()
-    threading.Thread(target=send_learnData, args=(hash_id,)).start()
+def stop_recording(hashID : str, endFramePos : int):
+    threading.Thread(target=send_learnData, args=(hashID, endFramePos)).start()
 
 def check_version():
     data = json.loads(requests.get("http://%s:%d/" % (L_SERVER, PORT)).text)
@@ -394,13 +384,13 @@ def get_newName():
             pass
     return res["info"]["name"]
 
-def end_session(hash_id):
+def end_session(hashID):
     global model
     mcai.clearSession()
     gc.collect(2)
     clear_all()
-    if hash_id in learn_data:
-        stop_recording(hash_id)
+    if hashID in learn_data:
+        stop_recording(hashID)
 
 def hostname2name(hostname):
     data = json.loads(requests.get('http://%s:%d/hostname?hostname=%s' % (CENTRAL_IP, PORT, hostname)).text)
@@ -427,7 +417,7 @@ def force_quit():
 def pos_distance(pos1, pos2):
     return sqrt((pos1[0]-pos2[0])**2+(pos1[1]-pos2[1])**2+(pos1[2]-pos2[2])**2)
 
-video = None
+videoFrames, videoFramePos = np.empty((FRAME_LIMIT, HEIGHT, WIDTH, 3), dtype="uint8"), 0
 
 model = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
 ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%dx%d" % (WIDTH, HEIGHT), server=SERVER)
@@ -456,7 +446,7 @@ if __name__ == "__main__":
                     break
                 send_message_data = ""
                 random_seed = time()
-                hash_id = start_recording()
+                hashID = start_recording()
                 mem = np.random.random((2**8, 8))
                 if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
                     model.model.load_weights(os.path.join(WORK_DIR, "model.h5"))
@@ -476,8 +466,8 @@ if __name__ == "__main__":
                 position_history = []
                 newbie, newbieDamage, newbieDamageChecked = True, False, False
                 while True:
-                    if not hash_id in learn_data:
-                        learn_data[hash_id] = []
+                    if not hashID in learn_data:
+                        learn_data[hashID] = []
                     url = "http://localhost:%d/" % (PORT)
                     send_data = {}
                     if (x != 0 and not inscreen):
@@ -499,13 +489,13 @@ if __name__ == "__main__":
                             failure += 1
                         if failure >= 10:
                             logger.error("Connection Error")
-                            end_session(hash_id)
+                            end_session(hashID)
                             subprocess.run(["killall", "-9", "java"])
                             exit(10)
                     if data["screen"]:
                         if "net.minecraft.client.gui.screens.DisconnectedScreen" in data["screenInfo"]["id"]:
                             logger.warning("Disconnected. Auto restart...")
-                            end_session(hash_id)
+                            end_session(hashID)
                             force_quit()
                             break
                     if data["playing"]:
@@ -566,7 +556,7 @@ if __name__ == "__main__":
                                 nextHunger += 120
                         if data["player"]["death"]:
                             logger.info("Dead")
-                            end_session(hash_id)
+                            end_session(hashID)
                             for _ in range(100):
                                 data = json.loads(requests.get(url).text)
                                 if data["playing"]:
@@ -623,7 +613,7 @@ if __name__ == "__main__":
                             if head_topbtm_time == -1:
                                 head_topbtm_time = time()
                             else:
-                                if time() - head_topbtm_time >= 3 and len(learn_data[hash_id]) >= 2:
+                                if time() - head_topbtm_time >= 3 and len(learn_data[hashID]) >= 2:
                                     logger.info("Head spinning")
                                     for _ in range(10):
                                         try:
@@ -648,7 +638,7 @@ if __name__ == "__main__":
                             average_pos = (average_pos[0] + p[0], average_pos[1] + p[1], average_pos[2] + p[2])
                         average_pos = (average_pos[0] / len(position_history), average_pos[1] / len(position_history), average_pos[2] / len(position_history))
                         if pos_distance(average_pos, pos_float) <= 0.5 and len(position_history) >= 10:
-                            if pos_distance(position_history[-1], position_history[-6]) <= 1 and len(learn_data[hash_id]) >= 2:
+                            if pos_distance(position_history[-1], position_history[-6]) <= 1 and len(learn_data[hashID]) >= 2:
                                 logger.info("No Walking")
                                 for _ in range(10):
                                     try:
@@ -734,8 +724,8 @@ if __name__ == "__main__":
                             send_message_data = send_message_data[:CHARS_LIMIT]
                         random.seed(time())
                         if random.random() < 0.1:
-                            frame = cv2.cvtColor((x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8"), cv2.COLOR_RGB2BGR)
-                            video.write(frame)
+                            videoFrames[videoFramePos] = (x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8")
+                            videoFramePos += 1
                             this_frame = {
                                 "health": data["player"]["health"],
                                 "input": {
@@ -765,21 +755,21 @@ if __name__ == "__main__":
                                     "chat": bin_to_char(ai_chat[0])
                                 }
                             }
-                            learn_data[hash_id].append(this_frame)
-                        if not hash_id in learn_data:
-                            hash_id = start_recording()
-                        #elif len(learn_data[hash_id]) > FRAME_LIMIT:
-                        #    stop_recording(hash_id)
-                        #    hash_id = start_recording()
+                            learn_data[hashID].append(this_frame)
+                        if not hashID in learn_data:
+                            hashID = start_recording()
+                        elif len(learn_data[hashID]) > FRAME_LIMIT:
+                            stop_recording(hashID)
+                            hashID = start_recording()
                     else:
                         if played:
                             logger.warning("Logged out. Auto restart...")
-                            end_session(hash_id)
+                            end_session(hashID)
                             force_quit()
                             break
                         elif time() - mc_start_time > 180:
                             logger.warning("Maybe disconnected. Auto restart...")
-                            end_session(hash_id)
+                            end_session(hashID)
                             force_quit()
                             break
                     if len(data["message"]) > 0:
@@ -792,6 +782,6 @@ if __name__ == "__main__":
         for i in t:
             logger.error(i)
     finally:
-        if not (hash_id == "" or hash_id == None):
-            end_session(hash_id)
+        if not (hashID == "" or hashID == None):
+            end_session(hashID)
         force_quit()

@@ -24,6 +24,8 @@ SERV_TYPE = "learn"
 CENTRAL_IP = None
 GPU_AVAIL = tf.test.is_gpu_available()
 
+videoFrames, moveFrames, learnFrames = {}, {}, {}
+
 if not os.path.exists("models/"):
     os.mkdir("models")
 
@@ -258,19 +260,20 @@ MODEL_WRITING = False
 CHECK_FIRSTRUN = True
 
 def checkCount():
-    learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
-    learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
-    learn_frames = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["data"]) for id in learn_ids]
-    learn_counts = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["count"] for id in learn_ids]
-    rewards = [pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))["reward"] for id in learn_ids]
-    return learn_ids, learn_frames, learn_counts, rewards
+    learnIDs = list(learnFrames.keys())
+    learnIDs.extend(list(videoFrames.keys()))
+    learnIDs = [id for id in set(learnIDs) if learnIDs.count(id) == 2]
+    learnFrameCount = [len(learnFrames[id]["data"]) for id in learnIDs]
+    rewards = [learnFrames[id]["reward"] for id in learnIDs]
+    return learnIDs, learnFrameCount, rewards
 
 def check():
     global data
     global CHECK_PROCESSING, CHECK_FIRSTRUN, LEARN_LIMIT, TRAINING
-    list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
+    list_ids = list(videoFrames.keys())
+    list_ids.extend(list(moveFrames.keys()))
     ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
-    learn_frames = [0]
+    learnFrameCount : list[int] = [0]
     if len(ids) >= 10 and not CHECK_PROCESSING and not TRAINING:
         CHECK_PROCESSING = True
         counts = []
@@ -278,22 +281,19 @@ def check():
         for i in range(len(ids)):
             id = ids[i]
             try:
-                count = len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"])
+                count = len(moveFrames[id]["data"])
                 if count >= 2:
                     counts.append(count)
                     continue
             except:
                 pass
-            os.remove(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)))
-            os.remove(os.path.join(SAVE_FOLDER, "%s.json" % (id)))
+            videoFrames.remove(id)
+            moveFrames.remove(id)
             ids_copy.remove(id)
         ids = ids_copy.copy()
         if len(counts) > 0:
             for id in ids:
-                shutil.move(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                shutil.move(os.path.join(SAVE_FOLDER, "%s.json" % (id)), os.path.join(DATA_FOLDER, "%s.json" % (id)))
-                with open(os.path.join(DATA_FOLDER, "%s.json" % (id)), "r") as f:
-                    data = json.loads(f.read())
+                data = moveFrames[id]
                 c_data = []
                 reward = 0.0
                 for i in range(len(data["data"])):
@@ -301,20 +301,18 @@ def check():
                     c_data.append(daf)
                     reward += data["data"][i]["health"] * ( 0.999 ** i )
                 allData = {
-                    "count": 0,
                     "reward": reward,
                     "data": c_data
                 }
-                with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
-                    pickle.dump(allData, f)
-                os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
-        learn_ids, learn_frames, learn_counts, rewards = checkCount()
+                learnFrames[id] = allData
+                moveFrames.remove(id)
+        learnIDs, learnFrameCount, rewards = checkCount()
         CHECK_FIRSTRUN = False
-        logger.debug("Check done, current total frames: %d/%d" % (sum(learn_frames), LEARN_LIMIT))
+        logger.debug("Check done, current total frames: %d/%d" % (sum(learnFrameCount), LEARN_LIMIT))
         CHECK_PROCESSING = False
     if CHECK_FIRSTRUN:
-        learn_ids, learn_frames, learn_counts, rewards = checkCount()
-        logger.debug("First Run, current total frames: %d" % (sum(learn_frames)))
+        learnIDs, learnFrameCount, rewards = checkCount()
+        logger.debug("First Run, current total frames: %d" % (sum(learnFrameCount)))
         CHECK_FIRSTRUN = False
         TRAINING = True
         if not os.path.exists("models/char_e.h5") or not os.path.exists("models/char_d.h5"):
@@ -324,10 +322,10 @@ def check():
         if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
             mouseVAELearn()
         TRAINING = False
-    if sum(learn_frames) >= LEARN_LIMIT and not TRAINING:
-        learn(learn_ids, learn_frames, learn_counts, rewards)
+    if sum(learnFrameCount) >= LEARN_LIMIT and not TRAINING:
+        learn(learnIDs, learnFrameCount, rewards)
 
-def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards: list):
+def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     global LEARN_LIMIT, TRAINING, MODEL_WRITING
     global model, vae, allMaxReward
     batchSize = 32
@@ -335,73 +333,29 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
         return
     TRAINING = True
     logger.info("Start Learning")
-    maxFrames = max(learn_frames)
-    aveFrames = sum(learn_frames) / len(learn_frames)
+    maxFrames = max(learnFrameCount)
+    aveFrames = sum(learnFrameCount) / len(learnFrameCount)
     beforeLimit = LEARN_LIMIT
-    LEARN_LIMIT = max(maxFrames * 100, 1000)
-    if LEARN_LIMIT != beforeLimit:
-        logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
+    LEARN_LIMIT = 1000
+    #LEARN_LIMIT = max(maxFrames * 100, 1000)
+    #if LEARN_LIMIT != beforeLimit:
+    #    logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
     logger.debug("Start: Image VAE Learning")
     if os.path.exists("models/vae_d_latest.h5") and os.path.exists("models/vae_e_latest.h5"):
         vae.decoder.model.load_weights("models/vae_d_latest.h5")
         vae.encoder.model.load_weights("models/vae_e_latest.h5")
-    video_ids = [file.replace(".mp4", "") for file in os.listdir(DATA_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
-    if sum(learn_frames) <= 10000:
-        logger.debug("Start: Image VAE Learning (Small Data)")
-        vaeFrames = np.empty((sum(learn_frames), 256, 256, 3), dtype=np.uint8)
-        i = 0
-        for id in video_ids:
-            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-            while True:
-                ret, frame = video.read()
-                if not ret:
-                    video.release()
-                    break
-                try:
-                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256, 256))
-                    vaeFrames[i] = np.array(frame)
-                    i += 1
-                except:
-                    pass
-        iters = i // batchSize
-        for epoch in range(2):
-            for iter in range(iters):
-                loss = vae.model.train_on_batch(vaeFrames[iter*batchSize:(iter+1)*batchSize]/255, vaeFrames[iter*batchSize:(iter+1)*batchSize]/255)
-                if iter % 10 == 0:
-                    logger.debug("Image VAE Loss: %.6f, %d epochs, %d iters" % (loss, epoch, iter))
-    else:
-        logger.debug("Start: Image VAE Learning (Large Data)")
-        vaeFrames = np.empty((batchSize, 256, 256, 3), dtype=np.uint8)
-        for epoch in range(2):
-            i = 0
-            iter = 0
-            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (video_ids[i])))
-            framesCount = 0
-            while True:
-                ret, frame = video.read()
-                if not ret:
-                    video.release()
-                    if i < len(video_ids) - 1:
-                        i += 1
-                        video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (video_ids[i])))
-                        continue
-                    else:
-                        vae.model.train_on_batch(vaeFrames[0:framesCount]/255, vaeFrames[0:framesCount]/255)
-                        framesCount = 0
-                        break
-                try:
-                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
-                    vaeFrames[framesCount] = np.array(frame).astype("uint8").reshape(256,256,3)
-                    framesCount += 1
-                except:
-                    logger.warning("Frame Skipped")
-                    logger.warning(frame)
-                if framesCount >= batchSize:
-                    iter += 1
-                    framesCount = 0
-                    loss = vae.model.train_on_batch(vaeFrames/255, vaeFrames/255)
-                    if iter % 10 == 0:
-                        logger.debug("Image VAE Loss: %.6f, %d epochs, %3d" % (loss, epoch, iter))
+    vaeFrames = np.empty((sum(learnFrameCount), 256, 256, 3), dtype=np.uint8)
+    i = 0
+    for id in videoFrames.keys():
+        for videoFramePos in range(len(learnFrames[id]["data"])):
+            vaeFrames[i] = np.array(videoFrames[id]["data"][videoFramePos])
+            i += 1
+    iters = i // batchSize
+    for epoch in range(2):
+        for iter in range(iters):
+            loss = vae.model.train_on_batch(vaeFrames[iter*batchSize:(iter+1)*batchSize]/255, vaeFrames[iter*batchSize:(iter+1)*batchSize]/255)
+            if iter % 10 == 0:
+                logger.debug("Image VAE Loss: %.6f, %d epochs, %d iters" % (loss, epoch, iter))
     del vaeFrames
     vae.encoder.model.save("models/vae_e_latest.h5")
     vae.decoder.model.save("models/vae_d_latest.h5")
@@ -437,21 +391,15 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     logger.debug("Start: Critic Learning")
     for epoch in range(this_epochs):
         loss_history = []
-        for i in range(len(learn_ids)):
-            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (learn_ids[i])), "rb") as f:
-                data = pickle.load(f)
-            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (learn_ids[i])))
-            for frame in data["data"]:
-                ret, frameImg = video.read()
+        for i in range(len(learnIDs)):
+            id = learnIDs[i]
+            data = learnFrames[id]
+            for framePos in len(data["data"]):
+                frameImg = videoFrames[id][framePos].reshape(1, 256, 256, 3) / 255
                 frameData = []
-                if not ret:
-                    break
-                frameImg = Image.fromarray(cv2.cvtColor(frameImg, cv2.COLOR_BGR2RGB)).resize((256, 256))
-                frameImg = np.array(frameImg).astype("uint8").reshape(1, 256, 256, 3) / 255
                 frameData.append(frameImg)
-                frameData.extend(frame)
+                frameData.extend(data["data"][framePos])
                 learn_data.append(frameData)
-            video.release()
             x, y = convAll()
             x = x[:-1]
             x.extend(y)
@@ -467,21 +415,15 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
     targetReward = allMaxReward
     for epoch in range(this_epochs):
         loss_history = []
-        for i in range(len(learn_ids)):
-            with open(os.path.join(DATA_FOLDER, "%s.pkl" % (learn_ids[i])), "rb") as f:
-                data = pickle.load(f)
-            video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (learn_ids[i])))
-            for frame in data["data"]:
-                ret, frameImg = video.read()
+        for i in range(len(learnIDs)):
+            id = learnIDs[i]
+            data = learnFrames[id]
+            for framePos in len(data["data"]):
+                frameImg = videoFrames[id][framePos] / 255
                 frameData = []
-                if not ret:
-                    break
-                frameImg = Image.fromarray(cv2.cvtColor(frameImg, cv2.COLOR_BGR2RGB)).resize((256, 256))
-                frameImg = np.array(frameImg).astype("uint8").reshape(1, 256, 256, 3) / 255
                 frameData.append(frameImg)
-                frameData.extend(frame)
+                frameData.extend(data["data"][framePos])
                 learn_data.append(frameData)
-            video.release()
             x, _ = convAll()
             y = np.array([targetReward for _ in range(len(data["data"]))])
             loss = combined.train_on_batch(x, y)
@@ -489,9 +431,11 @@ def learn(learn_ids: list, learn_frames: list[int], learn_counts: list, rewards:
         logger.info("Actor Loss: %.6f, %d epochs Reward: %f" % (sum(loss_history)/len(loss_history), epoch, targetReward))
     logger.debug("End: Actor Learning")
 
-    for id in learn_ids:
-        os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
-        os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
+    for id in learnIDs:
+        videoFrames.remove(id)
+        learnFrames.remove(id)
+        if id in moveFrames:
+            moveFrames.remove(id)
 
     logger.info("Finish Learning")
 
@@ -619,12 +563,17 @@ class Handler(BaseHTTPRequestHandler):
                 response = {
                     'status': 'ok'
                 }
+            elif self.path == "/videoND":
+                videoFrames[id] = np.frombuffer(self.rfile.read(content_len), dtype=np.uint8)
+                status_code = 200
+                response = {
+                    'status': 'ok'
+                }
             else:
                 requestBody = json.loads(self.rfile.read(content_len).decode('utf-8'))
                 if "data" in requestBody:
                     if len(requestBody["data"]) > 0:
-                        with open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "w") as f:
-                            json.dump(requestBody, f, indent=4)
+                        moveFrames[id] = requestBody["data"]
                 status_code = 200
                 response = {
                     'status' : "ok",
