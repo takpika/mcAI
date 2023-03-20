@@ -263,7 +263,7 @@ def send_learnData(hashID : str, endFramePos : int):
                     'content-type': 'application/octet-stream',
                     'id': hashID
                 }
-                requests.post("http://%s:%d/videoND" % (L_SERVER, PORT), data=videoFrames[:endFramePos+1].tobytes(), headers=headers)
+                requests.post("http://%s:%d/videoND" % (L_SERVER, PORT), data=videoFrames[:endFramePos].tobytes(), headers=headers)
                 headers['content-type'] = 'application/json'
                 sendData = {
                     "health": hp,
