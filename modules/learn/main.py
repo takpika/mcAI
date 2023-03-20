@@ -342,10 +342,9 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
         vae.encoder.model.load_weights("models/vae_e_latest.h5")
     vaeFrames = np.empty((sum(learnFrameCount), 256, 256, 3), dtype=np.uint8)
     i = 0
-    for id in videoFrames.keys():
-        for videoFramePos in range(len(learnFrames[id]["data"])):
-            vaeFrames[i] = videoFrames[id][videoFramePos]
-            i += 1
+    for id in learnFrames.keys():
+        videoLength = len(learnFrames[id]["data"])
+        vaeFrames[i:i+videoLength] = videoFrames[id][:videoLength]
     iters = i // batchSize
     for epoch in range(2):
         for iter in range(iters):
