@@ -278,7 +278,7 @@ def send_learnData(hashID : str, endFramePos : int):
                     SERVER = config["mc_server"]
     learn_data.clear()
 
-def start_recording():
+def startRecording():
     global videoFramePos
     global learn_data
     threading.Thread(target=download_update).start()
@@ -287,7 +287,7 @@ def start_recording():
     learn_data[hashID] = []
     return hashID
 
-def stop_recording(hashID : str, endFramePos : int):
+def stopRecording(hashID : str, endFramePos : int):
     threading.Thread(target=send_learnData, args=(hashID, endFramePos)).start()
 
 def check_version():
@@ -385,12 +385,12 @@ def get_newName():
     return res["info"]["name"]
 
 def end_session(hashID):
-    global model
+    global model, videoFramePos
     mcai.clearSession()
     gc.collect(2)
     clear_all()
     if hashID in learn_data:
-        stop_recording(hashID)
+        stopRecording(hashID, videoFramePos)
 
 def hostname2name(hostname):
     data = json.loads(requests.get('http://%s:%d/hostname?hostname=%s' % (CENTRAL_IP, PORT, hostname)).text)
@@ -445,8 +445,8 @@ if __name__ == "__main__":
                 if FORCE_QUIT:
                     break
                 send_message_data = ""
-                random_seed = time()
-                hashID = start_recording()
+                randomSeed = time()
+                hashID = startRecording()
                 mem = np.random.random((2**8, 8))
                 if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
                     model.model.load_weights(os.path.join(WORK_DIR, "model.h5"))
@@ -676,7 +676,7 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
-                        random.seed(random_seed)
+                        random.seed(randomSeed)
                         ai_k += (np.random.random(ai_k.shape) * 2 - 1) * (random.random() ** 10)
                         for i in ai_m:
                             i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 10)
@@ -757,10 +757,10 @@ if __name__ == "__main__":
                             }
                             learn_data[hashID].append(this_frame)
                         if not hashID in learn_data:
-                            hashID = start_recording()
+                            hashID = startRecording()
                         elif len(learn_data[hashID]) > FRAME_LIMIT:
-                            stop_recording(hashID)
-                            hashID = start_recording()
+                            stopRecording(hashID)
+                            hashID = startRecording()
                     else:
                         if played:
                             logger.warning("Logged out. Auto restart...")
