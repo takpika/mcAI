@@ -344,7 +344,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     i = 0
     for id in videoFrames.keys():
         for videoFramePos in range(len(learnFrames[id]["data"])):
-            vaeFrames[i] = np.array(videoFrames[id]["data"][videoFramePos])
+            vaeFrames[i] = videoFrames[id]["data"][videoFramePos]
             i += 1
     iters = i // batchSize
     for epoch in range(2):
