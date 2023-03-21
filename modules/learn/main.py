@@ -143,16 +143,6 @@ combined.compile(loss="mse", optimizer="Adam")
 
 allMaxReward = 0
 
-def limit(i):
-    i[i>1]=1
-    i[i<0]=0
-    return i
-
-def nichi(i):
-    i[i>=0.5]=1
-    i[i<0.5]=0
-    return i
-
 def convAll():
     global learn_data
     learnDataLength = len(learn_data)
@@ -204,14 +194,14 @@ def convAll():
     learn_data.clear()
     return input_data, output_data
 
-def conv_frame(ld):
+def convFrame(ld):
     inpdata = []
     inpdata.append(np.array([convBit(ld["input"]["mem"]["reg"])]))
     inpdata.append(np.array([ld["input"]["mem"]["data"]]))
     inpdata.append(np.array([convBit(ld["input"]["mem"]["reg2"])]))
     inpdata.append(np.array([ld["input"]["mem"]["data2"]]))
-    inpdata.append(np.array([conv_name(ld["input"]["chat"]["name"])]))
-    inpdata.append(np.array([conv_char(ld["input"]["chat"]["message"])]))
+    inpdata.append(np.array([convName(ld["input"]["chat"]["name"])]))
+    inpdata.append(np.array([convChar(ld["input"]["chat"]["message"])]))
     inpdata.append(np.array([ld["output"]["keyboard"]]))
     inpdata.append(np.array([ld["output"]["mouse"]["dir"]]))
     inpdata.append(np.array([ld["output"]["mouse"]["button"]]))
@@ -219,34 +209,34 @@ def conv_frame(ld):
     inpdata.append(np.array([ld["output"]["mem"]["mem"]]))
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg"])]))
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg2"])]))
-    inpdata.append(np.array([conv_char(ld["output"]["chat"])]))
+    inpdata.append(np.array([convChar(ld["output"]["chat"])]))
     return inpdata
 
-def conv_char(char):
+def convChar(char):
     data = np.zeros((CHARS_COUNT))
     for i in range(CHARS_COUNT):
         if chars["chars"][i] == char:
             data[i] = 1
     return data
 
-def bin_to_char(bin):
+def bin2Char(bin):
     return chars["chars"][np.argmax(bin)]
 
-def bin_to_name(bin):
+def bin2Name(bin):
     name = ""
     for b in bin:
-        char = bin_to_char(b)
+        char = bin2Char(b)
         if char != "\n":
             name += char
         else:
             break
     return name
 
-def conv_name(name):
+def convName(name):
     remain = 6 - len(name)
-    data = [conv_char(name[i]) for i in range(len(name))]
+    data = [convChar(name[i]) for i in range(len(name))]
     for i in range(remain):
-        data.append(conv_char("\n"))
+        data.append(convChar("\n"))
     return data
 
 def getBit(value, bit):
@@ -269,14 +259,14 @@ def checkCount():
 def check():
     global data, videoFrames, moveFrames, learnFrames
     global CHECK_PROCESSING, CHECK_FIRSTRUN, LEARN_LIMIT, TRAINING
-    list_ids = list(videoFrames.keys())
-    list_ids.extend(list(moveFrames.keys()))
-    ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
+    listIDs = list(videoFrames.keys())
+    listIDs.extend(list(moveFrames.keys()))
+    ids = [id for id in set(listIDs) if listIDs.count(id) == 2]
     learnFrameCount : list[int] = [0]
     if len(ids) >= 10 and not CHECK_PROCESSING and not TRAINING:
         CHECK_PROCESSING = True
         counts = []
-        ids_copy = ids.copy()
+        idsCopy = ids.copy()
         for i in range(len(ids)):
             id = ids[i]
             count = len(moveFrames[id]["data"])
@@ -285,20 +275,20 @@ def check():
                 continue
             videoFrames.pop(id)
             moveFrames.pop(id)
-            ids_copy.remove(id)
-        ids = ids_copy.copy()
+            idsCopy.remove(id)
+        ids = idsCopy.copy()
         if len(counts) > 0:
             for id in ids:
                 data = moveFrames[id]
-                c_data = []
+                cData = []
                 reward = 0.0
                 for i in range(len(data["data"])):
-                    daf = conv_frame(data["data"][i])
-                    c_data.append(daf)
+                    daf = convFrame(data["data"][i])
+                    cData.append(daf)
                     reward += data["data"][i]["health"] * ( 0.999 ** i )
                 allData = {
                     "reward": reward,
-                    "data": c_data
+                    "data": cData
                 }
                 learnFrames[id] = allData
                 moveFrames.pop(id)
@@ -365,7 +355,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     logger.debug("End: Image VAE Learning")
     
     minReward, maxReward, aveReward = min(rewards), max(rewards), sum(rewards)/len(rewards)
-    this_epochs = EPOCHS if not vaeOverride else 500
+    thisEpochs = EPOCHS # if not vaeOverride else EPOCHS * 10
     
     if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
         actor.model.load_weights("models/model.h5")
@@ -385,7 +375,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     critic.actorcharencoder.model.load_weights("models/char_e.h5")
 
     logger.debug("Start: Critic Learning")
-    for epoch in range(this_epochs):
+    for epoch in range(thisEpochs):
         loss_history = []
         for i in range(len(learnIDs)):
             id = learnIDs[i]
@@ -409,7 +399,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     #targetReward = aveReward + (maxReward - aveReward) * 0.5
     allMaxReward = max(allMaxReward, maxReward)
     targetReward = allMaxReward
-    for epoch in range(this_epochs):
+    for epoch in range(thisEpochs):
         loss_history = []
         for i in range(len(learnIDs)):
             id = learnIDs[i]
