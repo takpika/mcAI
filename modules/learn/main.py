@@ -337,7 +337,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
         vaeFrames[i:i+videoLength] = videoFrames[id][:videoLength]
         i += videoLength
     iters = i // batchSize
-    for epoch in range(2):
+    for epoch in range(1):
         for iter in range(iters):
             loss = vae.model.train_on_batch(vaeFrames[iter*batchSize:(iter+1)*batchSize]/255, vaeFrames[iter*batchSize:(iter+1)*batchSize]/255)
             if iter % 10 == 0:
