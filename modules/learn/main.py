@@ -141,7 +141,7 @@ valid = critic.model([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], 
 combined = Model(inputs=[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn], outputs=[valid])
 combined.compile(loss="mse", optimizer="Adam")
 
-allMaxReward = 0
+maxRewardHistory = []
 
 def convAll():
     global learn_data
@@ -313,7 +313,7 @@ def check():
 
 def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     global LEARN_LIMIT, TRAINING, MODEL_WRITING
-    global model, vae, allMaxReward
+    global model, vae, maxRewardHistory
     batchSize = 32
     if TRAINING:
         return
@@ -396,9 +396,10 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     logger.debug("End: Critic Learning")
 
     logger.debug("Start: Actor Learning")
-    #targetReward = aveReward + (maxReward - aveReward) * 0.5
-    allMaxReward = max(allMaxReward, maxReward)
-    targetReward = allMaxReward
+    maxRewardHistory.append(maxReward)
+    if len(maxRewardHistory) > 10:
+        maxRewardHistory.pop(0)
+    targetReward = sum(maxRewardHistory) / len(maxRewardHistory)
     for epoch in range(thisEpochs):
         loss_history = []
         for i in range(len(learnIDs)):
