@@ -396,7 +396,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     logger.debug("End: Critic Learning")
 
     logger.debug("Start: Actor Learning")
-    maxRewardHistory.append(maxReward)
+    maxRewardHistory.append(aveReward + (maxReward - aveReward) * 0.75)
     if len(maxRewardHistory) > 10:
         maxRewardHistory.pop(0)
     targetReward = sum(maxRewardHistory) / len(maxRewardHistory)
