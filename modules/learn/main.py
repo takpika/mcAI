@@ -376,7 +376,6 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     critic.actorcharencoder.model.load_weights("models/char_e.h5")
 
     logger.debug("Start: Critic Learning")
-    rewardEstMax = 0
     for epoch in range(thisEpochs):
         loss_history = []
         for i in range(len(learnIDs)):
@@ -392,7 +391,6 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
             x = x[:-1]
             x.extend(y)
             rewardEst = np.array([sum(data["health"][dp:])/(len(data["health"])-dp) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1) / 20
-            rewardEstMax = max(rewardEstMax, np.max(rewardEst))
             y = rewardEst
             loss = critic.model.train_on_batch(x, y)
             loss_history.append(loss)
@@ -400,7 +398,6 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     logger.debug("End: Critic Learning")
 
     logger.debug("Start: Actor Learning")
-    targetReward = rewardEstMax
     for epoch in range(thisEpochs):
         loss_history = []
         for i in range(len(learnIDs)):
@@ -413,7 +410,9 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
                 frameData.extend(data["data"][framePos])
                 learn_data.append(frameData)
             x, _ = convAll()
-            y = np.array([targetReward for _ in range(len(data["data"]))])
+            rewardEst = np.array([sum(data["health"][dp:])/(len(data["health"])-dp) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1) / 20
+            realEst = critic.model.predict(x)
+            y = np.maximum(rewardEst, realEst)
             loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
         logger.info("Actor Loss: %.6f, %d epochs Reward: %f" % (sum(loss_history)/len(loss_history), epoch, targetReward))
