@@ -278,7 +278,8 @@ def check():
         if len(counts) > 0:
             for id in ids:
                 data = moveFrames[id]
-                cData = [], healthData = []
+                cData = []
+                healthData = []
                 reward = 0.0
                 for i in range(len(data["data"])):
                     daf = convFrame(data["data"][i])
