@@ -415,7 +415,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
             y = np.maximum(rewardEst, realEst)
             loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
-        logger.info("Actor Loss: %.6f, %d epochs Reward: %f" % (sum(loss_history)/len(loss_history), epoch, targetReward))
+        logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
     logger.debug("End: Actor Learning")
 
     for id in learnIDs:
