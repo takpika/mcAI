@@ -141,8 +141,6 @@ valid = critic.model([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], 
 combined = Model(inputs=[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn], outputs=[valid])
 combined.compile(loss="mse", optimizer="Adam")
 
-maxRewardHistory = []
-
 def convAll():
     global learn_data
     learnDataLength = len(learn_data)
@@ -280,15 +278,17 @@ def check():
         if len(counts) > 0:
             for id in ids:
                 data = moveFrames[id]
-                cData = []
+                cData = [], healthData = []
                 reward = 0.0
                 for i in range(len(data["data"])):
                     daf = convFrame(data["data"][i])
                     cData.append(daf)
                     reward += data["data"][i]["health"] * ( 0.999 ** i )
+                    healthData.append(data["data"][i]["health"])
                 allData = {
                     "reward": reward,
-                    "data": cData
+                    "data": cData,
+                    "health": healthData
                 }
                 learnFrames[id] = allData
                 moveFrames.pop(id)
@@ -313,7 +313,7 @@ def check():
 
 def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     global LEARN_LIMIT, TRAINING, MODEL_WRITING
-    global model, vae, maxRewardHistory
+    global model, vae
     batchSize = 32
     if TRAINING:
         return
@@ -375,6 +375,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     critic.actorcharencoder.model.load_weights("models/char_e.h5")
 
     logger.debug("Start: Critic Learning")
+    rewardEstMax = 0
     for epoch in range(thisEpochs):
         loss_history = []
         for i in range(len(learnIDs)):
@@ -389,17 +390,16 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
             x, y = convAll()
             x = x[:-1]
             x.extend(y)
-            y = np.array([rewards[i] for _ in range(len(data["data"]))])
+            rewardEst = np.array([sum(data["health"][dp:])/(len(data["health"]-dp)) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1)
+            rewardEstMax = max(rewardEstMax, max(rewardEst))
+            y = rewardEst
             loss = critic.model.train_on_batch(x, y)
             loss_history.append(loss)
         logger.info("Critic Loss: %.6f, %d epochs %f/%f/%f" % (sum(loss_history)/len(loss_history), epoch, minReward, aveReward, maxReward))
     logger.debug("End: Critic Learning")
 
     logger.debug("Start: Actor Learning")
-    maxRewardHistory.append(aveReward + (maxReward - aveReward) * 0.75)
-    if len(maxRewardHistory) > 10:
-        maxRewardHistory.pop(0)
-    targetReward = sum(maxRewardHistory) / len(maxRewardHistory)
+    targetReward = rewardEstMax
     for epoch in range(thisEpochs):
         loss_history = []
         for i in range(len(learnIDs)):

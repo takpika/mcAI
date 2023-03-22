@@ -559,6 +559,9 @@ if __name__ == "__main__":
                                 nextHunger += 120
                         if data["player"]["death"]:
                             logger.info("Dead")
+                            if hashID in learn_data:
+                                if len(learn_data[hashID]) > 0:
+                                    learn_data[hashID][-1]["health"] = 0
                             end_session(hashID)
                             for _ in range(100):
                                 data = json.loads(requests.get(url).text)
