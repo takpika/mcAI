@@ -391,7 +391,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
             x, y = convAll()
             x = x[:-1]
             x.extend(y)
-            rewardEst = np.array([sum(data["health"][dp:])/(len(data["health"]-dp)) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1)
+            rewardEst = np.array([sum(data["health"][dp:])/(len(data["health"]-dp)) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1) / 20
             rewardEstMax = max(rewardEstMax, max(rewardEst))
             y = rewardEst
             loss = critic.model.train_on_batch(x, y)
