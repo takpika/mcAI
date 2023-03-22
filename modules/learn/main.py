@@ -411,7 +411,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
                 learn_data.append(frameData)
             x, _ = convAll()
             rewardEst = np.array([sum(data["health"][dp:])/(len(data["health"])-dp) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1) / 20
-            realEst = combined.predict(x)
+            realEst = combined.predict(x, verbose=0)
             y = np.maximum(rewardEst, realEst)
             loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
