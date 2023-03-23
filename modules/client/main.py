@@ -682,13 +682,13 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
-                        random.seed(randomSeed)
-                        ai_k += (np.random.random(ai_k.shape) * 2 - 1) * (random.random() ** 2)
-                        for i in ai_m:
-                            i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 2)
-                        for i in ai_mem:
-                            i += (np.random.random(i.shape) * 2 - 1) * (random.random() ** 2)
-                        ai_chat += (np.random.random(ai_chat.shape) * 2 - 1) * (random.random() ** 2)
+                        if random.random() < 0.01:
+                            ai_k = np.random.random(ai_k.shape)
+                            ai_m[0] = np.random.random(ai_m[0].shape) * 2 - 1
+                            ai_m[1] = np.random.random(ai_m[1].shape)
+                            for i in ai_mem:
+                                i = np.random.random(i.shape)
+                            ai_chat = np.random.random(ai_chat.shape)
                         AI_USING = False
                         ai_k = np.clip(ai_k, 0, 1)
                         ai_m[0] = np.clip(ai_m[0], -1, 1)
@@ -728,7 +728,6 @@ if __name__ == "__main__":
                                 edit_char = mes_char
                         if len(send_message_data) > CHARS_LIMIT:
                             send_message_data = send_message_data[:CHARS_LIMIT]
-                        random.seed(time())
                         if random.random() < 0.1:
                             videoFrames[videoFramePos] = (x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8")
                             videoFramePos += 1
