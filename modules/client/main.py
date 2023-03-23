@@ -448,7 +448,7 @@ if __name__ == "__main__":
                 if FORCE_QUIT:
                     break
                 send_message_data = ""
-                randomSeed = random.random() ** 2
+                #randomSeed = random.random() ** 2
                 hashID = startRecording()
                 mem = np.random.random((2**8, 8))
                 if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
@@ -682,7 +682,7 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
-                        if random.random() < randomSeed:
+                        if random.random() < 0.2:
                             ai_k = np.random.random(ai_k.shape)
                             ai_m[0] = np.random.random(ai_m[0].shape) * 2 - 1
                             ai_m[1] = np.random.random(ai_m[1].shape)
@@ -690,13 +690,13 @@ if __name__ == "__main__":
                                 i = np.random.random(i.shape)
                             ai_chat = np.random.random(ai_chat.shape)
                         AI_USING = False
-                        ai_k = np.clip(ai_k, 0, 1)
+                        ai_k = np.where(ai_k < 0.5, 0, 1)
                         ai_m[0] = np.clip(ai_m[0], -1, 1)
-                        ai_m[1] = np.clip(ai_m[1], 0, 1)
+                        ai_m[1] = np.where(ai_m[1] < 0.5, 0, 1)
                         for i in range(len(ai_mem)):
                             if i == 1:
                                 ai_mem[i] = np.clip(ai_mem[i], 0, 1)
-                            ai_mem[i] = np.where(ai_mem[i] >= 0.5, 1, 0)
+                            ai_mem[i] = np.where(ai_mem[i] < 0.5, 0, 1)
                         ai_chat = np.where(ai_chat == np.max(ai_chat), 1, 0)
                         for i in range(len(KEYS)):
                             res = ai_k[0][i] >= 0.5
