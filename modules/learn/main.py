@@ -24,7 +24,7 @@ SERV_TYPE = "learn"
 CENTRAL_IP = None
 GPU_AVAIL = tf.test.is_gpu_available()
 
-videoFrames, moveFrames, learnFrames = {}, {}, {}
+videoFrames, moveFrames, learnFramesBuffer = {}, {}, []
 
 if not os.path.exists("models/"):
     os.mkdir("models")
@@ -159,6 +159,7 @@ def convAll():
     ai_mem_3 = np.empty((learnDataLength, 8))
     ai_mem_4 = np.empty((learnDataLength, 8))
     ai_chat = np.empty((learnDataLength, CHARS_COUNT))
+    rewardEst = np.empty((learnDataLength, 1))
     for i in range(learnDataLength):
         x_img[i] = learn_data[i][0].reshape((HEIGHT,WIDTH,3))
         x_reg[i] = learn_data[i][1].reshape((8))
@@ -175,6 +176,7 @@ def convAll():
         ai_mem_3[i] = learn_data[i][12].reshape((8))
         ai_mem_4[i] = learn_data[i][13].reshape((8))
         ai_chat[i] = learn_data[i][14].reshape((CHARS_COUNT))
+        rewardEst[i] = learn_data[i][15].reshape((1))
     ai_k = np.clip(ai_k, 0, 1)
     ai_m_1 = np.clip(ai_m_1, -1, 1)
     ai_m_2 = np.clip(ai_m_2, 0, 1)
@@ -190,9 +192,9 @@ def convAll():
         ai_k, [ai_m_1, ai_m_2], [ai_mem_1, ai_mem_2, ai_mem_3, ai_mem_4], ai_chat
     ]
     learn_data.clear()
-    return input_data, output_data
+    return input_data, output_data, rewardEst
 
-def convFrame(ld):
+def convFrame(ld, reward):
     inpdata = []
     inpdata.append(np.array([convBit(ld["input"]["mem"]["reg"])]))
     inpdata.append(np.array([ld["input"]["mem"]["data"]]))
@@ -208,6 +210,7 @@ def convFrame(ld):
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg"])]))
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg2"])]))
     inpdata.append(np.array([convChar(ld["output"]["chat"])]))
+    inpdata.append(np.array([reward]))
     return inpdata
 
 def convChar(char):
@@ -248,14 +251,11 @@ MODEL_WRITING = False
 CHECK_FIRSTRUN = True
 
 def checkCount():
-    global learnFrames
-    learnIDs = list(learnFrames.keys())
-    learnFrameCount = [len(learnFrames[id]["data"]) for id in learnIDs]
-    rewards = [learnFrames[id]["reward"] for id in learnIDs]
-    return learnIDs, learnFrameCount, rewards
+    global learnFramesBuffer
+    return len(learnFramesBuffer)
 
 def check():
-    global data, videoFrames, moveFrames, learnFrames
+    global data, videoFrames, moveFrames, learnFramesBuffer
     global CHECK_PROCESSING, CHECK_FIRSTRUN, LEARN_LIMIT, TRAINING
     listIDs = list(videoFrames.keys())
     listIDs.extend(list(moveFrames.keys()))
@@ -278,28 +278,24 @@ def check():
         if len(counts) > 0:
             for id in ids:
                 data = moveFrames[id]
-                cData = []
-                healthData = []
                 reward = 0.0
+                healthData = [data["data"][i]["health"] for i in range(len(data["data"]))]
+                rewardEst = np.array([sum(healthData[dp:])/(len(data["health"])-dp) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1) / 20
                 for i in range(len(data["data"])):
-                    daf = convFrame(data["data"][i])
-                    cData.append(daf)
-                    reward += data["data"][i]["health"] * ( 0.999 ** i )
-                    healthData.append(data["data"][i]["health"])
-                allData = {
-                    "reward": reward,
-                    "data": cData,
-                    "health": healthData
-                }
-                learnFrames[id] = allData
+                    daf = convFrame(data["data"][i], rewardEst[i])
+                    img = videoFrames[id][i]
+                    learnFramesBuffer.append({"data": daf, "img": img})
+                    if len(learnFramesBuffer) > LEARN_LIMIT:
+                        learnFramesBuffer.pop(0)
                 moveFrames.pop(id)
-        learnIDs, learnFrameCount, rewards = checkCount()
+                videoFrames.pop(id)
+        learnFrameCount = checkCount()
         CHECK_FIRSTRUN = False
-        logger.debug("Check done, current total frames: %d/%d" % (sum(learnFrameCount), LEARN_LIMIT))
+        logger.debug("Check done, current total frames: %d/%d" % (learnFrameCount, LEARN_LIMIT))
         CHECK_PROCESSING = False
     if CHECK_FIRSTRUN:
-        learnIDs, learnFrameCount, rewards = checkCount()
-        logger.debug("First Run, current total frames: %d" % (sum(learnFrameCount)))
+        learnFrameCount = checkCount()
+        logger.debug("First Run, current total frames: %d" % (learnFrameCount))
         CHECK_FIRSTRUN = False
         TRAINING = True
         if not os.path.exists("models/char_e.h5") or not os.path.exists("models/char_d.h5"):
@@ -309,35 +305,25 @@ def check():
         if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
             mouseVAELearn()
         TRAINING = False
-    if sum(learnFrameCount) >= LEARN_LIMIT and not TRAINING:
-        learn(learnIDs, learnFrameCount, rewards)
+    if learnFrameCount >= (LEARN_LIMIT * 0.5) and not TRAINING:
+        learn()
 
-def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
+def learn():
     global LEARN_LIMIT, TRAINING, MODEL_WRITING
-    global model, vae
+    global model, vae, learnFramesBuffer
     batchSize = 32
-    if TRAINING:
-        return
+    if TRAINING: return
     TRAINING = True
     logger.info("Start Learning")
-    maxFrames = max(learnFrameCount)
-    aveFrames = sum(learnFrameCount) / len(learnFrameCount)
-    beforeLimit = LEARN_LIMIT
-    LEARN_LIMIT = 1000
-    #LEARN_LIMIT = max(maxFrames * 100, 1000)
-    #if LEARN_LIMIT != beforeLimit:
-    #    logger.debug("Learn Limit has Changed: %d" % (LEARN_LIMIT))
     logger.debug("Start: Image VAE Learning")
     if os.path.exists("models/vae_d_latest.h5") and os.path.exists("models/vae_e_latest.h5"):
         vae.decoder.model.load_weights("models/vae_d_latest.h5")
         vae.encoder.model.load_weights("models/vae_e_latest.h5")
-    vaeFrames = np.empty((sum(learnFrameCount), 256, 256, 3), dtype=np.uint8)
-    i = 0
-    for id in learnFrames.keys():
-        videoLength = len(learnFrames[id]["data"])
-        vaeFrames[i:i+videoLength] = videoFrames[id][:videoLength]
-        i += videoLength
-    iters = i // batchSize
+    learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 4)
+    vaeFrames = np.empty((LEARN_LIMIT // 4, 256, 256, 3), dtype=np.uint8)
+    for i in range(len(learnFrames)):
+        vaeFrames[i] = learnFrames[i]["img"]
+    iters = len(learnFrames) // batchSize
     for epoch in range(1):
         for iter in range(iters):
             loss = vae.model.train_on_batch(vaeFrames[iter*batchSize:(iter+1)*batchSize]/255, vaeFrames[iter*batchSize:(iter+1)*batchSize]/255)
@@ -354,9 +340,8 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
         shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
     mcai.clearSession()
     logger.debug("End: Image VAE Learning")
-    
-    minReward, maxReward, aveReward = min(rewards), max(rewards), sum(rewards)/len(rewards)
-    thisEpochs = EPOCHS # if not vaeOverride else EPOCHS * 10
+
+    thisEpochs = EPOCHS
     
     if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
         actor.model.load_weights("models/model.h5")
@@ -378,53 +363,41 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     logger.debug("Start: Critic Learning")
     for epoch in range(thisEpochs):
         loss_history = []
-        for i in range(len(learnIDs)):
-            id = learnIDs[i]
-            data = learnFrames[id]
-            for framePos in range(len(data["data"])):
-                frameImg = videoFrames[id][framePos].reshape(1, 256, 256, 3) / 255
+        for iter in range(iters):
+            batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
+            for frame in batchFrames:
                 frameData = []
+                frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
                 frameData.append(frameImg)
-                frameData.extend(data["data"][framePos])
+                frameData.extend(frame["data"])
                 learn_data.append(frameData)
-            x, y = convAll()
+            x, y, rewardEst = convAll()
             x = x[:-1]
             x.extend(y)
-            rewardEst = np.array([sum(data["health"][dp:])/(len(data["health"])-dp) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1) / 20
             y = rewardEst
             loss = critic.model.train_on_batch(x, y)
             loss_history.append(loss)
-        logger.info("Critic Loss: %.6f, %d epochs %f/%f/%f" % (sum(loss_history)/len(loss_history), epoch, minReward, aveReward, maxReward))
+        logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
     logger.debug("End: Critic Learning")
 
     logger.debug("Start: Actor Learning")
     for epoch in range(thisEpochs):
         loss_history = []
-        for i in range(len(learnIDs)):
-            id = learnIDs[i]
-            data = learnFrames[id]
-            for framePos in range(len(data["data"])):
-                frameImg = videoFrames[id][framePos] / 255
+        for iter in range(iters):
+            batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
+            for frame in batchFrames:
                 frameData = []
+                frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
                 frameData.append(frameImg)
-                frameData.extend(data["data"][framePos])
+                frameData.extend(frame["data"])
                 learn_data.append(frameData)
-            x, _ = convAll()
-            rewardEst = np.array([sum(data["health"][dp:])/(len(data["health"])-dp) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1) / 20
-            realEst = combined.predict(x, verbose=0)
+            x, _, rewardEst = convAll()
+            realEst = critic.model.predict(x, verbose=0)
             y = np.maximum(rewardEst, realEst)
-            loss = combined.train_on_batch(x, y)
+            loss = actor.model.train_on_batch(x, y)
             loss_history.append(loss)
         logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
     logger.debug("End: Actor Learning")
-
-    for id in learnIDs:
-        videoFrames.pop(id)
-        learnFrames.pop(id)
-        if id in moveFrames:
-            moveFrames.pop(id)
-
-    logger.info("Finish Learning")
 
     MODEL_WRITING = True
     actor.model.save("models/model.h5")
@@ -444,6 +417,7 @@ def learn(learnIDs: list, learnFrameCount: list[int], rewards: list):
     with open("models/version.json", "w") as f:
         json.dump(version, f)
     TRAINING = False
+    logger.info("Finish Learning")
 
 def charVAELearn():
     logger.debug("Start: Char VAE Learning")
