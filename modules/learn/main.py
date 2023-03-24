@@ -392,7 +392,7 @@ def learn():
                 frameData.extend(frame["data"])
                 learn_data.append(frameData)
             x, _, rewardEst = convAll()
-            realEst = critic.model.predict(x, verbose=0)
+            realEst = combined.predict(x, verbose=0)
             y = np.maximum(rewardEst, realEst)
             loss = actor.model.train_on_batch(x, y)
             loss_history.append(loss)
