@@ -260,7 +260,7 @@ def check():
     listIDs = list(videoFrames.keys())
     listIDs.extend(list(moveFrames.keys()))
     ids = [id for id in set(listIDs) if listIDs.count(id) == 2]
-    learnFrameCount : list[int] = [0]
+    learnFrameCount = len(learnFramesBuffer)
     if len(ids) >= 10 and not CHECK_PROCESSING and not TRAINING:
         CHECK_PROCESSING = True
         counts = []
