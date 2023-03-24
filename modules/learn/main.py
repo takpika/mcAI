@@ -394,7 +394,7 @@ def learn():
             x, _, rewardEst = convAll()
             realEst = combined.predict(x, verbose=0)
             y = np.maximum(rewardEst, realEst)
-            loss = actor.model.train_on_batch(x, y)
+            loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
         logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
     logger.debug("End: Actor Learning")
