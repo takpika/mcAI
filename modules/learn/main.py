@@ -280,7 +280,7 @@ def check():
                 data = moveFrames[id]
                 reward = 0.0
                 healthData = [data["data"][i]["health"] for i in range(len(data["data"]))]
-                rewardEst = np.array([sum(healthData[dp:])/(len(data["health"])-dp) for dp in range(len(data["health"]))]).reshape(len(data["health"]), 1) / 20
+                rewardEst = np.array([sum(healthData[dp:])/(len(healthData)-dp) for dp in range(len(healthData))]).reshape(len(healthData), 1) / 20
                 for i in range(len(data["data"])):
                     daf = convFrame(data["data"][i], rewardEst[i])
                     img = videoFrames[id][i]
