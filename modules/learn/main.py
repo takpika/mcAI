@@ -29,6 +29,7 @@ videoFrames, moveFrames, learnFramesBuffer = {}, {}, []
 if not os.path.exists("models/"):
     os.mkdir("models")
 
+# Search for Central Server
 logger.info("Searching for Central Server...")
 
 def search_central():
@@ -99,13 +100,7 @@ for key in config.keys():
         config[key] = config[key].replace("__HOME__", os.getenv('HOME'))
         config[key] = config[key].replace("__WORKDIR__", os.getcwd())
 
-SAVE_FOLDER = config["save_folder"]
-DATA_FOLDER = config["data_folder"]
-if not os.path.exists(SAVE_FOLDER):
-    os.makedirs(SAVE_FOLDER)
-if not os.path.exists(DATA_FOLDER):
-    os.makedirs(DATA_FOLDER)
-
+# Image Size
 WIDTH = config["resolution"]["x"]
 HEIGHT = config["resolution"]["y"]
 
@@ -261,6 +256,7 @@ def check():
     listIDs.extend(list(moveFrames.keys()))
     ids = [id for id in set(listIDs) if listIDs.count(id) == 2]
     learnFrameCount = len(learnFramesBuffer)
+
     if len(ids) >= 10 and not CHECK_PROCESSING and not TRAINING:
         CHECK_PROCESSING = True
         counts = []
@@ -278,7 +274,6 @@ def check():
         if len(counts) > 0:
             for id in ids:
                 data = moveFrames[id]
-                reward = 0.0
                 healthData = [data["data"][i]["health"] for i in range(len(data["data"]))]
                 rewardEst = np.array([sum(healthData[dp:])/(len(healthData)-dp) for dp in range(len(healthData))]).reshape(len(healthData), 1) / 20
                 for i in range(len(data["data"])):
@@ -293,6 +288,8 @@ def check():
         CHECK_FIRSTRUN = False
         logger.debug("Check done, current total frames: %d/%d" % (learnFrameCount, LEARN_LIMIT))
         CHECK_PROCESSING = False
+
+    # First Run
     if CHECK_FIRSTRUN:
         learnFrameCount = checkCount()
         logger.debug("First Run, current total frames: %d" % (learnFrameCount))
@@ -305,7 +302,7 @@ def check():
         if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
             mouseVAELearn()
         TRAINING = False
-    if learnFrameCount >= (LEARN_LIMIT * 0.5) and not TRAINING:
+    if learnFrameCount >= (LEARN_LIMIT * 0.75) and not TRAINING:
         learn()
 
 def learn():
@@ -315,11 +312,13 @@ def learn():
     if TRAINING: return
     TRAINING = True
     logger.info("Start Learning")
+
+    # Image VAE Learning
     logger.debug("Start: Image VAE Learning")
     if os.path.exists("models/vae_d_latest.h5") and os.path.exists("models/vae_e_latest.h5"):
         vae.decoder.model.load_weights("models/vae_d_latest.h5")
         vae.encoder.model.load_weights("models/vae_e_latest.h5")
-    learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 4)
+    learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 2)
     vaeFrames = np.empty((LEARN_LIMIT // 4, 256, 256, 3), dtype=np.uint8)
     for i in range(len(learnFrames)):
         vaeFrames[i] = learnFrames[i]["img"]
@@ -343,6 +342,7 @@ def learn():
 
     thisEpochs = EPOCHS
     
+    # Load Models
     if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
         actor.model.load_weights("models/model.h5")
         critic.model.load_weights("models/critic.h5")
@@ -360,7 +360,7 @@ def learn():
     critic.mouseencoder.model.load_weights("models/mouse_e.h5")
     critic.actorcharencoder.model.load_weights("models/char_e.h5")
 
-    logger.debug("Start: Critic Learning")
+    # Critic Learning
     for epoch in range(thisEpochs):
         loss_history = []
         for iter in range(iters):
@@ -378,9 +378,8 @@ def learn():
             loss = critic.model.train_on_batch(x, y)
             loss_history.append(loss)
         logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
-    logger.debug("End: Critic Learning")
 
-    logger.debug("Start: Actor Learning")
+    # Actor Learning
     for epoch in range(thisEpochs):
         loss_history = []
         for iter in range(iters):
