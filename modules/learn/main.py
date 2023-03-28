@@ -383,8 +383,11 @@ def learn():
         for iter in range(iters):
             batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
             for frame in batchFrames:
+                frameData = []
                 frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
-                learn_data.append([frameImg, frame["data"]])
+                frameData.append(frameImg)
+                frameData.extend(frame["data"])
+                learn_data.append(frameData)
             x, _, rewardEst = convAll()
             realEst = combined.predict(x, verbose=0)
             y = np.maximum(rewardEst, realEst)
@@ -511,14 +514,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             content_len=int(self.headers.get('content-length'))
             id = str(self.headers.get('id'))
-            if self.path == "/video":
-                with open(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), "wb") as f:
-                    f.write(self.rfile.read(content_len))
-                status_code = 200
-                response = {
-                    'status': 'ok'
-                }
-            elif self.path == "/videoND":
+            if self.path == "/videoND":
                 width = int(self.headers.get('width'))
                 height = int(self.headers.get('height'))
                 frameCount = int(self.headers.get('frameCount'))
