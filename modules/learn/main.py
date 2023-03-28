@@ -319,7 +319,7 @@ def learn():
         vae.decoder.model.load_weights("models/vae_d_latest.h5")
         vae.encoder.model.load_weights("models/vae_e_latest.h5")
     learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 2)
-    vaeFrames = np.empty((LEARN_LIMIT // 4, 256, 256, 3), dtype=np.uint8)
+    vaeFrames = np.empty((LEARN_LIMIT // 2, 256, 256, 3), dtype=np.uint8)
     for i in range(len(learnFrames)):
         vaeFrames[i] = learnFrames[i]["img"]
     iters = len(learnFrames) // batchSize
