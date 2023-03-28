@@ -728,7 +728,7 @@ if __name__ == "__main__":
                                 edit_char = mes_char
                         if len(send_message_data) > CHARS_LIMIT:
                             send_message_data = send_message_data[:CHARS_LIMIT]
-                        if random.random() < 0.1:
+                        if random.random() < 1.1:
                             videoFrames[videoFramePos] = (x_img.reshape((HEIGHT,WIDTH,3))*255).astype("uint8")
                             videoFramePos += 1
                             this_frame = {
