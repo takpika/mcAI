@@ -301,6 +301,17 @@ def check():
             keyboardVAELearn()
         if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
             mouseVAELearn()
+        actor.charencoder.model.load_weights("models/char_e.h5")
+        for c in actor.nameencoder.chars:
+            c.model.load_weights("models/char_e.h5")
+        actor.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
+        actor.mousedecoder.model.load_weights("models/mouse_d.h5")
+        critic.charencoder.model.load_weights("models/char_e.h5")
+        for c in critic.nameencoder.chars:
+            c.model.load_weights("models/char_e.h5")
+        critic.keyboardencoder.model.load_weights("models/keyboard_e.h5")
+        critic.mouseencoder.model.load_weights("models/mouse_e.h5")
+        critic.actorcharencoder.model.load_weights("models/char_e.h5")
         TRAINING = False
     if learnFrameCount >= (LEARN_LIMIT * 0.75) and not TRAINING:
         learn()
@@ -337,6 +348,8 @@ def learn():
         logger.debug("Image VAE Model Updated")
         shutil.copy("models/vae_e_latest.h5", "models/vae_e.h5")
         shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
+        actor.encoder.model.load_weights("models/vae_e.h5")
+        critic.encoder.model.load_weights("models/vae_e.h5")
     mcai.clearSession()
     logger.debug("End: Image VAE Learning")
 
@@ -346,19 +359,6 @@ def learn():
     if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
         actor.model.load_weights("models/model.h5")
         critic.model.load_weights("models/critic.h5")
-    actor.encoder.model.load_weights("models/vae_e.h5")
-    actor.charencoder.model.load_weights("models/char_e.h5")
-    for c in actor.nameencoder.chars:
-        c.model.load_weights("models/char_e.h5")
-    actor.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
-    actor.mousedecoder.model.load_weights("models/mouse_d.h5")
-    critic.encoder.model.load_weights("models/vae_e.h5")
-    critic.charencoder.model.load_weights("models/char_e.h5")
-    for c in critic.nameencoder.chars:
-        c.model.load_weights("models/char_e.h5")
-    critic.keyboardencoder.model.load_weights("models/keyboard_e.h5")
-    critic.mouseencoder.model.load_weights("models/mouse_e.h5")
-    critic.actorcharencoder.model.load_weights("models/char_e.h5")
 
     # Critic Learning
     for epoch in range(thisEpochs):
@@ -385,11 +385,8 @@ def learn():
         for iter in range(iters):
             batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
             for frame in batchFrames:
-                frameData = []
                 frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
-                frameData.append(frameImg)
-                frameData.extend(frame["data"])
-                learn_data.append(frameData)
+                learn_data.append([frameImg, frame["data"]])
             x, _, rewardEst = convAll()
             realEst = combined.predict(x, verbose=0)
             y = np.maximum(rewardEst, realEst)
