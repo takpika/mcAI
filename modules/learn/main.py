@@ -301,6 +301,9 @@ def check():
             keyboardVAELearn()
         if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
             mouseVAELearn()
+        if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
+            actor.model.load_weights("models/model.h5")
+            critic.model.load_weights("models/critic.h5")
         actor.charencoder.model.load_weights("models/char_e.h5")
         for c in actor.nameencoder.chars:
             c.model.load_weights("models/char_e.h5")
@@ -354,11 +357,6 @@ def learn():
     logger.debug("End: Image VAE Learning")
 
     thisEpochs = EPOCHS
-    
-    # Load Models
-    if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
-        actor.model.load_weights("models/model.h5")
-        critic.model.load_weights("models/critic.h5")
 
     # Critic Learning
     for epoch in range(thisEpochs):
