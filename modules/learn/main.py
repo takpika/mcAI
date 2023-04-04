@@ -346,7 +346,7 @@ def learn():
     vae.encoder.model.save("models/vae_e_latest.h5")
     vae.decoder.model.save("models/vae_d_latest.h5")
 
-    vaeOverride = random.random() < 0.01
+    vaeOverride = random.random() < 0
     if not os.path.exists("models/vae_e.h5") or not os.path.exists("models/vae_d.h5") or vaeOverride:
         logger.debug("Image VAE Model Updated")
         shutil.copy("models/vae_e_latest.h5", "models/vae_e.h5")
