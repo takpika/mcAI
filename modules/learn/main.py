@@ -328,16 +328,18 @@ def learn():
     TRAINING = True
     logger.info("Start Learning")
 
+    learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 2)
+    iters = len(learnFrames) // batchSize
+
+    '''
     # Image VAE Learning
-    logger.debug("Start: Image VAE Learning")
     if os.path.exists("models/vae_d_latest.h5") and os.path.exists("models/vae_e_latest.h5"):
         vae.decoder.model.load_weights("models/vae_d_latest.h5")
         vae.encoder.model.load_weights("models/vae_e_latest.h5")
-    learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 2)
     vaeFrames = np.empty((LEARN_LIMIT // 2, 256, 256, 3), dtype=np.uint8)
     for i in range(len(learnFrames)):
         vaeFrames[i] = learnFrames[i]["img"]
-    iters = len(learnFrames) // batchSize
+    logger.debug("Start: Image VAE Learning")
     for epoch in range(1):
         for iter in range(iters):
             loss = vae.model.train_on_batch(vaeFrames[iter*batchSize:(iter+1)*batchSize]/255, vaeFrames[iter*batchSize:(iter+1)*batchSize]/255)
@@ -356,6 +358,7 @@ def learn():
         critic.encoder.model.load_weights("models/vae_e.h5")
     mcai.clearSession()
     logger.debug("End: Image VAE Learning")
+    '''
 
     thisEpochs = EPOCHS
 
@@ -395,7 +398,6 @@ def learn():
             loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
         logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
-    logger.debug("End: Actor Learning")
 
     MODEL_WRITING = True
     actor.model.save("models/model.h5")
