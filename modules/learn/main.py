@@ -305,6 +305,9 @@ def check():
         if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
             actor.model.load_weights("models/model.h5")
             critic.model.load_weights("models/critic.h5")
+        if os.path.exists("models/vae_e.h5"):
+            actor.encoder.model.load_weights("models/vae_e.h5")
+            critic.encoder.model.load_weights("models/vae_e.h5")
         actor.charencoder.model.load_weights("models/char_e.h5")
         for c in actor.nameencoder.chars:
             c.model.load_weights("models/char_e.h5")
@@ -354,11 +357,11 @@ def learn():
         logger.debug("Image VAE Model Updated")
         shutil.copy("models/vae_e_latest.h5", "models/vae_e.h5")
         shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
+        actor.encoder.model.load_weights("models/vae_e.h5")
+        critic.encoder.model.load_weights("models/vae_e.h5")
     mcai.clearSession()
     logger.debug("End: Image VAE Learning")
     '''
-    actor.encoder.model.load_weights("models/vae_e.h5")
-    critic.encoder.model.load_weights("models/vae_e.h5")
 
     thisEpochs = EPOCHS
 
