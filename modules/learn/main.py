@@ -274,7 +274,7 @@ def check():
         if len(counts) > 0:
             for id in ids:
                 data = moveFrames[id]
-                healthData = [min(data["data"][i]["health"] * (1 if not (i + 1) % 10 == 0 else 1.5 if not (i + 1) % 100 == 0 else 2), 20) for i in range(len(data["data"]))]
+                healthData = [min(data["data"][i]["health"] * (1 if not (i + 1) % 20 == 0 else 1.25 if not (i + 1) % 100 == 0 else 15), 20) for i in range(len(data["data"]))]
                 rewardEst = np.array([sum(healthData[dp:])/(len(healthData)-dp) for dp in range(len(healthData))]).reshape(len(healthData), 1) / 20
                 for i in range(len(data["data"])):
                     daf = convFrame(data["data"][i], rewardEst[i])
