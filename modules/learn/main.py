@@ -354,11 +354,11 @@ def learn():
         logger.debug("Image VAE Model Updated")
         shutil.copy("models/vae_e_latest.h5", "models/vae_e.h5")
         shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
-        actor.encoder.model.load_weights("models/vae_e.h5")
-        critic.encoder.model.load_weights("models/vae_e.h5")
     mcai.clearSession()
     logger.debug("End: Image VAE Learning")
     '''
+    actor.encoder.model.load_weights("models/vae_e.h5")
+    critic.encoder.model.load_weights("models/vae_e.h5")
 
     thisEpochs = EPOCHS
 
