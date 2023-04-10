@@ -179,4 +179,4 @@ if __name__ == "__main__":
     t = threading.Thread(target=start_httpServer)
     t.daemon = True
     t.start()
-    subprocess.run(["/usr/bin/screen", "-DmS", "minecraft", "bash", "run.sh"], timeout=24*60*60)
+    subprocess.run(["/usr/bin/screen", "-DmS", "minecraft", "bash", "run.sh"])
