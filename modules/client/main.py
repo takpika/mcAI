@@ -455,6 +455,7 @@ if __name__ == "__main__":
                 char_at = 0
                 hp = 0.0
                 nextHunger = time()
+                randomSeed = 0.5 * random.random()
                 edit_char = ""
                 inscreen = False
                 before_key = [False for _ in KEYS]
@@ -676,7 +677,7 @@ if __name__ == "__main__":
                         ai_k, ai_m, ai_mem, ai_chat = actor.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ), verbose=0)
-                        if random.random() < 0.3:
+                        if random.random() < randomSeed:
                             ai_k = np.random.random(ai_k.shape)
                             ai_m[0] = np.random.random(ai_m[0].shape) * 2 - 1
                             ai_m[1] = np.random.random(ai_m[1].shape)
