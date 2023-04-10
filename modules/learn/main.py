@@ -177,7 +177,7 @@ def convAll():
     ai_mem_3 = np.where(ai_mem_3<0.5, 0, 1)
     ai_mem_4 = np.where(ai_mem_4<0.5, 0, 1)
     ai_chat = np.clip(ai_chat, 0, 1)
-    input_data = actor.make_input(
+    input_data = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT).make_input(
         x_img, x_reg, x_mem, x_reg2, x_mem2, np.transpose(x_name, (1,0,2)), x_mes, x_img.shape[0]
     )
     output_data = [
