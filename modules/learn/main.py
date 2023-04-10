@@ -380,6 +380,7 @@ def learn():
             x = x[:-1]
             x.extend(y)
             y = rewardEst
+            logger.debug(y)
             beforeEst = critic.model.predict(x, verbose=0).copy()
             loss = critic.model.train_on_batch(x, y)
             afterEst = critic.model.predict(x, verbose=0).copy()
