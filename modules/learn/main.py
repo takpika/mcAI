@@ -116,14 +116,10 @@ USE_LEARN_LIMIT = 3
 data = []
 learn_data = []
 TRAINING = False
-vae = mcai.image.ImageVAE()
-charVAE = mcai.text.CharVAE(CHARS_COUNT)
-keyboardVAE = mcai.control.KeyboardVAE()
-mouseVAE = mcai.control.MouseVAE()
-actor = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
-critic = mcai.Critic(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
-critic.model.compile(loss="mse", optimizer="Adam")
-critic.model.trainable = False
+actor = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT).buildModel()
+critic = mcai.Critic(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT).buildModel()
+critic.compile(loss="mse", optimizer="Adam")
+critic.trainable = False
 imgIn = Input(shape=(256, 256, 3))
 regIn = Input(shape=(8))
 memIn = Input(shape=(8))
@@ -132,8 +128,8 @@ mem2In = Input(shape=(8))
 nameIn = [Input(shape=(CHARS_COUNT)) for _ in range(6)]
 mesIn = Input(shape=(CHARS_COUNT))
 seedIn = Input(shape=(100))
-actorAction = actor.model([imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn])
-valid = critic.model([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], actorAction])
+actorAction = actor([imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn])
+valid = critic([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], actorAction])
 combined = Model(inputs=[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn], outputs=[valid])
 combined.compile(loss="mse", optimizer="Adam")
 
@@ -296,36 +292,16 @@ def check():
         logger.debug("First Run, current total frames: %d" % (learnFrameCount))
         CHECK_FIRSTRUN = False
         TRAINING = True
-        if not os.path.exists("models/char_e.h5") or not os.path.exists("models/char_d.h5"):
-            charVAELearn()
-        if not os.path.exists("models/keyboard_e.h5") or not os.path.exists("models/keyboard_d.h5"):
-            keyboardVAELearn()
-        if not os.path.exists("models/mouse_e.h5") or not os.path.exists("models/mouse_d.h5"):
-            mouseVAELearn()
         if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
-            actor.model.load_weights("models/model.h5")
-            critic.model.load_weights("models/critic.h5")
-        if os.path.exists("models/vae_e.h5"):
-            actor.encoder.model.load_weights("models/vae_e.h5")
-            critic.encoder.model.load_weights("models/vae_e.h5")
-        actor.charencoder.model.load_weights("models/char_e.h5")
-        for c in actor.nameencoder.chars:
-            c.model.load_weights("models/char_e.h5")
-        actor.keyboarddecoder.model.load_weights("models/keyboard_d.h5")
-        actor.mousedecoder.model.load_weights("models/mouse_d.h5")
-        critic.charencoder.model.load_weights("models/char_e.h5")
-        for c in critic.nameencoder.chars:
-            c.model.load_weights("models/char_e.h5")
-        critic.keyboardencoder.model.load_weights("models/keyboard_e.h5")
-        critic.mouseencoder.model.load_weights("models/mouse_e.h5")
-        critic.actorcharencoder.model.load_weights("models/char_e.h5")
+            actor.load_weights("models/model.h5")
+            critic.load_weights("models/critic.h5")
         TRAINING = False
     if learnFrameCount >= (LEARN_LIMIT * 0.75) and not TRAINING:
         learn()
 
 def learn():
     global LEARN_LIMIT, TRAINING, MODEL_WRITING
-    global model, vae, learnFramesBuffer
+    global model, learnFramesBuffer
     batchSize = 32
     if TRAINING: return
     TRAINING = True
@@ -333,33 +309,6 @@ def learn():
 
     learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 2)
     iters = len(learnFrames) // batchSize
-
-    # Image VAE Learning
-    if os.path.exists("models/vae_d_latest.h5") and os.path.exists("models/vae_e_latest.h5"):
-        vae.decoder.model.load_weights("models/vae_d_latest.h5")
-        vae.encoder.model.load_weights("models/vae_e_latest.h5")
-    vaeFrames = np.empty((LEARN_LIMIT // 2, 256, 256, 3), dtype=np.uint8)
-    for i in range(len(learnFrames)):
-        vaeFrames[i] = learnFrames[i]["img"]
-    logger.debug("Start: Image VAE Learning")
-    for epoch in range(1):
-        for iter in range(iters):
-            loss = vae.model.train_on_batch(vaeFrames[iter*batchSize:(iter+1)*batchSize]/255, vaeFrames[iter*batchSize:(iter+1)*batchSize]/255)
-            if iter % 10 == 0:
-                logger.debug("Image VAE Loss: %.6f, %d epochs, %d iters" % (loss, epoch, iter))
-    del vaeFrames
-    vae.encoder.model.save("models/vae_e_latest.h5")
-    vae.decoder.model.save("models/vae_d_latest.h5")
-
-    vaeOverride = random.random() < 0
-    if not os.path.exists("models/vae_e.h5") or not os.path.exists("models/vae_d.h5") or vaeOverride:
-        logger.debug("Image VAE Model Updated")
-        shutil.copy("models/vae_e_latest.h5", "models/vae_e.h5")
-        shutil.copy("models/vae_d_latest.h5", "models/vae_d.h5")
-        actor.encoder.model.load_weights("models/vae_e.h5")
-        critic.encoder.model.load_weights("models/vae_e.h5")
-    mcai.clearSession()
-    logger.debug("End: Image VAE Learning")
 
     thisEpochs = EPOCHS
 
@@ -378,9 +327,9 @@ def learn():
             x = x[:-1]
             x.extend(y)
             y = rewardEst
-            beforeEst = critic.model.predict(x, verbose=0).copy()
-            loss = critic.model.train_on_batch(x, y)
-            afterEst = critic.model.predict(x, verbose=0).copy()
+            beforeEst = critic.predict(x, verbose=0).copy()
+            loss = critic.train_on_batch(x, y)
+            afterEst = critic.predict(x, verbose=0).copy()
             logger.debug(np.all(beforeEst == afterEst))
             logger.debug(np.all(afterEst == y))
             logger.debug(afterEst)
@@ -426,46 +375,6 @@ def learn():
         json.dump(version, f)
     TRAINING = False
     logger.info("Finish Learning")
-
-def charVAELearn():
-    logger.debug("Start: Char VAE Learning")
-    for epoch in range(100000):
-        x = np.random.random((100, CHARS_COUNT))
-        x = np.where(x == x.max(axis=1, keepdims=True), 1, 0)
-        loss = charVAE.model.train_on_batch(x, x)
-        if epoch % 1000 == 0:
-            logger.debug("Char VAE Loss: %.6f, %d epochs" % (loss, epoch))
-    charVAE.encoder.model.save("models/char_e.h5")
-    charVAE.decoder.model.save("models/char_d.h5")
-    mcai.clearSession()
-    logger.debug("End: Char VAE Learning")
-
-def keyboardVAELearn():
-    logger.debug("Start: Keyboard VAE Learning")
-    for epoch in range(100000):
-        x = np.random.random((100, 17))
-        x = np.where(x >= 0.5, 1, 0)
-        loss = keyboardVAE.model.train_on_batch(x, x)
-        if epoch % 1000 == 0:
-            logger.debug("Keyboard VAE Loss: %.6f, %d epochs" % (loss, epoch))
-    keyboardVAE.encoder.model.save("models/keyboard_e.h5")
-    keyboardVAE.decoder.model.save("models/keyboard_d.h5")
-    mcai.clearSession()
-    logger.debug("End: Keyboard VAE Learning")
-
-def mouseVAELearn():
-    logger.debug("Start: Mouse VAE Learning")
-    for epoch in range(100000):
-        x_dir = np.random.random((100, 2)) * 2 - 1
-        x_btn = np.random.random((100, 2))
-        x_btn = np.where(x_btn >= 0.5, 1, 0)
-        loss = mouseVAE.model.train_on_batch([x_dir, x_btn], [x_dir, x_btn])
-        if epoch % 1000 == 0:
-            logger.debug("Mouse VAE Loss: %.6f, %d epochs" % (loss[0], epoch))
-    mouseVAE.encoder.model.save("models/mouse_e.h5")
-    mouseVAE.decoder.model.save("models/mouse_d.h5")
-    mcai.clearSession()
-    logger.debug("End: Mouse VAE Learning")
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):

@@ -303,7 +303,7 @@ def download_update():
     global DOWNLOAD_LOCK
     global AI_UPDATE_LOCK
     global VERSION, AI_COUNT
-    modelFiles = ["model.h5", "vae_e.h5", "char_e.h5", "keyboard_d.h5", "mouse_d.h5"]
+    modelFiles = ["model.h5"]
     if not DOWNLOAD_LOCK:
         DOWNLOAD_LOCK = True
         try:
@@ -330,13 +330,7 @@ def download_update():
                 while AI_USING:
                     sleep(0.1)
                 AI_UPDATE_LOCK = True
-                model.model.load_weights(os.path.join(WORK_DIR, "model.h5"))
-                model.encoder.model.load_weights(os.path.join(WORK_DIR, "vae_e.h5"))
-                model.charencoder.model.load_weights(os.path.join(WORK_DIR, "char_e.h5"))
-                for c in model.nameencoder.chars:
-                    c.model.load_weights(os.path.join(WORK_DIR, "char_e.h5"))
-                model.keyboarddecoder.model.load_weights(os.path.join(WORK_DIR, "keyboard_d.h5"))
-                model.mousedecoder.model.load_weights(os.path.join(WORK_DIR, "mouse_d.h5"))
+                model.load_weights(os.path.join(WORK_DIR, "model.h5"))
                 AI_UPDATE_LOCK = False
                 VERSION = currentVersion
                 AI_COUNT = currentCount
@@ -422,7 +416,7 @@ def pos_distance(pos1, pos2):
 
 videoFrames, videoFramePos = np.empty((FRAME_LIMIT, HEIGHT, WIDTH, 3), dtype="uint8"), 0
 
-model = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
+model = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT).buildModel()
 ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%dx%d" % (WIDTH, HEIGHT), server=SERVER)
 
 learn_data = {}
@@ -448,7 +442,6 @@ if __name__ == "__main__":
                 if FORCE_QUIT:
                     break
                 send_message_data = ""
-                #randomSeed = random.random() ** 2
                 hashID = startRecording()
                 mem = np.random.random((2**8, 8))
                 if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
