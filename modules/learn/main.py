@@ -330,9 +330,6 @@ def learn():
             beforeEst = critic.predict(x, verbose=0).copy()
             loss = critic.train_on_batch(x, y)
             afterEst = critic.predict(x, verbose=0).copy()
-            logger.debug(np.all(beforeEst == afterEst))
-            logger.debug(np.all(afterEst == y))
-            logger.debug(afterEst)
             loss_history.append(loss)
         logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
 
@@ -351,8 +348,6 @@ def learn():
             realEst = combined.predict(x, verbose=0)
             y = np.maximum(rewardEst, realEst)
             loss = combined.train_on_batch(x, y)
-            afterEst = combined.predict(x, verbose=0)
-            logger.debug(np.all(realEst == afterEst))
             loss_history.append(loss)
         logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
 
