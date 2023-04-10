@@ -383,6 +383,7 @@ def learn():
             afterEst = critic.model.predict(x, verbose=0).copy()
             logger.debug(np.all(beforeEst == afterEst))
             logger.debug(np.all(afterEst == y))
+            logger.debug(afterEst)
             loss_history.append(loss)
         logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
 
