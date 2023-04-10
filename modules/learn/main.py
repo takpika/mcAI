@@ -352,8 +352,8 @@ def learn():
         logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
 
     MODEL_WRITING = True
-    actor.model.save("models/model.h5")
-    critic.model.save("models/critic.h5")
+    actor.save("models/model.h5")
+    critic.save("models/critic.h5")
     MODEL_WRITING = False
 
     mcai.clearSession()
