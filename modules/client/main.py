@@ -330,7 +330,7 @@ def download_update():
                 while AI_USING:
                     sleep(0.1)
                 AI_UPDATE_LOCK = True
-                model.load_weights(os.path.join(WORK_DIR, "model.h5"))
+                actor.load_weights(os.path.join(WORK_DIR, "model.h5"))
                 AI_UPDATE_LOCK = False
                 VERSION = currentVersion
                 AI_COUNT = currentCount
@@ -416,7 +416,8 @@ def pos_distance(pos1, pos2):
 
 videoFrames, videoFramePos = np.empty((FRAME_LIMIT, HEIGHT, WIDTH, 3), dtype="uint8"), 0
 
-model = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT).buildModel()
+model = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT)
+actor = model.buildModel()
 ptmc = PortableMinecraft(version=config["version"], name=HOSTNAME, resol="%dx%d" % (WIDTH, HEIGHT), server=SERVER)
 
 learn_data = {}
@@ -445,7 +446,7 @@ if __name__ == "__main__":
                 hashID = startRecording()
                 mem = np.random.random((2**8, 8))
                 if os.path.exists(os.path.join(WORK_DIR, "model.h5")):
-                    model.model.load_weights(os.path.join(WORK_DIR, "model.h5"))
+                    actor.load_weights(os.path.join(WORK_DIR, "model.h5"))
                 x, y = 0, 0
                 mes_id = 0
                 last = time()
@@ -672,7 +673,7 @@ if __name__ == "__main__":
                             sleep(1)
                             logger.info("Updating AI...")
                         AI_USING = True
-                        ai_k, ai_m, ai_mem, ai_chat = model.predict(model.make_input(
+                        ai_k, ai_m, ai_mem, ai_chat = actor.predict(model.make_input(
                             x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, 1
                         ))
                         if random.random() < 0.2:
