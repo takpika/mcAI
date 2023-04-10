@@ -380,9 +380,9 @@ def learn():
             x = x[:-1]
             x.extend(y)
             y = rewardEst
-            beforeEst = critic.model.predict(x, verbose=0)
+            beforeEst = critic.model.predict(x, verbose=0).copy()
             loss = critic.model.train_on_batch(x, y)
-            afterEst = critic.model.predict(x, verbose=0)
+            afterEst = critic.model.predict(x, verbose=0).copy()
             logger.debug(np.all(beforeEst == afterEst))
             loss_history.append(loss)
         logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
