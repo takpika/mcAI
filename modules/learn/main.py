@@ -334,7 +334,6 @@ def learn():
     learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 2)
     iters = len(learnFrames) // batchSize
 
-    '''
     # Image VAE Learning
     if os.path.exists("models/vae_d_latest.h5") and os.path.exists("models/vae_e_latest.h5"):
         vae.decoder.model.load_weights("models/vae_d_latest.h5")
@@ -361,7 +360,6 @@ def learn():
         critic.encoder.model.load_weights("models/vae_e.h5")
     mcai.clearSession()
     logger.debug("End: Image VAE Learning")
-    '''
 
     thisEpochs = EPOCHS
 
