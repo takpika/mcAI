@@ -398,9 +398,9 @@ def learn():
             x, _, rewardEst = convAll()
             realEst = combined.predict(x, verbose=0)
             y = np.maximum(rewardEst, realEst)
-            logger.debug(np.all(y == rewardEst))
-            logger.debug(np.all(y == realEst))
             loss = combined.train_on_batch(x, y)
+            afterEst = combined.predict(x, verbose=0)
+            logger.debug(np.all(realEst == afterEst))
             loss_history.append(loss)
         logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
 
