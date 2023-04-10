@@ -123,7 +123,6 @@ mouseVAE = mcai.control.MouseVAE()
 actor = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
 critic = mcai.Critic(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
 critic.model.compile(loss="mse", optimizer="Adam")
-critic.model.trainable = False
 imgIn = Input(shape=(256, 256, 3))
 regIn = Input(shape=(8))
 memIn = Input(shape=(8))
@@ -380,7 +379,6 @@ def learn():
             x = x[:-1]
             x.extend(y)
             y = rewardEst
-            logger.debug(y)
             beforeEst = critic.model.predict(x, verbose=0).copy()
             loss = critic.model.train_on_batch(x, y)
             afterEst = critic.model.predict(x, verbose=0).copy()
