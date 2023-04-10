@@ -123,7 +123,7 @@ keyboardVAE = mcai.control.KeyboardVAE()
 mouseVAE = mcai.control.MouseVAE()
 actor = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
 critic = mcai.Critic(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
-critic.model.compile(loss="mse", optimizer=Adam(lr=0.001))
+critic.model.compile(loss="mse", optimizer=Adam(learning_rate=0.001))
 critic.model.trainable = False
 imgIn = Input(shape=(256, 256, 3))
 regIn = Input(shape=(8))
@@ -136,7 +136,7 @@ seedIn = Input(shape=(100))
 actorAction = actor.model([imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn])
 valid = critic.model([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], actorAction])
 combined = Model(inputs=[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn], outputs=[valid])
-combined.compile(loss="mse", optimizer=Adam(lr=0.001))
+combined.compile(loss="mse", optimizer=Adam(learning_rate=0.001))
 
 def convAll():
     global learn_data
