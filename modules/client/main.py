@@ -458,6 +458,7 @@ if __name__ == "__main__":
                 playFrameCounts = 0
                 nextHunger = time()
                 jumpCount = 0
+                beforeHp, criticalHp = 8, 999999
                 randomSeed = 0.5 * random.random()
                 edit_char = ""
                 inscreen = False
@@ -562,6 +563,16 @@ if __name__ == "__main__":
                             datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 39, 1)).text)
                             if datae["status"] == "ok":
                                 nextHunger += 120
+                        if data["player"]["health"] <= beforeHp - 10:
+                            criticalHp = data["player"]["health"] + 5
+                            datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "slowness", 5, 3600)).text)
+                            datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "mining_fatigue", 1, 3600)).text)
+                            datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "weakness", 0, 3600)).text)
+                            datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "jump_boost", 254, 3600)).text)
+                        if data["player"]["health"] >= criticalHp:
+                            datae = json.loads(requests.get("http://%s:%d/effect?name=%s&clear=true" % (SERVER, PORT, HOSTNAME)).text)
+                            criticalHp = 999999
+                        beforeHp = data["player"]["health"]
                         if data["player"]["death"]:
                             logger.info("Dead")
                             if hashID in learn_data:
