@@ -184,6 +184,7 @@ def convAll():
         ai_k, [ai_m_1, ai_m_2], [ai_mem_1, ai_mem_2, ai_mem_3, ai_mem_4], ai_chat
     ]
     learn_data.clear()
+    del x_img, x_reg, x_mem, x_reg2, x_mem2, x_name, x_mes, ai_k, ai_m_1, ai_m_2, ai_mem_1, ai_mem_2, ai_mem_3, ai_mem_4, ai_chat
     return input_data, output_data, rewardEst
 
 def convFrame(ld, reward):
@@ -329,9 +330,7 @@ def learn():
             y = rewardEst
             loss = critic.train_on_batch(x, y)
             loss_history.append(loss)
-            del x, y, rewardEst
         logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
-    mcai.clearSession()
 
     # Actor Learning
     for epoch in range(thisEpochs):
@@ -349,7 +348,6 @@ def learn():
             y = np.maximum(rewardEst, realEst)
             loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
-            del x, y, rewardEst, realEst
         logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
     mcai.clearSession()
 
