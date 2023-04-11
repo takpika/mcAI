@@ -110,7 +110,7 @@ with open(config["char_file"], "r") as f:
     chars = json.loads(f.read())
 
 CHARS_COUNT = len(chars["chars"])
-LEARN_LIMIT = 1000
+LEARN_LIMIT = 4096
 USE_LEARN_LIMIT = 3
 
 data = []
@@ -296,7 +296,7 @@ def check():
             actor.load_weights("models/model.h5")
             critic.load_weights("models/critic.h5")
         TRAINING = False
-    if learnFrameCount >= (LEARN_LIMIT * 0.75) and not TRAINING:
+    if learnFrameCount >= (LEARN_LIMIT * 0.5) and not TRAINING:
         learn()
 
 def learn():
@@ -307,7 +307,7 @@ def learn():
     TRAINING = True
     logger.info("Start Learning")
 
-    learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 2)
+    learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 4)
     iters = len(learnFrames) // batchSize
 
     thisEpochs = EPOCHS
