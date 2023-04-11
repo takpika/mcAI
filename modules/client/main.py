@@ -501,10 +501,7 @@ if __name__ == "__main__":
                             break
                     if data["playing"]:
                         played = True
-                        if playStartTime == -1:
-                            playStartTime = time()
-                        playFrameCounts += 1
-                        FPS = playFrameCounts / (time() - playStartTime)
+                        FPS = -1
                         img = sct.grab(mon)
                         image = Image.frombytes('RGB', (img.width, img.height), img.rgb)
                         if data["player"]["gamemode"] != "SURVIVAL":
@@ -555,6 +552,10 @@ if __name__ == "__main__":
                             newbieDamage = True
                             sleep(1)
                             continue
+                        if playStartTime == -1:
+                            playStartTime = time()
+                        playFrameCounts += 1
+                        FPS = playFrameCounts / (time() - playStartTime)
                         if time() > nextHunger or jumpCount >= FPS * 10:
                             if jumpCount >= FPS * 10:
                                 jumpCount = 0
