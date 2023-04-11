@@ -454,6 +454,8 @@ if __name__ == "__main__":
                 mem_reg, mem_reg2 = 0x0, 0x0
                 char_at = 0
                 hp = 0.0
+                playStartTime = -1
+                playFrameCounts = 0
                 nextHunger = time()
                 jumpCount = 0
                 randomSeed = 0.5 * random.random()
@@ -499,6 +501,10 @@ if __name__ == "__main__":
                             break
                     if data["playing"]:
                         played = True
+                        if playStartTime == -1:
+                            playStartTime = time()
+                        playFrameCounts += 1
+                        FPS = playFrameCounts / (time() - playStartTime)
                         img = sct.grab(mon)
                         image = Image.frombytes('RGB', (img.width, img.height), img.rgb)
                         if data["player"]["gamemode"] != "SURVIVAL":
@@ -549,8 +555,8 @@ if __name__ == "__main__":
                             newbieDamage = True
                             sleep(1)
                             continue
-                        if time() > nextHunger or jumpCount >= 100:
-                            if jumpCount >= 100:
+                        if time() > nextHunger or jumpCount >= FPS * 10:
+                            if jumpCount >= FPS * 10:
                                 jumpCount = 0
                             datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 39, 1)).text)
                             if datae["status"] == "ok":
@@ -635,14 +641,14 @@ if __name__ == "__main__":
                         pos_float = (data["player"]["pos"]["x"], data["player"]["pos"]["y"], data["player"]["pos"]["z"])
                         dir = (int(data["player"]["direction"]["x"]), int(data["player"]["direction"]["y"]))
                         position_history.append(pos_float)
-                        if len(position_history) > 1000:
+                        if len(position_history) > FPS * 60 * 60:
                             position_history.pop(0)
                         average_pos = (0, 0, 0)
                         for p in position_history:
                             average_pos = (average_pos[0] + p[0], average_pos[1] + p[1], average_pos[2] + p[2])
                         average_pos = (average_pos[0] / len(position_history), average_pos[1] / len(position_history), average_pos[2] / len(position_history))
-                        if pos_distance(average_pos, pos_float) <= 0.5 and len(position_history) >= 10:
-                            if pos_distance(position_history[-1], position_history[-6]) <= 1 and len(learn_data[hashID]) >= 2:
+                        if pos_distance(average_pos, pos_float) <= 0.5 and len(position_history) >= FPS * 3:
+                            if pos_distance(position_history[-1], position_history[-int(FPS)]) <= 1 and len(learn_data[hashID]) >= 2:
                                 logger.info("No Walking")
                                 for _ in range(10):
                                     try:
