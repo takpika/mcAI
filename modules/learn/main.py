@@ -323,12 +323,14 @@ def learn():
                 frameData.append(frameImg)
                 frameData.extend(frame["data"])
                 learn_data.append(frameData)
+                del frameImg, frameData
             x, y, rewardEst = convAll()
             x = x[:-1]
             x.extend(y)
             y = rewardEst
             loss = critic.train_on_batch(x, y)
             loss_history.append(loss)
+            del x, y, rewardEst, batchFrames
         logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
 
     # Actor Learning
@@ -342,11 +344,13 @@ def learn():
                 frameData.append(frameImg)
                 frameData.extend(frame["data"])
                 learn_data.append(frameData)
+                del frameImg, frameData
             x, _, rewardEst = convAll()
             realEst = combined.predict(x, verbose=0)
             y = np.maximum(rewardEst, realEst)
             loss = combined.train_on_batch(x, y)
             loss_history.append(loss)
+            del x, y, rewardEst, realEst, batchFrames
         logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
     mcai.clearSession()
     gc.collect()
