@@ -455,6 +455,7 @@ if __name__ == "__main__":
                 char_at = 0
                 hp = 0.0
                 nextHunger = time()
+                jumpCount = 0
                 randomSeed = 0.5 * random.random()
                 edit_char = ""
                 inscreen = False
@@ -548,7 +549,9 @@ if __name__ == "__main__":
                             newbieDamage = True
                             sleep(1)
                             continue
-                        if time() > nextHunger:
+                        if time() > nextHunger or jumpCount >= 100:
+                            if jumpCount >= 100:
+                                jumpCount = 0
                             datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 39, 1)).text)
                             if datae["status"] == "ok":
                                 nextHunger += 120
@@ -695,6 +698,8 @@ if __name__ == "__main__":
                         ai_chat = np.where(ai_chat == np.max(ai_chat), 1, 0)
                         for i in range(len(KEYS)):
                             res = ai_k[0][i] >= 0.5
+                            if res and KEYS[i] == "space":
+                                jumpCount += 1
                             if before_key[i] != res:
                                 handle_keyboard(KEYS[i], ai_k[0][i] >= 0.5)
                             before_key[i] = res
