@@ -531,6 +531,10 @@ if __name__ == "__main__":
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: toughasnails:thirst")
                                     continue
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "strength", 0, 999999)).text)
+                                if datae["status"] != "ok":
+                                    logger.debug("Failed to add effect: strength")
+                                    continue
                                 for effect in effects:
                                     if random.random() < 0.01:
                                         level = int((random.random() ** 2) * 10)
