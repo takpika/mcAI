@@ -522,12 +522,12 @@ if __name__ == "__main__":
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to clear effects")
                                     continue
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 3)).text)
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 240, 4)).text)
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: hunger")
                                     continue
                                 nextHunger += 120
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "toughasnails:thirst", 160, 1)).text)
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "toughasnails:thirst", 150, 1)).text)
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: toughasnails:thirst")
                                     continue
