@@ -466,6 +466,7 @@ if __name__ == "__main__":
                 head_topbtm_time = -1
                 last_pos, last_dir, last_change, last_change_pos = (-1, -1, -1), (-1, -1), -1, -1
                 position_history = []
+                afkStartTime = -1
                 newbie, newbieDamage, newbieDamageChecked = True, False, False
                 while True:
                     if not hashID in learn_data:
@@ -522,12 +523,12 @@ if __name__ == "__main__":
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to clear effects")
                                     continue
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 240, 4)).text)
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 3)).text)
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: hunger")
                                     continue
                                 nextHunger += 120
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "toughasnails:thirst", 150, 1)).text)
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "toughasnails:thirst", 160, 1)).text)
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: toughasnails:thirst")
                                     continue
@@ -641,16 +642,7 @@ if __name__ == "__main__":
                             else:
                                 if time() - head_topbtm_time >= 3 and len(learn_data[hashID]) >= 2:
                                     logger.info("Head spinning")
-                                    for _ in range(10):
-                                        try:
-                                            data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
-                                            if data["status"] == "ok":
-                                                sleep(1)
-                                                break
-                                        except:
-                                            pass
-                                        sleep(1)
-                                    continue
+                                    datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 60)).text)
                         else:
                             head_topbtm_time = -1
                         pos = (int(data["player"]["pos"]["x"]), int(data["player"]["pos"]["y"]), int(data["player"]["pos"]["z"]))
@@ -663,19 +655,15 @@ if __name__ == "__main__":
                         for p in position_history:
                             average_pos = (average_pos[0] + p[0], average_pos[1] + p[1], average_pos[2] + p[2])
                         average_pos = (average_pos[0] / len(position_history), average_pos[1] / len(position_history), average_pos[2] / len(position_history))
-                        if pos_distance(average_pos, pos_float) <= 0.5 and len(position_history) >= FPS * 3:
-                            if pos_distance(position_history[-1], position_history[-int(FPS)]) <= 1 and len(learn_data[hashID]) >= 2:
-                                logger.info("No Walking")
-                                for _ in range(10):
-                                    try:
-                                        data = json.loads(requests.get("http://%s:%d/kill?name=%s" % (SERVER, PORT, HOSTNAME)).text)
-                                        if data["status"] == "ok":
-                                            sleep(1)
-                                            break
-                                    except:
-                                        pass
-                                    sleep(1)
-                                continue
+                        if pos_distance(average_pos, pos_float) <= min(len(position_history)/FPS*4.317*0.25, 10):
+                            if afkStartTime == -1:
+                                afkStartTime = time()
+                            else:
+                                if time() - afkStartTime >= 5:
+                                    logger.info("AFK")
+                                    datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 60)).text)
+                        else:
+                            afkStartTime = -1
                         x_img = np.array(image).reshape((1, HEIGHT, WIDTH, 3)) / 255
                         x_reg = np.array([getBit(mem_reg, i) for i in range(7,-1,-1)])
                         x_mem = mem[mem_reg]
