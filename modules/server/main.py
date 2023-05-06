@@ -116,7 +116,6 @@ def runCommand(command):
             break
         except:
             mcr.disconnect()
-            mcr.connect()
             continue
     mcrLock = False
     mcrJobs = mcrJobs[1:]
