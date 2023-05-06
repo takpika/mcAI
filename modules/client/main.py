@@ -42,15 +42,14 @@ def search_central():
     sock.settimeout(1)
     for _ in range(10):
         sock.sendto(json.dumps(sendData).encode("utf-8"), ("224.1.1.1", 9999))
-        for _ in range(10):
-            try:
-                data, addr = sock.recvfrom(1024)
-                data = json.loads(data.decode("utf-8"))
-                if data["status"] == "ok" and data["info"]["type"] == "central":
-                    CENTRAL_IP = addr[0]
-                    break
-            except:
-                pass
+        try:
+            data, addr = sock.recvfrom(1024)
+            data = json.loads(data.decode("utf-8"))
+            if data["status"] == "ok" and data["info"]["type"] == "central":
+                CENTRAL_IP = addr[0]
+                break
+        except:
+            pass
         if CENTRAL_IP != None:
             break
     sock.close()

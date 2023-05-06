@@ -4,6 +4,7 @@ from time import sleep
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 import threading, urllib.parse
+from mcrcon import MCRcon
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -13,6 +14,10 @@ logger_handler.setFormatter(logger_formatter)
 logger.addHandler(logger_handler)
 
 SERV_TYPE = "server"
+
+RCON_ADDRESS = "localhost"
+RCON_PORT = 25575
+RCON_PASSWORD = "mcai"
 
 if os.path.exists("eula.txt"):
     os.remove("eula.txt")
@@ -62,15 +67,14 @@ def search_central():
     sock.settimeout(1)
     for _ in range(10):
         sock.sendto(json.dumps(sendData).encode("utf-8"), ("224.1.1.1", 9999))
-        for _ in range(10):
-            try:
-                data, addr = sock.recvfrom(1024)
-                data = json.loads(data.decode("utf-8"))
-                if data["status"] == "ok" and data["info"]["type"] == "central":
-                    CENTRAL_IP = addr[0]
-                    break
-            except:
-                pass
+        try:
+            data, addr = sock.recvfrom(1024)
+            data = json.loads(data.decode("utf-8"))
+            if data["status"] == "ok" and data["info"]["type"] == "central":
+                CENTRAL_IP = addr[0]
+                break
+        except:
+            pass
         if CENTRAL_IP != None:
             break
     sock.close()
@@ -90,6 +94,24 @@ send_data = {
     }
 }
 trys = 0
+
+mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
+
+def runCommand(command):
+    global mcr
+    while True:
+        try:
+            mcr.command(command)
+        except ConnectionRefusedError:
+            mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
+            continue
+    
+def checkServerRunning():
+    try:
+        mcr.command("list")
+        return True
+    except:
+        return False
 
 while requests.get("http://%s:%d/check?type=%s" % (CENTRAL_IP, 8000, SERV_TYPE)).status_code != 200:
     requests.post("http://%s:%d/" % (CENTRAL_IP, 8000), json=send_data)
@@ -127,7 +149,7 @@ class Handler(BaseHTTPRequestHandler):
         }
         if path == "/kill":
             if "name" in query:
-                subprocess.run("/usr/bin/screen -S minecraft -X eval 'stuff \"kill %s\"'\015" % query["name"][0], shell=True)
+                runCommand("kill %s" % query["name"][0])
                 status_code = 200
                 response["status"] = "ok"
                 response["msg"] = "Success"
@@ -136,7 +158,7 @@ class Handler(BaseHTTPRequestHandler):
                 response["msg"] = "Bad Request"
         elif path == "/gamemode":
             if "name" in query and "mode" in query:
-                subprocess.run("/usr/bin/screen -S minecraft -X eval 'stuff \"gamemode %s %s\"'\015" % (query["mode"][0], query["name"][0]), shell=True)
+                runCommand("gamemode %s %s" % (query["mode"][0], query["name"][0]))
                 status_code = 200
                 response["status"] = "ok"
                 response["msg"] = "Success"
@@ -149,14 +171,14 @@ class Handler(BaseHTTPRequestHandler):
                 effectName = query["effect"][0]
                 level = int(query["level"][0]) if "level" in query else 1
                 duration = int(query["duration"][0]) if "duration" in query else 999999
-                subprocess.run("/usr/bin/screen -S minecraft -X eval 'stuff \"effect give %s %s %d %d true\"'\015" % (playerName, effectName, duration, level), shell=True)
+                runCommand("effect give %s %s %d %d true" % (playerName, effectName, duration, level))
                 status_code = 200
                 response["status"] = "ok"
                 response["msg"] = "Success"
             elif "name" in query and "clear" in query:
                 playerName = query["name"][0]
                 effect = query["effect"][0] if "effect" in query else ""
-                subprocess.run("/usr/bin/screen -S minecraft -X eval 'stuff \"effect clear %s %s\"'\015" % (playerName, effect), shell=True)
+                runCommand("effect clear %s %s" % (playerName, effect))
                 status_code = 200
                 response["status"] = "ok"
                 response["msg"] = "Success"
@@ -175,8 +197,16 @@ def start_httpServer():
     server = ThreadedHTTPServer(("0.0.0.0", PORT), Handler)
     server.serve_forever()
 
+def randomApple():
+    while not checkServerRunning():
+        sleep(1)
+    while True:
+        runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:apple\",Count:1b},PickupDelay:0s,Tags:[\"randomApple\"],NoGravity:true}")
+        runCommand("execute at @r run spreadplayers ~ ~ 10 30 false @e[tag=randomApple]")
+        sleep(60)
+
 if __name__ == "__main__":
     t = threading.Thread(target=start_httpServer)
     t.daemon = True
     t.start()
-    subprocess.run(["/usr/bin/screen", "-DmS", "minecraft", "bash", "run.sh"])
+    subprocess.run(["bash", "run.sh"])
