@@ -154,13 +154,6 @@ CHARS_LIMIT = config["chat_chars_limit"]
 
 FRAME_LIMIT = config["frame_record_limit"]
 
-if os.path.exists(".minecraft/config/toughasnails/temperature.toml"):
-    with open(".minecraft/config/toughasnails/temperature.toml", "r") as f:
-        data = f.read()
-    data = data.replace("climate_clemency_duration = 6000", "climate_clemency_duration = 0")
-    with open(".minecraft/config/toughasnails/temperature.toml", "w") as f:
-        f.write(data)
-
 def clear_keyboard():
     for k in KEYS:
         handle_keyboard(k, False)
@@ -522,15 +515,11 @@ if __name__ == "__main__":
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to clear effects")
                                     continue
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 3)).text)
+                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 2)).text) # before: 255 3 sec
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: hunger")
                                     continue
                                 nextHunger += 120
-                                datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "toughasnails:thirst", 160, 1)).text)
-                                if datae["status"] != "ok":
-                                    logger.debug("Failed to add effect: toughasnails:thirst")
-                                    continue
                                 datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "strength", 0, 999999)).text)
                                 if datae["status"] != "ok":
                                     logger.debug("Failed to add effect: strength")

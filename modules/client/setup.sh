@@ -63,8 +63,6 @@ source ~/.bashrc
 if [ ! -d ~/.minecraft/mods ]; then
 mkdir -p ~/.minecraft/mods
 fi
-curl -o ~/.minecraft/mods/OptiFine_${MC_VERSION}_HD_U_H9.jar `python scripts/download_optifine.py`
-curl -o ~/.minecraft/mods/ToughAsNails-${MC_VERSION}.jar https://mediafilez.forgecdn.net/files/3871/450/ToughAsNails-1.19-8.0.0.78.jar
 bash modules/client/build_mod.sh
 mv ~/*.jar ~/.minecraft/mods
 cp modules/client/options.txt ~/.minecraft/

@@ -146,13 +146,6 @@ while True:
 
 PORT = config["port"]
 
-if os.path.exists("config/toughasnails/temperature.toml"):
-    with open("config/toughasnails/temperature.toml", "r") as f:
-        data = f.read()
-    data = data.replace("climate_clemency_duration = 6000", "climate_clemency_duration = 0")
-    with open("config/toughasnails/temperature.toml", "w") as f:
-        f.write(data)
-
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parse_data = urllib.parse.urlparse(self.path)
@@ -217,7 +210,7 @@ def randomApple():
     while not checkServerRunning():
         sleep(1)
     while True:
-        runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:apple\",Count:16b},PickupDelay:0s,Tags:[\"randomApple\"],NoGravity:true}")
+        runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:apple\",Count:4b},PickupDelay:0s,Tags:[\"randomApple\"],NoGravity:true}")
         runCommand("execute at @r run spreadplayers ~ ~ 5 10 false @e[tag=randomApple]")
         sleep(60)
 
