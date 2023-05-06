@@ -102,8 +102,10 @@ def runCommand(command):
     while True:
         try:
             mcr.command(command)
-        except ConnectionRefusedError:
-            mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
+            break
+        except:
+            mcr.disconnect()
+            mcr.connect()
             continue
     
 def checkServerRunning():
