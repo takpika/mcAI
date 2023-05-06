@@ -211,7 +211,7 @@ if __name__ == "__main__":
     targets = [start_httpServer, randomApple]
     for target in targets:
         thread = threading.Thread(target=target)
-        thread.start()
         thread.daemon = True
+        thread.start()
     subprocess.run(["bash", "run.sh"])
     sys.exit(1)
