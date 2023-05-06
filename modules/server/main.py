@@ -5,6 +5,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 import threading, urllib.parse
 from mcrcon import MCRcon
+import random
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -97,10 +98,14 @@ trys = 0
 
 mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
 mcrLock = False
+mcrJobs = []
 
 def runCommand(command):
-    global mcr, mcrLock
-    while mcrLock:
+    global mcr, mcrLock, mcrJobs
+    id = random.randint(0, 100000)
+    if mcrLock:
+        mcrJobs.append(id)
+    while mcrJobs[0] != id and mcrLock:
         sleep(0.1)
     mcrLock = True
     while True:
@@ -112,6 +117,7 @@ def runCommand(command):
             mcr.connect()
             continue
     mcrLock = False
+    mcrJobs = mcrJobs[1:]
 
 def checkServerRunning():
     try:
