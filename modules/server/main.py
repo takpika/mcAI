@@ -1,4 +1,4 @@
-import json, os, socket, requests, subprocess
+import json, os, socket, requests, subprocess, sys
 from logging import getLogger, DEBUG, StreamHandler, Formatter
 from time import sleep
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -214,3 +214,4 @@ if __name__ == "__main__":
         thread.start()
         thread.setDaemon(True)
     subprocess.run(["bash", "run.sh"])
+    sys.exit(1)
