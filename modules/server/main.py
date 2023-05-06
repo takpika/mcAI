@@ -212,6 +212,6 @@ if __name__ == "__main__":
     for target in targets:
         thread = threading.Thread(target=target)
         thread.start()
-        thread.setDaemon(True)
+        thread.daemon = True
     subprocess.run(["bash", "run.sh"])
     sys.exit(1)
