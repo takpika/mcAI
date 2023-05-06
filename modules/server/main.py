@@ -110,6 +110,8 @@ def runCommand(command):
     mcrLock = True
     while True:
         try:
+            if not mcr.socket:
+                mcr.connect()
             mcr.command(command)
             break
         except:
@@ -121,6 +123,8 @@ def runCommand(command):
 
 def checkServerRunning():
     try:
+        if not mcr.socket:
+            mcr.connect()
         mcr.command("list")
         return True
     except:
