@@ -654,7 +654,7 @@ if __name__ == "__main__":
                         for p in position_history:
                             average_pos = (average_pos[0] + p[0], average_pos[1] + p[1], average_pos[2] + p[2])
                         average_pos = (average_pos[0] / len(position_history), average_pos[1] / len(position_history), average_pos[2] / len(position_history))
-                        if pos_distance(average_pos, pos_float) <= min(len(position_history)/FPS*4.317*0.1, 10):
+                        if pos_distance(average_pos, pos_float) <= min(len(position_history)/FPS*0.01, 10):
                             if afkStartTime == -1:
                                 afkStartTime = time()
                             else:
