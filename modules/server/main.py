@@ -5,7 +5,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 import threading, urllib.parse
 from mcrcon import MCRcon
-import random
+import random, traceback
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -222,10 +222,16 @@ def randomApple():
         sleep(60)
 
 if __name__ == "__main__":
-    targets = [start_httpServer, randomApple]
-    for target in targets:
-        thread = threading.Thread(target=target)
-        thread.daemon = True
-        thread.start()
-    subprocess.run(["bash", "run.sh"])
-    sys.exit(1)
+    try:
+        targets = [start_httpServer, randomApple]
+        for target in targets:
+            thread = threading.Thread(target=target)
+            thread.daemon = True
+            thread.start()
+        subprocess.run(["bash", "run.sh"])
+    except Exception as e:
+        t = list(traceback.TracebackException.from_exception(e).format())
+        for i in t:
+            logger.error(i)
+    finally:
+        sys.exit(1)
