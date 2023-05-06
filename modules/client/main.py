@@ -462,10 +462,10 @@ if __name__ == "__main__":
                 edit_char = ""
                 inscreen = False
                 before_key = [False for _ in KEYS]
-                head_topbtm_time = -1
+                head_topbtm_time, headProcessed = -1, False
                 last_pos, last_dir, last_change, last_change_pos = (-1, -1, -1), (-1, -1), -1, -1
                 position_history = []
-                afkStartTime = -1
+                afkStartTime, afkProcesed = -1, False
                 newbie, newbieDamage, newbieDamageChecked = True, False, False
                 while True:
                     if not hashID in learn_data:
@@ -639,11 +639,13 @@ if __name__ == "__main__":
                             if head_topbtm_time == -1:
                                 head_topbtm_time = time()
                             else:
-                                if time() - head_topbtm_time >= 3 and len(learn_data[hashID]) >= 2:
+                                if time() - head_topbtm_time >= 3 and len(learn_data[hashID]) >= 2 and not headProcessed:
                                     logger.info("Head spinning")
                                     datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 60)).text)
+                                    headProcessed = True
                         else:
                             head_topbtm_time = -1
+                            headProcessed = False
                         pos = (int(data["player"]["pos"]["x"]), int(data["player"]["pos"]["y"]), int(data["player"]["pos"]["z"]))
                         pos_float = (data["player"]["pos"]["x"], data["player"]["pos"]["y"], data["player"]["pos"]["z"])
                         dir = (int(data["player"]["direction"]["x"]), int(data["player"]["direction"]["y"]))
@@ -658,11 +660,13 @@ if __name__ == "__main__":
                             if afkStartTime == -1:
                                 afkStartTime = time()
                             else:
-                                if time() - afkStartTime >= 5:
+                                if time() - afkStartTime >= 5 and not afkProcessed:
                                     logger.info("AFK")
                                     datae = json.loads(requests.get("http://%s:%d/effect?name=%s&effect=%s&level=%d&duration=%d" % (SERVER, PORT, HOSTNAME, "hunger", 255, 60)).text)
+                                    afkProcessed = True
                         else:
                             afkStartTime = -1
+                            afkProcessed = False
                         x_img = np.array(image).reshape((1, HEIGHT, WIDTH, 3)) / 255
                         x_reg = np.array([getBit(mem_reg, i) for i in range(7,-1,-1)])
                         x_mem = mem[mem_reg]
