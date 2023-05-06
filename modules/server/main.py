@@ -105,8 +105,8 @@ def runCommand(command):
     id = random.randint(0, 100000)
     if mcrLock:
         mcrJobs.append(id)
-    while mcrJobs[0] != id and mcrLock:
-        sleep(0.1)
+        while mcrJobs[0] != id and mcrLock:
+            sleep(0.1)
     mcrLock = True
     while True:
         try:
