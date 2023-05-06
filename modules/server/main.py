@@ -208,7 +208,9 @@ def randomApple():
         sleep(60)
 
 if __name__ == "__main__":
-    t = threading.Thread(target=start_httpServer)
-    t.daemon = True
-    t.start()
+    targets = [start_httpServer, randomApple]
+    for target in targets:
+        thread = threading.Thread(target=target)
+        thread.start()
+        thread.setDaemon(True)
     subprocess.run(["bash", "run.sh"])
