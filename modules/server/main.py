@@ -96,9 +96,13 @@ send_data = {
 trys = 0
 
 mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
+mcrLock = False
 
 def runCommand(command):
-    global mcr
+    global mcr, mcrLock
+    while mcrLock:
+        sleep(0.1)
+    mcrLock = True
     while True:
         try:
             mcr.command(command)
@@ -107,7 +111,8 @@ def runCommand(command):
             mcr.disconnect()
             mcr.connect()
             continue
-    
+    mcrLock = False
+
 def checkServerRunning():
     try:
         mcr.command("list")
