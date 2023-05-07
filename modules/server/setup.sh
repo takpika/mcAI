@@ -3,8 +3,8 @@ export DEBIAN_FRONTEND=noninteractive
 MODULE="server"
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
-MC_VERSION="1.19.2"
-FORGE_VERSION="43.2.1"
+MC_VERSION="1.19.4"
+FORGE_VERSION="45.0.57"
 PID1=`ps -p 1 -o comm=`
 if [ "$PID1" = "systemd" ]; then
     echo "Normal Environment, Running Systemd"

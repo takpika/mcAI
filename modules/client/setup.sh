@@ -5,7 +5,7 @@ CURRENT_DIR=`pwd`
 PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
 ID=`printf "%02d" $1`
 PID1=`ps -p 1 -o comm=`
-MC_VERSION="1.19.2"
+MC_VERSION="1.19.4"
 if [ "$PID1" = "systemd" ]; then
     echo "Normal Environment, Running Systemd"
 else
