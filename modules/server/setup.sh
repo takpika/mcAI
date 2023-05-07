@@ -18,7 +18,7 @@ bash scripts/change_dns.sh 8.8.8.8
 fi
 set -e
 sudo apt update
-DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-17-jdk python3 python-is-python3 python3-pip cifs-utils screen inetutils-ping watchdog curl -y
+DEBIAN_FRONTEND=noninteractive sudo apt install openjdk-19-jdk python3 python-is-python3 python3-pip cifs-utils screen inetutils-ping watchdog curl -y
 sudo pip install -r modules/$MODULE/requirements.txt
 cd ~/
 curl -o forge-installer.jar https://maven.minecraftforge.net/net/minecraftforge/forge/${MC_VERSION}-${FORGE_VERSION}/forge-${MC_VERSION}-${FORGE_VERSION}-installer.jar
