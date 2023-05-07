@@ -43,6 +43,10 @@ Section "Screen"
     SubSection "Display"
     EndSubSection
 EndSection
+
+Section "Extensions"
+    Option "MIT-SHM" "Disable"
+EndSection
 EOF
 fi
 tee - ~/.xinitrc << EOF
