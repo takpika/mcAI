@@ -460,7 +460,7 @@ if __name__ == "__main__":
                 head_topbtm_time, headProcessed = -1, False
                 last_pos, last_dir, last_change, last_change_pos = (-1, -1, -1), (-1, -1), -1, -1
                 position_history = []
-                afkStartTime, afkProcesed = -1, False
+                afkStartTime, afkProcessed = -1, False
                 newbie, newbieDamage, newbieDamageChecked = True, False, False
                 while True:
                     if not hashID in learn_data:
