@@ -96,27 +96,21 @@ send_data = {
 }
 trys = 0
 
-mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
-
 def runCommand(command):
     global mcr
     while True:
         try:
-            mcr.connect()
-            mcr.command(command)
+            with MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT) as mcr:
+                mcr.command(command)
             break
-        except Exception as e:
-            mcr.disconnect()
-            t = list(traceback.TracebackException.from_exception(e).format())
-            for i in t:
-                logger.error(i)
+        except:
             continue
 
 def checkServerRunning():
     global mcr
     try:
-        mcr.connect()
-        mcr.command("list")
+        with MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT) as mcr:
+            mcr.command("list")
         return True
     except:
         return False
