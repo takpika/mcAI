@@ -96,34 +96,20 @@ send_data = {
 }
 trys = 0
 
-mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
-mcrLock = False
-mcrJobs = []
-
 def runCommand(command):
-    global mcr, mcrLock, mcrJobs
-    id = random.randint(0, 100000)
-    if mcrLock:
-        mcrJobs.append(id)
-        while mcrJobs[0] != id and mcrLock:
-            sleep(0.1)
-    mcrLock = True
     while True:
         try:
-            if not mcr.socket:
-                mcr.connect()
+            mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
+            mcr.connect()
             mcr.command(command)
             break
         except:
-            mcr.disconnect()
             continue
-    mcrLock = False
-    mcrJobs = mcrJobs[1:]
 
 def checkServerRunning():
     try:
-        if not mcr.socket:
-            mcr.connect()
+        mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
+        mcr.connect()
         mcr.command("list")
         return True
     except:
