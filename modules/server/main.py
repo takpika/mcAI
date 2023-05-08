@@ -103,8 +103,10 @@ def runCommand(command):
             mcr.connect()
             mcr.command(command)
             break
-        except:
-            continue
+        except Exception as e:
+            t = list(traceback.TracebackException.from_exception(e).format())
+            for i in t:
+                logger.error(i)
 
 def checkServerRunning():
     try:
