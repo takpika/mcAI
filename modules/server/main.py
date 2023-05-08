@@ -97,11 +97,26 @@ send_data = {
 }
 trys = 0
 
+class CustomMCRcon(MCRcon):
+    def __init__(self, host, password, port=25575, tlsmode=0, timeout=5):
+        self.host = host
+        self.password = password
+        self.port = port
+        self.tlsmode = tlsmode
+        self.timeout = timeout
+
+    def _read(self, length):
+        self.socket.settimeout(self.timeout)
+        data = b""
+        while len(data) < length:
+            data += self.socket.recv(length - len(data))
+        return data
+
 def runCommand(command):
     global mcr
     while True:
         try:
-            with MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT) as mcr:
+            with CustomMCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT) as mcr:
                 mcr.command(command)
             break
         except Exception as e:
@@ -113,7 +128,7 @@ def runCommand(command):
 def checkServerRunning():
     global mcr
     try:
-        with MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT) as mcr:
+        with CustomMCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT) as mcr:
             mcr.command("list")
         return True
     except:
