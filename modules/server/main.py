@@ -6,6 +6,7 @@ from socketserver import ThreadingMixIn
 import threading, urllib.parse
 from mcrcon import MCRcon
 import random, traceback
+from concurrent.futures import ThreadPoolExecutor, TimeoutError, as_completed
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -107,7 +108,6 @@ def runCommand(command):
             t = list(traceback.TracebackException.from_exception(e).format())
             for i in t:
                 logger.error(i)
-            sleep(1)
             continue
 
 def checkServerRunning():
@@ -204,17 +204,26 @@ def randomApple():
         runCommand("execute at @r run spreadplayers ~ ~ 5 10 false @e[tag=randomApple]")
         sleep(60)
 
+def minecraftServer():
+    subprocess.run(["bash", "run.sh"])
+
+def main():
+    tasks = []
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        tasks.append(executor.submit(start_httpServer))
+        tasks.append(executor.submit(randomApple))
+        tasks.append(executor.submit(minecraftServer))
+        for future in as_completed(tasks):
+            try:
+                future.result()
+            except Exception as e:
+                t = list(traceback.TracebackException.from_exception(e).format())
+                for i in t:
+                    logger.error(i)
+            finally:
+                for task in tasks:
+                    task.cancel()
+                exit(1)
+
 if __name__ == "__main__":
-    try:
-        targets = [start_httpServer, randomApple]
-        for target in targets:
-            thread = threading.Thread(target=target)
-            thread.daemon = True
-            thread.start()
-        subprocess.run(["bash", "run.sh"])
-    except Exception as e:
-        t = list(traceback.TracebackException.from_exception(e).format())
-        for i in t:
-            logger.error(i)
-    finally:
-        sys.exit(1)
+    main()
