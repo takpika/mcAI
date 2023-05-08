@@ -8,6 +8,8 @@ from logging import getLogger, DEBUG, StreamHandler, Formatter
 import gc
 from pmc import PortableMinecraft
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
 logger_handler = StreamHandler()
