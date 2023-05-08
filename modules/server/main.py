@@ -103,7 +103,11 @@ def runCommand(command):
             with MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT) as mcr:
                 mcr.command(command)
             break
-        except:
+        except Exception as e:
+            t = list(traceback.TracebackException.from_exception(e).format())
+            for i in t:
+                logger.error(i)
+            sleep(1)
             continue
 
 def checkServerRunning():
