@@ -21,21 +21,26 @@ class PortableMinecraft:
         self.resol = resol
         self.jvm = jvm
         self.server = server
+        self.running = True
         cli.load_addons()
         self.parser = cli.register_arguments()
         pmcf.ForgeVersionInstaller = ForgeVersionInstaller
 
     def install(self):
         global version
+        if not self.running: self.running = True
         nsList = ["start", "forge:%s" % self.version, "--dry", "--jvm", self.jvm]
         ns = self.parser.parse_args(nsList)
         cli.cmd_start(ns, cli.new_context(ns))
+        self.running = False
 
     def start(self):
         global version
+        if not self.running: self.running = True
         nsList = ["start", "forge:%s" % self.version, "--jvm", self.jvm, "-u", self.name, "--resol", self.resol, "-s", self.server, "--jvm-args=-Xmx1G"]
         ns = self.parser.parse_args(nsList)
         cli.cmd_start(ns, cli.new_context(ns))
+        self.running = False
 
 if __name__ == "__main__":
     pmc = PortableMinecraft(sys.argv[1], "setup")

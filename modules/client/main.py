@@ -421,21 +421,23 @@ if __name__ == "__main__":
         while True:
             mc_thread = threading.Thread(target=ptmc.start)
             mc_thread.start()
+            sleep(0.1)
             while True:
+                if not ptmc.running: break
                 try:
                     requests.get("http://localhost:%d/" % (PORT))
                     break
                 except:
                     sleep(0.1)
                     continue
+            if not ptmc.running: continue
             mc_start_time = time()
             mon = {'top': int(screen.height/2-HEIGHT/2), 'left': int(screen.width/2-WIDTH/2), 'width': WIDTH, 'height': HEIGHT}
             FORCE_QUIT = False
             played = False
             while True:
                 get_newName()
-                if FORCE_QUIT:
-                    break
+                if FORCE_QUIT: break
                 send_message_data = ""
                 hashID = startRecording()
                 mem = np.random.random((2**8, 8))
@@ -463,6 +465,9 @@ if __name__ == "__main__":
                 afkStartTime, afkProcessed = -1, False
                 newbie, newbieDamage, newbieDamageChecked = True, False, False
                 while True:
+                    if not ptmc.running:
+                        FORCE_QUIT = True
+                        break
                     if not hashID in learn_data:
                         learn_data[hashID] = []
                     url = "http://localhost:%d/" % (PORT)
