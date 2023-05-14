@@ -2,6 +2,7 @@ from portablemc import cli, Version
 import portablemc_forge as pmcf
 from os import path
 import sys
+import threading
 
 class ForgeVersionInstaller(pmcf.ForgeVersionInstaller):
     def __init__(self, *args, **kwargs):
@@ -31,7 +32,7 @@ class PortableMinecraft:
         if not self.running: self.running = True
         nsList = ["start", "forge:%s" % self.version, "--dry", "--jvm", self.jvm]
         ns = self.parser.parse_args(nsList)
-        cli.cmd_start(ns, cli.new_context(ns))
+        self.cmd_watch(ns)
         self.running = False
 
     def start(self):
@@ -39,8 +40,13 @@ class PortableMinecraft:
         if not self.running: self.running = True
         nsList = ["start", "forge:%s" % self.version, "--jvm", self.jvm, "-u", self.name, "--resol", self.resol, "-s", self.server, "--jvm-args=-Xmx1G"]
         ns = self.parser.parse_args(nsList)
-        cli.cmd_start(ns, cli.new_context(ns))
+        self.cmd_watch(ns)
         self.running = False
+
+    def cmd_watch(self, ns):
+        t = threading.Thread(target=cli.cmd_start, args=(ns, cli.new_context(ns)))
+        t.start()
+        t.join()
 
 if __name__ == "__main__":
     pmc = PortableMinecraft(sys.argv[1], "setup")
