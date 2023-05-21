@@ -215,8 +215,8 @@ def randomApple():
     while not checkServerRunning():
         sleep(1)
     while True:
-        runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:apple\",Count:4b},PickupDelay:0s,Tags:[\"randomApple\"],NoGravity:true}")
-        runCommand("execute at @r run spreadplayers ~ ~ 0 30 false @e[tag=randomApple]")
+        runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:bread\",Count:1b},PickupDelay:0s,Tags:[\"randomFood\"],NoGravity:true}")
+        runCommand("execute at @r run spreadplayers ~ ~ 0 30 false @e[tag=randomFood]")
         sleep(60)
 
 def minecraftServer():
