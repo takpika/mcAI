@@ -1,13 +1,18 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import shutil
+import gc
 from socketserver import ThreadingMixIn
 import threading
-import json, mcai, argparse, os, psutil, socket, requests, subprocess, random, pickle, cv2
+import json, mcai, argparse, os, psutil, socket, requests, subprocess, random, pickle, cv2, shutil, time
 from time import sleep
 import numpy as np
 from datetime import datetime
 from logging import getLogger, DEBUG, StreamHandler, Formatter
 from PIL import Image
+import tensorflow as tf
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -20,30 +25,43 @@ SERV_TYPE = "learn"
 
 CENTRAL_IP = None
 
+videoFrames, moveFrames, learnFramesBuffer = {}, {}, []
+
 if not os.path.exists("models/"):
     os.mkdir("models")
 
+# Search for Central Server
 logger.info("Searching for Central Server...")
 
 def search_central():
     global CENTRAL_IP
+    if os.path.exists("central_host"):
+        with open("central_host", "r") as f:
+            CENTRAL_IP = f.read().replace("\n","")
+        try:
+            data = json.loads(requests.get("http://%s:%d/hello" % (CENTRAL_IP, 8000)).text)
+            if data["status"] == "ok" and data["info"]["type"] == "central":
+                return
+            else:
+                CENTRAL_IP = None
+        except:
+            CENTRAL_IP = None
     sendData = {
         "type": "hello"
     }
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("0.0.0.0", 9999))
-    sock.settimeout(3)
+    sock.settimeout(1)
     for _ in range(10):
         sock.sendto(json.dumps(sendData).encode("utf-8"), ("224.1.1.1", 9999))
-        for _ in range(10):
-            try:
-                data, addr = sock.recvfrom(1024)
-                data = json.loads(data.decode("utf-8"))
-                if data["status"] == "ok" and data["info"]["type"] == "central":
-                    CENTRAL_IP = addr[0]
-                    break
-            except:
-                pass
+        try:
+            data, addr = sock.recvfrom(1024)
+            data = json.loads(data.decode("utf-8"))
+            if data["status"] == "ok" and data["info"]["type"] == "central":
+                CENTRAL_IP = addr[0]
+                break
+        except:
+            pass
         if CENTRAL_IP != None:
             break
     sock.close()
@@ -75,23 +93,14 @@ while True:
     if res.status_code == 200:
         config = json.loads(res.text)["config"]
         break
-    sleep(0.1)
+    sleep(10)
 
 for key in config.keys():
     if type(config[key]) == str:
         config[key] = config[key].replace("__HOME__", os.getenv('HOME'))
         config[key] = config[key].replace("__WORKDIR__", os.getcwd())
 
-SAVE_FOLDER = config["save_folder"]
-DATA_FOLDER = config["data_folder"]
-VIDEO_FOLDER = config["video_folder"]
-if not os.path.exists(SAVE_FOLDER):
-    os.makedirs(SAVE_FOLDER)
-if not os.path.exists(DATA_FOLDER):
-    os.makedirs(DATA_FOLDER)
-if not os.path.exists(VIDEO_FOLDER):
-    os.makedirs(VIDEO_FOLDER)
-
+# Image Size
 WIDTH = config["resolution"]["x"]
 HEIGHT = config["resolution"]["y"]
 
@@ -101,87 +110,90 @@ with open(config["char_file"], "r") as f:
     chars = json.loads(f.read())
 
 CHARS_COUNT = len(chars["chars"])
+LEARN_LIMIT = 4096
+USE_LEARN_LIMIT = 3
 
 data = []
 learn_data = []
-training = False
-vae = mcai.image.ImageVAE()
-model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
+TRAINING = False
+actor = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT).buildModel()
+critic = mcai.Critic(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT).buildModel()
+critic.compile(loss="mse", optimizer="Adam")
+critic.trainable = False
+imgIn = Input(shape=(256, 256, 3))
+regIn = Input(shape=(8))
+memIn = Input(shape=(8))
+reg2In = Input(shape=(8))
+mem2In = Input(shape=(8))
+nameIn = [Input(shape=(CHARS_COUNT)) for _ in range(6)]
+mesIn = Input(shape=(CHARS_COUNT))
+seedIn = Input(shape=(100))
+actorAction = actor([imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn])
+valid = critic([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], actorAction])
+combined = Model(inputs=[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn], outputs=[valid])
+combined.compile(loss="mse", optimizer="Adam")
 
-def limit(i):
-    i[i>1]=1
-    i[i<0]=0
-    return i
-
-def nichi(i):
-    i[i>=0.5]=1
-    i[i<0.5]=0
-    return i
-
-def convertData():
-    x_img = np.empty((0, HEIGHT, WIDTH, 3))
-    x_reg = np.empty((0, 8))
-    x_mem = np.empty((0, 8))
-    x_reg2 = np.empty((0, 8))
-    x_mem2 = np.empty((0, 8))
-    x_name = np.empty((0, 6, CHARS_COUNT))
-    x_mes = np.empty((0, CHARS_COUNT))
-    ai_k = np.empty((0, 17))
-    ai_m_1 = np.empty((0, 2))
-    ai_m_2 = np.empty((0, 2))
-    ai_mem_1 = np.empty((0, 8))
-    ai_mem_2 = np.empty((0, 8))
-    ai_mem_3 = np.empty((0, 8))
-    ai_mem_4 = np.empty((0, 8))
-    ai_chat = np.empty((0, CHARS_COUNT))
+def convAll():
     global learn_data
-    for ld in learn_data:
-        x_img = np.append(x_img, ld[0].reshape((1,HEIGHT,WIDTH,3)), axis=0)
-        x_reg = np.append(x_reg, ld[1].reshape((1,8)), axis=0)
-        x_mem = np.append(x_mem, ld[2].reshape((1,8)), axis=0)
-        x_reg2 = np.append(x_reg2, ld[3].reshape((1,8)), axis=0)
-        x_mem2 = np.append(x_mem2, ld[4].reshape((1,8)), axis=0)
-        x_name = np.append(x_name, ld[5].reshape((1,6,CHARS_COUNT)), axis=0)
-        x_mes = np.append(x_mes, ld[6].reshape((1,CHARS_COUNT)), axis=0)
-        ai_k = np.append(ai_k, ld[7].reshape((1,17)), axis=0)
-        ai_m_1 = np.append(ai_m_1, ld[8].reshape((1,2)), axis=0)
-        ai_m_2 = np.append(ai_m_2, ld[9].reshape((1,2)), axis=0)
-        ai_mem_1 = np.append(ai_mem_1, ld[10].reshape((1,8)), axis=0)
-        ai_mem_2 = np.append(ai_mem_2, ld[11].reshape((1,8)), axis=0)
-        ai_mem_3 = np.append(ai_mem_3, ld[12].reshape((1,8)), axis=0)
-        ai_mem_4 = np.append(ai_mem_4, ld[13].reshape((1,8)), axis=0)
-        ai_chat = np.append(ai_chat, ld[14].reshape((1,CHARS_COUNT)), axis=0)
-    if random.random() < 0.1:
-        ai_k += (np.random.random(ai_k.shape)-0.5)
-    if random.random() < 0.1:
-        ai_m_1 += (np.random.random(ai_m_1.shape)-0.5)
-    if random.random() < 0.1:
-        ai_m_2 += (np.random.random(ai_m_2.shape)-0.5)
-    ai_k = limit(ai_k)
-    ai_m_1 = limit(ai_m_1)
-    ai_m_2 = limit(ai_m_2)
-    ai_mem_1 = nichi(ai_mem_1)
-    ai_mem_2 = nichi(ai_mem_2)
-    ai_mem_3 = nichi(ai_mem_3)
-    ai_mem_4 = nichi(ai_mem_4)
-    ai_chat = limit(ai_chat)
-    input_data = model.make_input(
+    learnDataLength = len(learn_data)
+    x_img = np.empty((learnDataLength, HEIGHT, WIDTH, 3))
+    x_reg = np.empty((learnDataLength, 8))
+    x_mem = np.empty((learnDataLength, 8))
+    x_reg2 = np.empty((learnDataLength, 8))
+    x_mem2 = np.empty((learnDataLength, 8))
+    x_name = np.empty((learnDataLength, 6, CHARS_COUNT))
+    x_mes = np.empty((learnDataLength, CHARS_COUNT))
+    ai_k = np.empty((learnDataLength, 17))
+    ai_m_1 = np.empty((learnDataLength, 2))
+    ai_m_2 = np.empty((learnDataLength, 2))
+    ai_mem_1 = np.empty((learnDataLength, 8))
+    ai_mem_2 = np.empty((learnDataLength, 8))
+    ai_mem_3 = np.empty((learnDataLength, 8))
+    ai_mem_4 = np.empty((learnDataLength, 8))
+    ai_chat = np.empty((learnDataLength, CHARS_COUNT))
+    rewardEst = np.empty((learnDataLength, 1))
+    for i in range(learnDataLength):
+        x_img[i] = learn_data[i][0].reshape((HEIGHT,WIDTH,3))
+        x_reg[i] = learn_data[i][1].reshape((8))
+        x_mem[i] = learn_data[i][2].reshape((8))
+        x_reg2[i] = learn_data[i][3].reshape((8))
+        x_mem2[i] = learn_data[i][4].reshape((8))
+        x_name[i] = learn_data[i][5].reshape((6, CHARS_COUNT))
+        x_mes[i] = learn_data[i][6].reshape((CHARS_COUNT))
+        ai_k[i] = learn_data[i][7].reshape((17))
+        ai_m_1[i] = learn_data[i][8].reshape((2))
+        ai_m_2[i] = learn_data[i][9].reshape((2))
+        ai_mem_1[i] = learn_data[i][10].reshape((8))
+        ai_mem_2[i] = learn_data[i][11].reshape((8))
+        ai_mem_3[i] = learn_data[i][12].reshape((8))
+        ai_mem_4[i] = learn_data[i][13].reshape((8))
+        ai_chat[i] = learn_data[i][14].reshape((CHARS_COUNT))
+        rewardEst[i] = learn_data[i][15].reshape((1))
+    ai_k = np.clip(ai_k, 0, 1)
+    ai_m_1 = np.clip(ai_m_1, -1, 1)
+    ai_m_2 = np.clip(ai_m_2, 0, 1)
+    ai_mem_1 = np.where(ai_mem_1<0.5, 0, 1)
+    ai_mem_2 = np.where(ai_mem_2<0.5, 0, 1)
+    ai_mem_3 = np.where(ai_mem_3<0.5, 0, 1)
+    ai_mem_4 = np.where(ai_mem_4<0.5, 0, 1)
+    ai_chat = np.clip(ai_chat, 0, 1)
+    input_data = mcai.Actor(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT).make_input(
         x_img, x_reg, x_mem, x_reg2, x_mem2, np.transpose(x_name, (1,0,2)), x_mes, x_img.shape[0]
     )
     output_data = [
         ai_k, [ai_m_1, ai_m_2], [ai_mem_1, ai_mem_2, ai_mem_3, ai_mem_4], ai_chat
     ]
     learn_data.clear()
-    return input_data, output_data
+    return input_data, output_data, rewardEst
 
-def conv_data(ld):
+def convFrame(ld, reward):
     inpdata = []
     inpdata.append(np.array([convBit(ld["input"]["mem"]["reg"])]))
     inpdata.append(np.array([ld["input"]["mem"]["data"]]))
     inpdata.append(np.array([convBit(ld["input"]["mem"]["reg2"])]))
     inpdata.append(np.array([ld["input"]["mem"]["data2"]]))
-    inpdata.append(np.array([conv_name(ld["input"]["chat"]["name"])]))
-    inpdata.append(np.array([conv_char(ld["input"]["chat"]["message"])]))
+    inpdata.append(np.array([convName(ld["input"]["chat"]["name"])]))
+    inpdata.append(np.array([convChar(ld["input"]["chat"]["message"])]))
     inpdata.append(np.array([ld["output"]["keyboard"]]))
     inpdata.append(np.array([ld["output"]["mouse"]["dir"]]))
     inpdata.append(np.array([ld["output"]["mouse"]["button"]]))
@@ -189,37 +201,35 @@ def conv_data(ld):
     inpdata.append(np.array([ld["output"]["mem"]["mem"]]))
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg"])]))
     inpdata.append(np.array([convBit(ld["output"]["mem"]["reg2"])]))
-    inpdata.append(np.array([conv_char(ld["output"]["chat"])]))
-    for i in range(len(inpdata)):
-        if i != 1 and i != 3 and i != 7 and i != 10:
-            inpdata[i] = np.where(inpdata[i] < 0.5, 0, 1)
+    inpdata.append(np.array([convChar(ld["output"]["chat"])]))
+    inpdata.append(np.array([reward]))
     return inpdata
 
-def conv_char(char):
+def convChar(char):
     data = np.zeros((CHARS_COUNT))
     for i in range(CHARS_COUNT):
         if chars["chars"][i] == char:
             data[i] = 1
     return data
 
-def bin_to_char(bin):
+def bin2Char(bin):
     return chars["chars"][np.argmax(bin)]
 
-def bin_to_name(bin):
+def bin2Name(bin):
     name = ""
     for b in bin:
-        char = bin_to_char(b)
+        char = bin2Char(b)
         if char != "\n":
             name += char
         else:
             break
     return name
 
-def conv_name(name):
+def convName(name):
     remain = 6 - len(name)
-    data = [conv_char(name[i]) for i in range(len(name))]
+    data = [convChar(name[i]) for i in range(len(name))]
     for i in range(remain):
-        data.append(conv_char("\n"))
+        data.append(convChar("\n"))
     return data
 
 def getBit(value, bit):
@@ -232,161 +242,161 @@ CHECK_PROCESSING = False
 MODEL_WRITING = False
 CHECK_FIRSTRUN = True
 
+def checkCount():
+    global learnFramesBuffer
+    return len(learnFramesBuffer)
+
 def check():
-    global training, learn_data, data
-    global CHECK_PROCESSING, CHECK_FIRSTRUN, MODEL_WRITING
-    global model, vae
-    list_ids = [file.replace(".mp4","").replace(".json","") for file in os.listdir(SAVE_FOLDER)]
-    ids = [id for id in set(list_ids) if list_ids.count(id) == 2]
-    learn_counts = [0]
-    if len(ids) >= 10 and not CHECK_PROCESSING:
+    global data, videoFrames, moveFrames, learnFramesBuffer
+    global CHECK_PROCESSING, CHECK_FIRSTRUN, LEARN_LIMIT, TRAINING
+    listIDs = list(videoFrames.keys())
+    listIDs.extend(list(moveFrames.keys()))
+    ids = [id for id in set(listIDs) if listIDs.count(id) == 2]
+    learnFrameCount = len(learnFramesBuffer)
+
+    if len(ids) >= 10 and not CHECK_PROCESSING and not TRAINING:
         CHECK_PROCESSING = True
-        counts = [len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) for id in ids if len(json.loads(open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "r").read())["data"]) >= 2]
+        counts = []
+        idsCopy = ids.copy()
+        for i in range(len(ids)):
+            id = ids[i]
+            count = len(moveFrames[id]["data"])
+            if count >= 2:
+                counts.append(count)
+                continue
+            videoFrames.pop(id)
+            moveFrames.pop(id)
+            idsCopy.remove(id)
+        ids = idsCopy.copy()
         if len(counts) > 0:
             for id in ids:
-                shutil.move(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                shutil.copy(os.path.join(DATA_FOLDER, "%s.mp4" % (id)), os.path.join(VIDEO_FOLDER, "%s.mp4" % (id)))
-                shutil.move(os.path.join(SAVE_FOLDER, "%s.json" % (id)), os.path.join(DATA_FOLDER, "%s.json" % (id)))
-                with open(os.path.join(DATA_FOLDER, "%s.json" % (id)), "r") as f:
-                    data = json.loads(f.read())
-                c_data = []
-                for d in data["data"]:
-                    daf = conv_data(d)
-                    c_data.append(daf)
-                with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "wb") as f:
-                    pickle.dump(c_data, f)
-                os.remove(os.path.join(DATA_FOLDER, "%s.json" % (id)))
-        learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
-        learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
-        learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
+                data = moveFrames[id]
+                healthData = [min(data["data"][i]["health"] * (1 if not (i + 1) % 10 == 0 else 1.25 if not (i + 1) % 100 == 0 else 1.5), 20) for i in range(len(data["data"]))]
+                rewardEst = np.array([sum(healthData[dp:])/(len(healthData)-dp) for dp in range(len(healthData))]).reshape(len(healthData), 1) / 20
+                for i in range(len(data["data"])):
+                    daf = convFrame(data["data"][i], rewardEst[i])
+                    img = videoFrames[id][i]
+                    learnFramesBuffer.append({"data": daf, "img": img})
+                    if len(learnFramesBuffer) > LEARN_LIMIT:
+                        learnFramesBuffer.pop(0)
+                moveFrames.pop(id)
+                videoFrames.pop(id)
+        learnFrameCount = checkCount()
         CHECK_FIRSTRUN = False
-        logger.debug("Check done, current total frames: %d" % (sum(learn_counts)))
+        logger.debug("Check done, current total frames: %d/%d" % (learnFrameCount, LEARN_LIMIT))
         CHECK_PROCESSING = False
+
+    # First Run
     if CHECK_FIRSTRUN:
-        learn_list_ids = [file.replace(".mp4","").replace(".pkl","") for file in os.listdir(DATA_FOLDER)]
-        learn_ids = [id for id in set(learn_list_ids) if learn_list_ids.count(id) == 2]
-        learn_counts = [len(pickle.load(open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb"))) for id in learn_ids]
-        logger.debug("First Run, current total frames: %d" % (sum(learn_counts)))
+        learnFrameCount = checkCount()
+        logger.debug("First Run, current total frames: %d" % (learnFrameCount))
         CHECK_FIRSTRUN = False
-    if sum(learn_counts) >= 1000 and not training:
-        training = True
-        logger.info("Start Learning")
-        logger.debug("Start: VAE Learning")
-        vae = mcai.image.ImageVAE()
-        if os.path.exists("models/vae_d.h5") and os.path.exists("models/vae_e.h5"):
-            vae.decoder.model.load_weights("models/vae_d.h5")
-            vae.encoder.model.load_weights("models/vae_e.h5")
-        video_ids = [file.replace(".mp4", "") for file in os.listdir(VIDEO_FOLDER) if ".mp4" in file.lower() and file[0] != "."]
-        for epoch in range(2):
-            i = 0
-            video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
-            frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
-            while True:
-                ret, frame = video.read()
-                if not ret:
-                    video.release()
-                    if i < len(video_ids) - 1:
-                        i += 1
-                        video = cv2.VideoCapture(os.path.join(VIDEO_FOLDER, "%s.mp4" % (video_ids[i])))
-                        continue
-                    else:
-                        vae.model.train_on_batch(frames/255, frames/255)
-                        break
-                try:
-                    frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((256,256))
-                    frames = np.append(frames, np.array(frame).astype("uint8").reshape((1,256,256,3)), axis=0)
-                except:
-                    logger.warning("Frame Skipped")
-                    logger.warning(frame)
-                if frames.shape[0] >= 10:
-                    loss = vae.model.train_on_batch(frames/255, frames/255)
-                    logger.debug("VAE Loss: %.6f" % (loss))
-                    frames = np.empty((0, 256, 256, 3), dtype=np.uint8)
-        vae.encoder.model.save("models/vae_e.h5")
-        vae.decoder.model.save("models/vae_d.h5")
-        logger.debug("End: VAE Learning")
-        total_count = 0
-        now_count = 0
-        mx, mn = max(learn_counts), min(learn_counts)
-        ave, pow_ave = sum(learn_counts) / len(learn_counts), sum([count ** 2 for count in learn_counts]) / len(learn_counts)
-        max_dis = mx - ave
-        for count in learn_counts:
-            a, b = int(count / 10), count % 10
-            if b > 0:
-                a += 1
-            total_count += a
-        total_count *= EPOCHS
-        model = mcai.mcAI(WIDTH=WIDTH, HEIGHT=HEIGHT, CHARS_COUNT=CHARS_COUNT, logger=logger)
-        model.encoder.model.load_weights("models/vae_e.h5")
-        for epoch in range(EPOCHS):
-            for id in learn_ids:
-                with open(os.path.join(DATA_FOLDER, "%s.pkl" % (id)), "rb") as f:
-                    l_data = pickle.load(f)
-                count = len(l_data)
-                point = (count - ave) / max_dis
-                a, b = int(count / 10), count % 10
-                video = cv2.VideoCapture(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                all_count = a
-                if b > 0:
-                    all_count += 1
-                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                for i in range(all_count):
-                    c = b
-                    if i != a:
-                        c = 10
-                    learn_data = []
-                    for x in range(c):
-                        f = []
-                        try:
-                            _, frame = video.read()
-                            frame = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).resize((WIDTH, HEIGHT))
-                        except:
-                            break
-                        f.append(np.array(frame).reshape((1, HEIGHT, WIDTH, 3)))
-                        f_ctrls = l_data[i*10+x]
-                        for v in range(8):
-                            f_ctrls[6+v] = f_ctrls[6+v] * point
-                            if point < 0:
-                                f_ctrls[6+v] = f_ctrls[6+v] + 1
-                        for f_ctrl in f_ctrls:
-                            f.append(f_ctrl)
-                        learn_data.append(f)
-                    x, y = convertData()
-                    loss = -1
-                    try:
-                        loss = model.model.train_on_batch(x, y)
-                    except:
-                        logger.error("Training failure, skipped...")
-                    now_count += 1
-                    if now_count % 10 == 0:
-                        logger.debug("Learning Progress: %d/%d (%.1f%%) loss: %.6f" % (now_count, total_count, now_count/total_count*100, loss[0]))
-                if epoch >= EPOCHS-1:
-                    os.remove(os.path.join(DATA_FOLDER, "%s.mp4" % (id)))
-                    os.remove(os.path.join(DATA_FOLDER, "%s.pkl" % (id)))
-        logger.info("Finish Learning")
-        MODEL_WRITING = True
-        model.model.save("models/model.h5")
-        MODEL_WRITING = False
-        with open("models/version", "w") as f:
-            f.write(str(int(datetime.now().timestamp())))
-        training = False
+        TRAINING = True
+        if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
+            actor.load_weights("models/model.h5")
+            critic.load_weights("models/critic.h5")
+        TRAINING = False
+    if learnFrameCount >= (LEARN_LIMIT * 0.5) and not TRAINING:
+        learn()
+
+def learn():
+    global LEARN_LIMIT, TRAINING, MODEL_WRITING
+    global model, learnFramesBuffer
+    batchSize = 32
+    if TRAINING: return
+    TRAINING = True
+    logger.info("Start Learning")
+
+    learnFrames = random.sample(learnFramesBuffer, LEARN_LIMIT // 4)
+    iters = len(learnFrames) // batchSize
+
+    thisEpochs = EPOCHS
+
+    # Critic Learning
+    for epoch in range(thisEpochs):
+        loss_history = []
+        for iter in range(iters):
+            batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
+            for frame in batchFrames:
+                frameData = []
+                frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
+                frameData.append(frameImg)
+                frameData.extend(frame["data"])
+                learn_data.append(frameData)
+                del frameImg, frameData
+            x, y, rewardEst = convAll()
+            x = x[:-1]
+            x.extend(y)
+            y = rewardEst
+            loss = critic.train_on_batch(x, y)
+            loss_history.append(loss)
+        logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
+
+    # Actor Learning
+    for epoch in range(thisEpochs):
+        loss_history = []
+        for iter in range(iters):
+            batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
+            for frame in batchFrames:
+                frameData = []
+                frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
+                frameData.append(frameImg)
+                frameData.extend(frame["data"])
+                learn_data.append(frameData)
+                del frameImg, frameData
+            x, _, rewardEst = convAll()
+            realEst = combined.predict(x, verbose=0)
+            y = np.maximum(rewardEst, realEst)
+            loss = combined.train_on_batch(x, y)
+            loss_history.append(loss)
+        logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
+    mcai.clearSession()
+    gc.collect()
+
+    MODEL_WRITING = True
+    actor.save("models/model.h5")
+    critic.save("models/critic.h5")
+    MODEL_WRITING = False
+
+    version = {
+        "version": time.time(),
+        "count": 1
+    }
+    if os.path.exists("models/version.json"):
+        with open("models/version.json", "r") as f:
+            beforeVersion = json.load(f)
+        if "count" in beforeVersion:
+            version["count"] = beforeVersion["count"] + 1
+    with open("models/version.json", "w") as f:
+        json.dump(version, f)
+    TRAINING = False
+    logger.info("Finish Learning")
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if not self.path == "/model.h5":
-            version = 0
-            if os.path.exists('models/version'):
-                with open("models/version", "r") as f:
-                    version = int(f.read())
-            response = {
-                'status': 'ok',
-                'version': version
-            }
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            responseBody = json.dumps(response)
-            self.wfile.write(responseBody.encode('utf-8'))
+        status = 500
+        if ".h5" in self.path:
+            if MODEL_WRITING:
+                response = {
+                    'status': 'ng',
+                    'message': 'Writing model...'
+                }
+                status = 503
+            else:
+                fileName = self.path[1:]
+                if os.path.exists("models/%s" % fileName):
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/octet-stream')
+                    self.end_headers()
+                    with open("models/%s" % fileName, "rb") as f:
+                        self.wfile.write(f.read())
+                    return
+                else:
+                    response = {
+                        'status': 'ng',
+                        'message': 'File not found'
+                    }
+                    status = 404
         elif self.path == "/hello":
             response = {
                 "status": "ok",
@@ -394,47 +404,37 @@ class Handler(BaseHTTPRequestHandler):
                     "type": "learn"
                 }
             }
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            responseBody = json.dumps(response)
-            self.wfile.write(responseBody.encode('utf-8'))
+            status = 200
         else:
-            if MODEL_WRITING:
-                response = {
-                    'status': 'ng', 
-                    'error': 'training'
-                }
-                self.send_response(500)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                responseBody = json.dumps(response)
-                self.wfile.write(responseBody.encode('utf-8'))
-            else:
-                if os.path.exists("models/model.h5"):
-                    self.send_response(200)
-                    self.send_header('Content-type', 'application/octet-stream')
-                    self.end_headers()
-                    self.wfile.write(open("models/model.h5", "rb").read())
-                else:
-                    response = {
-                        'status': 'ng', 
-                        'msg': 'not found'
-                    }
-                    self.send_response(404)
-                    self.send_header('Content-type', 'application/json')
-                    self.end_headers()
-                    responseBody = json.dumps(response)
-                    self.wfile.write(responseBody.encode('utf-8'))
+            currentVersion = {
+                "version": 0,
+                "count": 0
+            }
+            if os.path.exists('models/version.json'):
+                with open("models/version.json", "r") as f:
+                    currentVersion = json.load(f)
+            response = {
+                'status': 'ok',
+                'version': currentVersion["version"],
+                'count': currentVersion["count"]
+            }
+            status = 200
+        self.send_response(status)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        responseBody = json.dumps(response)
+        self.wfile.write(responseBody.encode('utf-8'))
 
 
     def do_POST(self):
         try:
             content_len=int(self.headers.get('content-length'))
             id = str(self.headers.get('id'))
-            if self.path == "/video":
-                with open(os.path.join(SAVE_FOLDER, "%s.mp4" % (id)), "wb") as f:
-                    f.write(self.rfile.read(content_len))
+            if self.path == "/videoND":
+                width = int(self.headers.get('width'))
+                height = int(self.headers.get('height'))
+                frameCount = int(self.headers.get('frameCount'))
+                videoFrames[id] = np.frombuffer(self.rfile.read(content_len), dtype=np.uint8).reshape((frameCount, height, width, 3))
                 status_code = 200
                 response = {
                     'status': 'ok'
@@ -443,11 +443,7 @@ class Handler(BaseHTTPRequestHandler):
                 requestBody = json.loads(self.rfile.read(content_len).decode('utf-8'))
                 if "data" in requestBody:
                     if len(requestBody["data"]) > 0:
-                        with open(os.path.join(SAVE_FOLDER, "%s.json" % (id)), "w") as f:
-                            json.dump(requestBody, f, indent=4)
-                #    if len(requestBody["data"]) > 0:
-                #        data.append(requestBody)
-                #        threading.Thread(target=check).start()
+                        moveFrames[id] = requestBody
                 status_code = 200
                 response = {
                     'status' : "ok",

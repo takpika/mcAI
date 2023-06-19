@@ -13,11 +13,11 @@
         "x": 256,
         "y": 256
     },
-    "chat_chars_limit": 512,
+    "chat_chars_limit": 1024,
     "frame_record_limit": 1000,
     "port": 8000,
-    "version": "1.19.2",
-    "epochs": 10,
+    "version": "1.19.4",
+    "epochs": 1,
     "threshold": {
         "distance": 10.0,
         "direction": 30.0

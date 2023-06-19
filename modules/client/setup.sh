@@ -5,7 +5,7 @@ CURRENT_DIR=`pwd`
 PARENT_DIR=`echo $CURRENT_DIR | sed -i "s/\/mcAI//g"`
 ID=`printf "%02d" $1`
 PID1=`ps -p 1 -o comm=`
-MC_VERSION="1.19.2"
+MC_VERSION="1.19.4"
 if [ "$PID1" = "systemd" ]; then
     echo "Normal Environment, Running Systemd"
 else
@@ -43,6 +43,10 @@ Section "Screen"
     SubSection "Display"
     EndSubSection
 EndSection
+
+Section "Extensions"
+    Option "MIT-SHM" "Disable"
+EndSection
 EOF
 fi
 tee - ~/.xinitrc << EOF
@@ -63,15 +67,13 @@ source ~/.bashrc
 if [ ! -d ~/.minecraft/mods ]; then
 mkdir -p ~/.minecraft/mods
 fi
-curl -o ~/.minecraft/mods/OptiFine_${MC_VERSION}_HD_U_H9.jar `python scripts/download_optifine.py`
-curl -o ~/.minecraft/mods/ToughAsNails-${MC_VERSION}.jar https://mediafilez.forgecdn.net/files/3871/450/ToughAsNails-1.19-8.0.0.78.jar
 bash modules/client/build_mod.sh
 mv ~/*.jar ~/.minecraft/mods
 cp modules/client/options.txt ~/.minecraft/
 cp -r modules/client/* ~/
 cp scripts/chars.json ~/
 cp -r mcai/ ~/
-portablemc start -u setup forge:${MCVERSION} --dry
+python modules/client/pmc.py $MC_VERSION
 
 tee ~/startmcai.sh << EOF
 cd $CURRENT_DIR/..
@@ -148,6 +150,9 @@ sudo tee /init << EOF
 #!/bin/bash
 rm /tmp/.X0-lock
 cd $HOME
+if [ -n \$CENTRAL_SERVICE_HOST ]; then
+echo \$CENTRAL_SERVICE_HOST > $HOME/central_host
+fi
 sudo -u $USERNAME /usr/bin/xinit
 EOF
 sudo chmod +x /init

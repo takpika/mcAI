@@ -1,0 +1,73 @@
+name: Build container images
+
+on:
+  push:
+    paths:
+      - "**.sh"
+      - "**/Dockerfile"
+      - "**.yml"
+  pull_request:
+    types: [closed]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    permissions: 
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        target: ["central", "client", "server", "learn", "learn-gpu"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        if : ${{ matrix.target != 'learn-gpu' }}
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image tag for master
+        run: |
+          COMMITID=$(git rev-parse --short ${{ github.sha }})
+          if [ "${{ github.base_ref }}" = "" ]; then
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          else
+            BRANCH_NAME=${{ github.base_ref }}
+            echo "BRANCH_NAME=${{ github.base_ref }}" >> $GITHUB_ENV
+          fi
+          if [ "${BRANCH_NAME}" = "development" ]; then
+            echo "DOCKER_TAG=dev-${COMMITID}" >> $GITHUB_ENV
+            echo "DOCKER_TAG2=latest-dev" >> $GITHUB_ENV
+          else
+            echo "DOCKER_TAG=${COMMITID}" >> $GITHUB_ENV
+            echo "DOCKER_TAG2=latest" >> $GITHUB_ENV
+          fi
+
+      - name: Build and Push Docker Image
+        if : ${{ matrix.target != 'learn-gpu' }}
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }} --push
+
+      - name: Build Docker Image (learn-gpu)
+        if : ${{ matrix.target == 'learn-gpu' }}
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }} -t ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }} --build-arg BRANCH="${{ env.BRANCH_NAME }}" ./modules/${{ matrix.target }}
+
+      - name: Push Docker Image
+        if : ${{ matrix.target == 'learn-gpu' }}
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG }}
+          docker push ghcr.io/${{ github.repository_owner }}/mcai-${{ matrix.target }}:${{ env.DOCKER_TAG2 }}

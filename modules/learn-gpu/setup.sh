@@ -17,7 +17,7 @@ fi
 set -e
 sudo apt update
 DEBIAN_FRONTEND=noninteractive sudo apt install python3 python-is-python3 python3-pip python3-dev git cifs-utils inetutils-ping watchdog libgl1-mesa-dev libglib2.0-0 -y
-sudo pip install -r modules/$MODULE/requirements.txt
+sudo pip install -r modules/$MODULE-gpu/requirements.txt
 tee -a ~/.bashrc << EOF
 export PATH="~/.local/bin:\$PATH"
 EOF
@@ -43,7 +43,7 @@ else
     git pull
     cd ..
 fi
-sudo pip install -r mcAI/modules/$MODULE/requirements.txt
+sudo pip install -r mcAI/modules/$MODULE-gpu/requirements.txt
 cp -r mcAI/modules/$MODULE/* ~/
 cp mcAI/scripts/chars.json ~/
 cp -r mcAI/mcai/ ~/

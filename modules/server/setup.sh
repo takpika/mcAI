@@ -3,8 +3,8 @@ export DEBIAN_FRONTEND=noninteractive
 MODULE="server"
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
-MC_VERSION="1.19.2"
-FORGE_VERSION="43.2.1"
+MC_VERSION="1.19.4"
+FORGE_VERSION="45.0.57"
 PID1=`ps -p 1 -o comm=`
 if [ "$PID1" = "systemd" ]; then
     echo "Normal Environment, Running Systemd"
@@ -39,7 +39,6 @@ fi
 mkdir -p ~/world
 mkdir -p ~/server
 mkdir -p ~/mods
-curl -o ~/mods/ToughAsNails-${MC_VERSION}.jar https://mediafilez.forgecdn.net/files/3871/450/ToughAsNails-1.19-8.0.0.78.jar
 for json in {ops,whitelist,usercache,banned-ips,banned-players}.json; do
     if [ -f ~/$json ]; then
         rm ~/$json
@@ -94,6 +93,11 @@ rm -rf ~/server
 sudo tee /init << EOF
 #!/bin/bash
 cd $HOME
+if [ -n \$CENTRAL_SERVICE_HOST ]; then
+echo \$CENTRAL_SERVICE_HOST > $HOME/central_host
+fi
+chown -R $USERNAME:$USERNAME $HOME/server
+chown -R $USERNAME:$USERNAME $HOME/world
 sudo -u $USERNAME bash $HOME/startmcai.sh
 EOF
 sudo chmod +x /init
