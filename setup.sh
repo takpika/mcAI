@@ -1,4 +1,5 @@
 #!/bin/bash
+cd $HOME
 if [ ! -d mcAI ]; then
     git clone https://github.com/takpika/mcAI.git
 else

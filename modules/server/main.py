@@ -6,7 +6,6 @@ from socketserver import ThreadingMixIn
 import threading, urllib.parse
 from mcrcon import MCRcon
 import random, traceback
-from concurrent.futures import ThreadPoolExecutor, TimeoutError, as_completed
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -97,39 +96,35 @@ send_data = {
 }
 trys = 0
 
-class CustomMCRcon(MCRcon):
-    def __init__(self, host, password, port=25575, tlsmode=0, timeout=5):
-        self.host = host
-        self.password = password
-        self.port = port
-        self.tlsmode = tlsmode
-        self.timeout = timeout
-
-    def _read(self, length):
-        self.socket.settimeout(self.timeout)
-        data = b""
-        while len(data) < length:
-            data += self.socket.recv(length - len(data))
-        return data
+mcr = MCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT)
+mcrLock = False
+mcrJobs = []
 
 def runCommand(command):
-    global mcr
+    global mcr, mcrLock, mcrJobs
+    id = random.randint(0, 100000)
+    if mcrLock:
+        mcrJobs.append(id)
+        while mcrJobs[0] != id and mcrLock:
+            sleep(0.1)
+    mcrLock = True
     while True:
         try:
-            with CustomMCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT) as mcr:
-                mcr.command(command)
+            if not mcr.socket:
+                mcr.connect()
+            mcr.command(command)
             break
-        except Exception as e:
-            t = list(traceback.TracebackException.from_exception(e).format())
-            for i in t:
-                logger.error(i)
+        except:
+            mcr.disconnect()
             continue
+    mcrLock = False
+    mcrJobs = mcrJobs[1:]
 
 def checkServerRunning():
-    global mcr
     try:
-        with CustomMCRcon(RCON_ADDRESS, RCON_PASSWORD, RCON_PORT) as mcr:
-            mcr.command("list")
+        if not mcr.socket:
+            mcr.connect()
+        mcr.command("list")
         return True
     except:
         return False
@@ -215,30 +210,21 @@ def randomApple():
     while not checkServerRunning():
         sleep(1)
     while True:
-        runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:bread\",Count:1b},PickupDelay:0s,Tags:[\"randomFood\"],NoGravity:true}")
-        runCommand("execute at @r run spreadplayers ~ ~ 0 30 false @e[tag=randomFood]")
+        runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:apple\",Count:4b},PickupDelay:0s,Tags:[\"randomApple\"],NoGravity:true}")
+        runCommand("execute at @r run spreadplayers ~ ~ 5 10 false @e[tag=randomApple]")
         sleep(60)
 
-def minecraftServer():
-    subprocess.run(["bash", "run.sh"])
-
-def main():
-    tasks = []
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        tasks.append(executor.submit(start_httpServer))
-        tasks.append(executor.submit(randomApple))
-        tasks.append(executor.submit(minecraftServer))
-        for future in as_completed(tasks):
-            try:
-                future.result()
-            except Exception as e:
-                t = list(traceback.TracebackException.from_exception(e).format())
-                for i in t:
-                    logger.error(i)
-            finally:
-                for task in tasks:
-                    task.cancel()
-                exit(1)
-
 if __name__ == "__main__":
-    main()
+    try:
+        targets = [start_httpServer, randomApple]
+        for target in targets:
+            thread = threading.Thread(target=target)
+            thread.daemon = True
+            thread.start()
+        subprocess.run(["bash", "run.sh"])
+    except Exception as e:
+        t = list(traceback.TracebackException.from_exception(e).format())
+        for i in t:
+            logger.error(i)
+    finally:
+        sys.exit(1)

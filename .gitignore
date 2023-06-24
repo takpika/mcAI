@@ -1,4 +1,12 @@
 *.jar
 __pycache__
+
+# Mac garbage
 ._*
 .DS_Store
+
+# VSCode garbage
+.vscode
+
+# Learn
+models/

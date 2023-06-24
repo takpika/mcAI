@@ -12,8 +12,6 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
 logger_handler = StreamHandler()
