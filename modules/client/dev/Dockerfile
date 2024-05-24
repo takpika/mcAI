@@ -15,4 +15,4 @@ RUN echo "Defaults always_set_home" >> /etc/sudoers
 ADD --chown=mcai:mcai ./ /var/mcai/mcAI/
 RUN cd /var/mcai/mcAI && sudo -u mcai -E bash modules/client/setup.sh
 
-CMD ["/init"]
+CMD ["/bin/sh", "/init"]

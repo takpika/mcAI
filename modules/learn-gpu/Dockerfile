@@ -14,4 +14,4 @@ RUN echo "Defaults always_set_home" >> /etc/sudoers
 RUN cd /var/mcai && sudo -u mcai git clone https://github.com/takpika/mcAI.git > /dev/null
 RUN cd /var/mcai/mcAI && sudo -u mcai git checkout ${BRANCH} && sudo -u mcai git pull && sudo -u mcai -E bash modules/learn/setup.sh
 
-CMD ["/init"]
+CMD ["/bin/sh", "/init"]
