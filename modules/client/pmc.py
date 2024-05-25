@@ -2,7 +2,7 @@ import portablemc.cli
 import sys
 from pathlib import Path
 from typing import List, Optional
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import run, Popen, PIPE, STDOUT
 
 version = None
 mcPID: int | None = None
@@ -43,6 +43,12 @@ class PortableMinecraft:
 
     def getPID(self) -> int | None:
         return mcPID
+    
+    def isRunning(self) -> bool:
+        if mcPID is not None:
+            result = run(["ps", "-p", str(mcPID)], stdout=PIPE)
+            return result.returncode == 0
+        return False
 
 if __name__ == "__main__":
     pmc = PortableMinecraft(sys.argv[1], "setup")

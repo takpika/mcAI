@@ -281,11 +281,14 @@ class Client(ModuleCore):
         self.FORCE_QUIT = True
         self.logger.debug("Force Quit")
         try:
+            mcPID = self.ptmc.getPID()
             while True:
+                if not self.ptmc.isRunning():
+                    break
                 try:
                     self.getModData(session=GameSession(), data={"close": True})
                 except:
-                    subprocess.run(["kill", "-9", "%d" % self.ptmc.getPID()])
+                    subprocess.run(["kill", "-9", "%d" % mcPID])
                 sleep(1)
         except:
             exit(10)
@@ -323,7 +326,6 @@ class Client(ModuleCore):
                 sock.send(json.dumps(send_data).encode())
                 sock.settimeout(1)
                 data = sock.recv(1024)
-                self.logger.info(data.decode())
                 sock.close()
                 return json.loads(data)
             except:
@@ -533,15 +535,14 @@ class Client(ModuleCore):
         return result["status"] == "ok"
 
     def tick(self, session: GameSession):
-        if not self.ptmc.running:
+        if not self.ptmc.isRunning():
             self.FORCE_QUIT = True
             return
         if not session.sessionID in self.learn_data:
             self.learn_data[session.sessionID] = []
         try:
             data = self.getModData(session=session)
-        except Exception as e:
-            self.logger.error(e)
+        except:
             return
         if data["screen"]:
             self.processScreen(data=data, session=session)
@@ -672,14 +673,14 @@ class Client(ModuleCore):
         mc_thread.start()
         sleep(0.1)
         while True:
-            if not self.ptmc.running: break
+            if not self.ptmc.isRunning(): break
             try:
                 self.getModData(session=GameSession(sessionID="dummy", parent=self))
                 break
             except Exception as e:
                 sleep(0.1)
                 continue
-        if not self.ptmc.running: return
+        if not self.ptmc.isRunning(): return
         self.logger.info("Minecraft detected")
         self.mcStartTime = time()
         self.FORCE_QUIT = False
