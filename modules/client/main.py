@@ -676,7 +676,7 @@ class Client(ModuleCore):
         while True:
             if not self.ptmc.running: break
             try:
-                self.getModData(session=self.session)
+                self.getModData(session=GameSession(sessionID="dummy", parent=self))
                 break
             except Exception as e:
                 t = list(traceback.TracebackException.from_exception(e).format())
