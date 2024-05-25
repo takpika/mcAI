@@ -266,9 +266,6 @@ class Client(ModuleCore):
         self.clear_all()
         if sessionID in self.learn_data:
             self.stopRecording(sessionID, self.videoFramePos)
-        mcPID = self.ptmc.getPID()
-        if mcPID != None:
-            subprocess.run(["kill", "-9", "%d" % mcPID])
 
     def hostname2name(self, hostname):
         data = json.loads(requests.get('http://%s:%d/hostname?hostname=%s' % (self.CENTRAL_IP, self.PORT, hostname)).text)
