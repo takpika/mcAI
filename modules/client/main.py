@@ -402,6 +402,7 @@ class Client(ModuleCore):
             if data["player"]["death"]:
                 self.logger.error("Failed to respawn")
                 self.forceQuit()
+        session.newbie = True
 
     def processAI(self, data: dict, session: GameSession):
         x_img = np.array(self.image).reshape((1, self.HEIGHT, self.WIDTH, 3)) / 255
