@@ -40,7 +40,7 @@ class PortableMinecraft:
         self.running = True
         cli.load_addons()
         self.parser = cli.register_arguments()
-        pmc.http_request = http_request
+        portablemc.http_request = http_request
         pmcf.ForgeVersionInstaller = ForgeVersionInstaller
 
     def install(self):
