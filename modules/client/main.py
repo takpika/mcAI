@@ -380,6 +380,7 @@ class Client(ModuleCore):
             if len(self.learn_data[session.sessionID]) > 0:
                 self.learn_data[session.sessionID][-1]["health"] = 0
         self.end_session(session.sessionID)
+        data = {"playing": False, "player": {"death": True}}
         for _ in range(100):
             try:
                 data = self.getModData(session=session)
@@ -545,7 +546,6 @@ class Client(ModuleCore):
         except Exception as e:
             self.logger.error(e)
             return
-        self.logger.info(data)
         if data["screen"]:
             self.processScreen(data=data, session=session)
             if self.FORCE_QUIT: return
@@ -662,7 +662,6 @@ class Client(ModuleCore):
         threading.Thread(target=self.register).start()
 
     def playSession(self):
-        self.logger.info("Start Playing")
         self.get_newName()
         self.session = GameSession(sessionID=self.startRecording(), parent=self)
         if os.path.exists(os.path.join(self.WORK_DIR, "model.h5")):
