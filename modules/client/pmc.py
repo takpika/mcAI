@@ -49,7 +49,7 @@ class PortableMinecraft:
         if mcPID is not None:
             result = run(["kill", "-0", str(mcPID)], stdout=PIPE, stderr=STDOUT)
             return result.returncode == 0
-        return False
+        return self.running
 
 if __name__ == "__main__":
     pmc = PortableMinecraft(sys.argv[1], "setup")

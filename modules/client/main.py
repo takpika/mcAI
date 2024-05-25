@@ -680,6 +680,7 @@ class Client(ModuleCore):
             except Exception as e:
                 sleep(0.1)
                 continue
+        self.logger.info(self.ptmc.getPID())
         if not self.ptmc.isRunning(): return
         self.logger.info("Minecraft detected")
         self.mcStartTime = time()
