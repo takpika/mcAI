@@ -48,7 +48,10 @@ class PortableMinecraft:
         global mcPID
         if mcPID is not None:
             result = run(["kill", "-0", str(mcPID)], stdout=PIPE, stderr=STDOUT)
-            return result.returncode == 0
+            self.running = True
+            if result.returncode != 0:
+                mcPID = None
+                self.running = False
         return self.running
 
 if __name__ == "__main__":

@@ -384,7 +384,9 @@ class Client(ModuleCore):
         for _ in range(100):
             try:
                 data = self.getModData(session=session)
-            except:
+                self.logger.info(data)
+            except Exception as e:
+                self.logger.error(e)
                 sleep(0.1)
                 continue
             if data["playing"]:
