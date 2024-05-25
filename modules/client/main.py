@@ -542,8 +542,10 @@ class Client(ModuleCore):
             self.learn_data[session.sessionID] = []
         try:
             data = self.getModData(session=session)
-        except:
+        except Exception as e:
+            self.logger.error(e)
             return
+        self.logger.info(data)
         if data["screen"]:
             self.processScreen(data=data, session=session)
             if self.FORCE_QUIT: return
