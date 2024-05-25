@@ -1,8 +1,10 @@
 from portablemc import cli, Version
+import portablemc
 import portablemc_forge as pmcf
 from os import path
 import sys
 import threading
+from typing import Optional, Tuple
 
 class ForgeVersionInstaller(pmcf.ForgeVersionInstaller):
     def __init__(self, *args, **kwargs):
@@ -12,6 +14,19 @@ class ForgeVersionInstaller(pmcf.ForgeVersionInstaller):
 
 def new_version(ctx: cli.CliContext, version_id: str) -> Version:
     return version
+
+pmc_http_request = portablemc.http_request
+
+def http_request(url: str, method: str, *,
+                 data: Optional[bytes] = None,
+                 headers: Optional[dict] = None,
+                 timeout: Optional[float] = None,
+                 rcv_headers: Optional[dict] = None) -> Tuple[int, bytes]:
+    if headers is None:
+        headers = {}
+    if not "User-Agent" in headers:
+        headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+    return pmc_http_request(url, method, data=data, headers=headers, timeout=timeout, rcv_headers=rcv_headers)
 
 version = None
 
@@ -25,6 +40,7 @@ class PortableMinecraft:
         self.running = True
         cli.load_addons()
         self.parser = cli.register_arguments()
+        pmc.http_request = http_request
         pmcf.ForgeVersionInstaller = ForgeVersionInstaller
 
     def install(self):
