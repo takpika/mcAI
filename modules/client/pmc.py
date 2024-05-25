@@ -28,14 +28,14 @@ class PortableMinecraft:
         portablemc.cli.CliRunner = MCCliRunner
 
     def install(self) -> None:
-        global version
+        global version, mcPID
         if mcPID != None: return
         nsList = ["start", "forge:%s" % self.version, "--dry", "--jvm", self.jvm]
         portablemc.cli.main(nsList)
         self.running = False
 
     def start(self) -> None:
-        global version
+        global version, mcPID
         if mcPID != None: return
         nsList = ["start", "forge:%s" % self.version, "--jvm", self.jvm, "-u", self.name, "--resol", self.resol, "-s", self.server, "--jvm-args=-Xmx1G"]
         portablemc.cli.main(nsList)
@@ -45,6 +45,7 @@ class PortableMinecraft:
         return mcPID
     
     def isRunning(self) -> bool:
+        global mcPID
         if mcPID is not None:
             result = run(["kill", "-0", str(mcPID)], stdout=PIPE, stderr=STDOUT)
             return result.returncode == 0
