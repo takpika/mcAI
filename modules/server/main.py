@@ -95,8 +95,9 @@ class Server(ModuleCore):
         while not self.checkServerRunning():
             sleep(1)
         while True:
-            self.runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:bread\",Count:1b},PickupDelay:0s,Tags:[\"randomFood\"],NoGravity:true}")
-            self.runCommand("execute at @r run spreadplayers ~ ~ 0 30 false @e[tag=randomFood]")
+            #self.runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:golden_apple\",Count:1b},PickupDelay:0s,Tags:[\"randomFood\"],NoGravity:true}")
+            #self.runCommand("execute at @r run spreadplayers ~ ~ 0 30 false @e[tag=randomFood]")
+            self.runCommand("give @a minecraft:golden_apple")
             sleep(60)
 
     def startHTTPServer(self):
