@@ -1,4 +1,4 @@
-tensorflow==2.16.1
+tensorflow==2.15.1
 pyautogui==0.9.54
 numpy==1.26.4
 matplotlib==3.9.0
