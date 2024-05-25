@@ -676,6 +676,7 @@ class Client(ModuleCore):
                 self.getModData(session=self.session)
                 break
             except:
+                self.logger.info("Waiting for mod...")
                 sleep(0.1)
                 continue
         if not self.ptmc.running: return
