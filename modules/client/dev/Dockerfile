@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:jammy
 
 ARG BRANCH
 ENV DEBIAN_FRONTEND=noninteractive
