@@ -3,7 +3,7 @@ export DEBIAN_FRONTEND=noninteractive
 MODULE="server"
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
-MC_VERSION="1.19.4"
+MC_VERSION="1.19.2"
 FORGE_VERSION="45.0.57"
 set -e
 

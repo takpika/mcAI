@@ -1,7 +1,7 @@
 #!/bin/bash
 MODULE="client"
 USERNAME=`whoami`
-MC_VERSION="1.19.4"
+MC_VERSION="1.19.2"
 set -e
 #---Start Script Section---
 # $HOME/startmcai.sh
