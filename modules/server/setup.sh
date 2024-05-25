@@ -4,7 +4,7 @@ MODULE="server"
 USERNAME=`whoami`
 CURRENT_DIR=`pwd`
 MC_VERSION="1.19.2"
-FORGE_VERSION="45.0.57"
+FORGE_VERSION="43.3.0"
 set -e
 
 #---Start Script Section---
