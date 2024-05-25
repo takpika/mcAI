@@ -196,7 +196,7 @@ setupMC() {
     cp -rf scripts/chars.json $HOME/
     cp -rf mcai/ $HOME/
     echo "[INFO] Installing Minecraft Forge"
-    CERTPATH=`python -c "import certifi; print(certifi.where())"`
+    CERTPATH=`/opt/mcAI/bin/python -c "import certifi; print(certifi.where())"`
     curl -o /tmp/isrg-root-x2.pem https://letsencrypt.org/certs/isrg-root-x2.pem > /dev/null
     cat /tmp/isrg-root-x2.pem | sudo tee -a $CERTPATH > /dev/null
     /opt/mcAI/bin/python modules/client/pmc.py $MC_VERSION > /dev/null
