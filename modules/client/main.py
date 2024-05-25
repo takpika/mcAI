@@ -292,9 +292,10 @@ class Client(ModuleCore):
 
     def getModData(self, session: GameSession, data: dict = {}) -> dict:
         mcPID = self.ptmc.getPID()
+        self.logger.info(f"Get data from mod: {mcPID}")
         socketFile = f"/tmp/mcai.{mcPID}.socket"
         if not os.path.exists(socketFile):
-            print("Socket file not found")
+            self.logger.info("Socket file not found")
             raise Exception("Socket file not found")
         send_data = {
             "pos": {
@@ -321,12 +322,12 @@ class Client(ModuleCore):
                 sock.send(json.dumps(send_data).encode())
                 sock.settimeout(1)
                 data = sock.recv(1024)
-                print(data)
+                self.logger.info(data.decode())
                 sock.close()
                 return json.loads(data)
             except:
                 failure += 1
-                print(f"Socket fail: {failure}")
+                self.logger.info(f"Socket fail: {failure}")
                 sock.close()
                 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                 sock.connect(socketFile)
