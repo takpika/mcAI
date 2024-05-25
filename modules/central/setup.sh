@@ -18,16 +18,16 @@ if [ \"\$FLAVOR\" != \"local\" ]; then
 else
     echo \"[INFO] Local Dev Mode\"
     sleep 3
-    sudo pip install debugpy
+    sudo /opt/mcAI/bin/pip install debugpy
 fi
-sudo pip install -r mcAI/modules/$MODULE/requirements.txt
+sudo /opt/mcAI/bin/pip install -r mcAI/modules/$MODULE/requirements.txt
 cp -rf $HOME/mcAI/modules/$MODULE/* $HOME/
 cp -rf $HOME/mcAI/mcai/ $HOME/
 cp -rf $HOME/mcAI/scripts/* $HOME/
 if [ \"\$FLAVOR\" != \"local\" ]; then
-    python $HOME/main.py $HOME/configure.json
+    /opt/mcAI/bin/python $HOME/main.py $HOME/configure.json
 else
-    python -m debugpy --wait-for-client --listen 0.0.0.0:12888 mcAI/modules/$MODULE/main.py $HOME/configure.json
+    /opt/mcAI/bin/python -m debugpy --wait-for-client --listen 0.0.0.0:12888 mcAI/modules/$MODULE/main.py $HOME/configure.json
 fi
 "
 
@@ -83,12 +83,13 @@ installPackages() {
     echo "[INFO] Fetching package list"
     sudo apt update > /dev/null
     echo "[INFO] Installing apt packages"
-    DEBIAN_FRONTEND=noninteractive sudo apt install python3 python3-pip python-is-python3 watchdog -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive sudo apt install python3 python3-pip python-is-python3 python3-venv watchdog -y > /dev/null
     echo "[INFO] Installing Python libraries"
-    sudo pip install -r modules/$MODULE/requirements.txt > /dev/null
+    sudo python -m venv /opt/mcAI
+    sudo /opt/mcAI/bin/pip install -r modules/$MODULE/requirements.txt > /dev/null
     if [ "$FLAVOR" = "local" ]; then
         echo "[INFO] Installing Debug Python library"
-        sudo pip install debugpy > /dev/null
+        sudo /opt/mcAI/bin/pip install debugpy > /dev/null
     fi
 }
 

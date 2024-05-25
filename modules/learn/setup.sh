@@ -24,16 +24,16 @@ if [ \"\$FLAVOR\" != \"local\" ]; then
 else
     echo \"[INFO] Local Dev Mode\"
     sleep 3
-    sudo pip install debugpy
+    sudo /opt/mcAI/bin/pip install debugpy
 fi
-sudo pip install -r mcAI/modules/$MODULE/requirements.txt
+sudo /opt/mcAI/bin/pip install -r mcAI/modules/$MODULE/requirements.txt
 cp -rf $HOME/mcAI/modules/$MODULE/* $HOME/
 cp -rf $HOME/mcAI/mcai/ $HOME/
 cp -rf $HOME/mcAI/scripts/* $HOME/
 if [ \"\$FLAVOR\" != \"local\" ]; then
-    python $HOME/main.py
+    /opt/mcAI/bin/python $HOME/main.py
 else
-    python -m debugpy --wait-for-client --listen 0.0.0.0:12888 mcAI/modules/$MODULE/main.py
+    /opt/mcAI/bin/python -m debugpy --wait-for-client --listen 0.0.0.0:12888 mcAI/modules/$MODULE/main.py
 fi
 "
 
@@ -94,12 +94,13 @@ installPackages() {
     echo "[INFO] Fetching package list"
     sudo apt update > /dev/null
     echo "[INFO] Installing apt packages"
-    DEBIAN_FRONTEND=noninteractive sudo apt install python3 python-is-python3 python3-pip python3-dev git cifs-utils inetutils-ping watchdog libgl1-mesa-dev libglib2.0-0 -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive sudo apt install python3 python-is-python3 python3-pip python3-venv python3-dev git cifs-utils inetutils-ping watchdog libgl1-mesa-dev libglib2.0-0 -y > /dev/null
     echo "[INFO] Installing Python libraries"
-    sudo pip install -r modules/$MODULE/requirements.txt > /dev/null
+    sudo python -m venv /opt/mcAI
+    sudo /opt/mcAI/bin/pip install -r modules/$MODULE/requirements.txt > /dev/null
     if [ "$FLAVOR" = "local" ]; then
         echo "[INFO] Installing Debug Python library"
-        sudo pip install debugpy > /dev/null
+        sudo /opt/mcAI/bin/pip install debugpy > /dev/null
     fi
 }
 
