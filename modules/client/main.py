@@ -4,6 +4,7 @@ from mss import mss
 from PIL import ImageDraw, Image
 from time import sleep, time
 import numpy as np
+import socket
 
 from pmc import PortableMinecraft
 from GameSession import GameSession
@@ -18,6 +19,7 @@ class Client(ModuleCore):
         self.getLogger()
         self.REGISTER_LAST_CHECK = 0
         self.sct = mss()
+        self.char_at = 0
         if __name__ == "__main__":
             self.logger.info("Searching for Central Server...")
             self.searchCentral()
@@ -242,7 +244,7 @@ class Client(ModuleCore):
 
     def send_chat(self, name, message):
         self.logger.info("Send Chat to %s: %s" % (name, message))
-        requests.get("http://localhost:%d/?name=%s&message=%s" % (self.PORT, name, message))
+        #requests.get("http://localhost:%d/?name=%s&message=%s" % (self.PORT, name, message))
 
     def send_chat_function(self, name, message):
         op_name = self.get_available_chat_name(name)
@@ -277,11 +279,10 @@ class Client(ModuleCore):
         self.logger.debug("Force Quit")
         try:
             while True:
-                res = requests.get("http://localhost:%d/?close=true" % (self.PORT))
-                if res.status_code > 0:
-                    subprocess.run(["killall", "-9", "java"])
-                else:
-                    break
+                try:
+                    self.getModData(session=GameSession(), data={"close": True})
+                except:
+                    subprocess.run(["kill", "-9", "%d" % self.ptmc.getPID()])
                 sleep(1)
         except:
             exit(10)
@@ -289,33 +290,47 @@ class Client(ModuleCore):
     def pos_distance(self, pos1: tuple, pos2: tuple):
         return sqrt((pos1[0]-pos2[0])**2+(pos1[1]-pos2[1])**2+(pos1[2]-pos2[2])**2)
 
-    def getModData(self, session: GameSession) -> dict:
-        url = "http://localhost:%d/" % (self.PORT)
-        send_data = {}
+    def getModData(self, session: GameSession, data: dict = {}) -> dict:
+        mcPID = self.ptmc.getPID()
+        socketFile = f"/tmp/mcai.{mcPID}.socket"
+        if not os.path.exists(socketFile):
+            raise Exception("Socket file not found")
+        send_data = {
+            "pos": {
+                "x": 0,
+                "y": 0
+            },
+            "close": False,
+            "checked": ""
+        }
+        for k in data:
+            send_data[k] = data[k]
         if (session.moveDis[0] != 0 and not session.inScreen):
-            send_data["x"] = float(session.moveDis[0])
+            send_data["pos"]["x"] = float(session.moveDis[0])
         if (session.moveDis[1] != 0 and not session.inScreen):
-            send_data["y"] = float(session.moveDis[1])
+            send_data["pos"]["y"] = float(session.moveDis[1])
         if (session.checkedMesID > 0):
             send_data["checked"] = session.checkedMesID
         session.checkedMesID = 0
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.connect(socketFile)
         failure = 0
         while True:
             try:
-                if (len(list(send_data.keys())) > 0):
-                    data = json.loads(requests.get("%s?%s" % (url, urllib.parse.urlencode(send_data))).text)
-                else:
-                    data = json.loads(requests.get(url).text)
-                return data
+                sock.send(json.dumps(send_data).encode())
+                sock.settimeout(1)
+                data = sock.recv(1024)
+                sock.close()
+                return json.loads(data)
             except:
                 failure += 1
+                sock.close()
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.connect(socketFile)
             if failure >= 10:
-                self.logger.error("Connection Error")
-                self.end_session(session.sessionID)
-                subprocess.run(["killall", "-9", "java"])
-                exit(10)
+                raise Exception("Failed to get data from mod")
 
-    def processScreen(self, data: dict, session: GameSession) -> bool:
+    def processScreen(self, data: dict, session: GameSession):
         if "net.minecraft.client.gui.screens.DisconnectedScreen" in data["screenInfo"]["id"]:
             self.logger.warning("Disconnected. Auto restart...")
             self.end_session(session.sessionID)
@@ -360,7 +375,11 @@ class Client(ModuleCore):
                 self.learn_data[session.sessionID][-1]["health"] = 0
         self.end_session(session.sessionID)
         for _ in range(100):
-            data = self.getModData(session=session)
+            try:
+                data = self.getModData(session=session)
+            except:
+                sleep(0.1)
+                continue
             if data["playing"]:
                 if data["player"]["death"]:
                     pyautogui.keyDown("tab")
@@ -390,10 +409,10 @@ class Client(ModuleCore):
             elif session.unreadMessages[0]["name"] == "":
                 session.unreadMessages[0]["name"] = self.hostname2name(session.unreadMessages[0]["author"])
             x_name = self.convName(session.unreadMessages[0]["name"])
-            x_mes = self.convChar(session.unreadMessages[0]["message"][char_at])
-            char_at += 1
-            if char_at >= len(session.unreadMessages[0]["message"]):
-                char_at = 0
+            x_mes = self.convChar(session.unreadMessages[0]["message"][self.char_at])
+            self.char_at += 1
+            if self.char_at >= len(session.unreadMessages[0]["message"]):
+                self.char_at = 0
                 session.unreadMessages.pop(0)
         else:
             x_name = self.convName("")
@@ -515,7 +534,10 @@ class Client(ModuleCore):
             return
         if not session.sessionID in self.learn_data:
             self.learn_data[session.sessionID] = []
-        data = self.getModData(session=session)
+        try:
+            data = self.getModData(session=session)
+        except:
+            return
         if data["screen"]:
             self.processScreen(data=data, session=session)
             if self.FORCE_QUIT: return
@@ -647,7 +669,7 @@ class Client(ModuleCore):
         while True:
             if not self.ptmc.running: break
             try:
-                requests.get("http://localhost:%d/" % (self.PORT))
+                self.getModData(session=self.session)
                 break
             except:
                 sleep(0.1)
