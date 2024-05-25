@@ -83,7 +83,7 @@ installPackages() {
     echo "[INFO] Fetching package list"
     sudo apt update > /dev/null
     echo "[INFO] Installing apt packages"
-    DEBIAN_FRONTEND=noninteractive sudo apt install python3.11 python3-pip python-is-python3 python3.11-venv watchdog -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive sudo apt install python3.11 python3-pip python-is-python3 python3-venv watchdog -y > /dev/null
     echo "[INFO] Installing Python libraries"
     sudo python -m venv /opt/mcAI
     sudo /opt/mcAI/bin/pip install -r modules/$MODULE/requirements.txt > /dev/null

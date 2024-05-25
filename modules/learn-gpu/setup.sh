@@ -93,7 +93,7 @@ installPackages() {
     echo "[INFO] Fetching package list"
     sudo apt update > /dev/null
     echo "[INFO] Installing apt packages"
-    DEBIAN_FRONTEND=noninteractive sudo apt install python3 python-is-python3 python3-pip python3.11-venv python3-dev git cifs-utils inetutils-ping watchdog libgl1-mesa-dev libglib2.0-0 -y > /dev/null
+    DEBIAN_FRONTEND=noninteractive sudo apt install python3 python-is-python3 python3-pip python3-venv python3-dev git cifs-utils inetutils-ping watchdog libgl1-mesa-dev libglib2.0-0 -y > /dev/null
     echo "[INFO] Installing Python libraries"
     sudo python -m venv /opt/mcAI
     sudo /opt/mcAI/bin/pip install -r modules/$MODULE-gpu/requirements.txt > /dev/null
