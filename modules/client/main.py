@@ -679,6 +679,7 @@ class Client(ModuleCore):
                 sleep(0.1)
                 continue
         if not self.ptmc.running: return
+        self.logger.info("Minecraft detected")
         self.mcStartTime = time()
         self.FORCE_QUIT = False
         self.played = False
