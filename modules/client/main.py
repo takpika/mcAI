@@ -381,7 +381,8 @@ class Client(ModuleCore):
         for _ in range(100):
             try:
                 data = self.getModData(session=session)
-            except:
+            except Exception as e:
+                self.logger.error(e.with_traceback())
                 sleep(0.1)
                 continue
             if data["playing"]:
@@ -676,7 +677,6 @@ class Client(ModuleCore):
                 self.getModData(session=self.session)
                 break
             except:
-                self.logger.info("Waiting for mod...")
                 sleep(0.1)
                 continue
         if not self.ptmc.running: return
