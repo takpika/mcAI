@@ -1,2 +1,2 @@
-requests
-mcrcon
+requests==2.32.2
+mcrcon==0.7.0
