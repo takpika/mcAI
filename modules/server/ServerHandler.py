@@ -56,6 +56,18 @@ class ServerHandler(BaseHTTPRequestHandler):
             else:
                 status_code = 400
                 response["msg"] = "Bad Request"
+        elif path == "/item":
+            if "name" in query and "item" in query:
+                playerName = query["name"][0]
+                itemName = query["item"][0]
+                count = int(query["count"][0]) if "count" in query else 1
+                self.server.parent.runCommand("give %s %s %d" % (playerName, itemName, count))
+                status_code = 200
+                response["status"] = "ok"
+                response["msg"] = "Success"
+            else:
+                status_code = 400
+                response["msg"] = "Bad Request"
         self.send_response(status_code)
         self.send_header("Content-type", "application/json")
         self.end_headers()

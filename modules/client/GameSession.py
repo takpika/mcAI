@@ -23,7 +23,4 @@ class GameSession:
         self.editChar = ""
         self.inScreen = False
         self.beforeKeys = [False for _ in parent.KEYS]
-        self.headTopBtmTime, self.headProcessed = -1, False
-        self.positionHistory = []
-        self.afkStartTime, self.afkProcessed = -1, False
         self.newbie, self.newbieDamage, self.newbieDamageChecked = True, False, False

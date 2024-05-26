@@ -536,6 +536,12 @@ class Client(ModuleCore):
         if result["status"] != "ok":
             self.logger.debug("Failed to clear effects")
         return result["status"] == "ok"
+    
+    def giveItem(self, playerName: str, itemName: str, count: int) -> bool:
+        result = json.loads(requests.get("http://%s:%d/item?name=%s&item=%s&count=%d" % (self.SERVER, self.PORT, playerName, itemName, count)).text)
+        if result["status"] != "ok":
+            self.logger.debug("Failed to give item: %s" % (itemName))
+        return result["status"] == "ok"
 
     def tick(self, session: GameSession):
         if not self.ptmc.isRunning():
@@ -562,7 +568,7 @@ class Client(ModuleCore):
             if session.newbie:
                 for _ in range(10):
                     self.clearEffect(self.HOSTNAME)
-                    if not self.giveEffect(self.HOSTNAME, "hunger", 255, 2):
+                    if not self.giveEffect(self.HOSTNAME, "hunger", 255, 3):
                         return
                     session.nextHunger += 120
                     if not self.giveEffect(self.HOSTNAME, "strength", 0, 999999):
@@ -576,6 +582,7 @@ class Client(ModuleCore):
             if session.newbieDamage and not session.newbieDamageChecked:
                 if data["player"]["health"] <= 8:
                     session.newbieDamageChecked = True
+                    self.giveItem(self.HOSTNAME, "golden_apple", 1)
                 else:
                     session.newbieDamage = False
             if data["player"]["health"] > 8 and not session.newbieDamage:
@@ -612,36 +619,6 @@ class Client(ModuleCore):
             dir_X = data["player"]["direction"]["x"]
             if dir_X < 0:
                 dir_X *= -1
-            if dir_X > 80:
-                if session.headTopBtmTime == -1:
-                    session.headTopBtmTime = time()
-                else:
-                    if time() - session.headTopBtmTime >= 3 and len(self.learn_data[session.sessionID]) >= 2 and not session.headProcessed:
-                        self.logger.info("Head spinning")
-                        self.giveEffect(self.HOSTNAME, "hunger", 255, 60)
-                        session.headProcessed = True
-            else:
-                session.headTopBtmTime = -1
-                session.headProcessed = False
-            pos_float = (data["player"]["pos"]["x"], data["player"]["pos"]["y"], data["player"]["pos"]["z"])
-            session.positionHistory.append(pos_float)
-            if len(session.positionHistory) > FPS * 60 * 60:
-                session.positionHistory.pop(0)
-            average_pos = (0, 0, 0)
-            for p in session.positionHistory:
-                average_pos = (average_pos[0] + p[0], average_pos[1] + p[1], average_pos[2] + p[2])
-            average_pos = (average_pos[0] / len(session.positionHistory), average_pos[1] / len(session.positionHistory), average_pos[2] / len(session.positionHistory))
-            if self.pos_distance(average_pos, pos_float) <= min(len(session.positionHistory)/FPS*0.01, 10):
-                if session.afkStartTime == -1:
-                    session.afkStartTime = time()
-                else:
-                    if time() - session.afkStartTime >= 5 and not session.afkProcessed:
-                        self.logger.info("AFK")
-                        self.giveEffect(self.HOSTNAME, "hunger", 255, 60)
-                        session.afkProcessed = True
-            else:
-                session.afkStartTime = -1
-                session.afkProcessed = False
             self.processAI(data=data, session=session)
             if not session.sessionID in self.learn_data:
                 session.sessionID = self.startRecording()
