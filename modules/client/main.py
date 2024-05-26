@@ -46,7 +46,6 @@ class Client(ModuleCore):
         self.DOWNLOAD_LOCK = False
         self.AI_UPDATE_LOCK = False
         self.FORCE_QUIT = False
-        self.fetchFailure = 0
 
         vfp = os.path.join(self.WORK_DIR, "version.json")
         if os.path.exists(vfp):
@@ -549,12 +548,9 @@ class Client(ModuleCore):
             self.learn_data[session.sessionID] = []
         try:
             data = self.getModData(session=session)
-            self.fetchFailure = 0
         except Exception as e:
             self.logger.error(e)
-            self.fetchFailure += 1
-            if self.fetchFailure > 3:
-                self.forceQuit()
+            self.forceQuit()
             return self.FORCE_QUIT
         if data["screen"]:
             self.processScreen(data=data, session=session)
