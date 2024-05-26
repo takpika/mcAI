@@ -568,7 +568,7 @@ class Client(ModuleCore):
             if session.newbie:
                 for _ in range(10):
                     self.clearEffect(self.HOSTNAME)
-                    if not self.giveEffect(self.HOSTNAME, "hunger", 255, 3):
+                    if not self.giveEffect(self.HOSTNAME, "hunger", 240, 4):
                         return
                     session.nextHunger += 120
                     if not self.giveEffect(self.HOSTNAME, "strength", 0, 999999):
