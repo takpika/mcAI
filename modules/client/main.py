@@ -46,6 +46,7 @@ class Client(ModuleCore):
         self.DOWNLOAD_LOCK = False
         self.AI_UPDATE_LOCK = False
         self.FORCE_QUIT = False
+        self.fetchFailure = 0
 
         vfp = os.path.join(self.WORK_DIR, "version.json")
         if os.path.exists(vfp):
@@ -160,11 +161,7 @@ class Client(ModuleCore):
                     }
                     requests.post("http://%s:%d/" % (self.L_SERVER, self.PORT), json=sendData, headers=headers)
                 except requests.exceptions.ConnectionError:
-                    res = requests.get("http://%s:%d/config?type=%s" % (self.CENTRAL_IP, 8000, self.SERV_TYPE))
-                    if res.status_code == 200:
-                        self.config = json.loads(res.text)["config"]
-                        self.L_SERVER = self.config["learn_server"]
-                        self.SERVER = self.config["mc_server"]
+                    self.getConfig()
         self.learn_data.clear()
 
     def startRecording(self) -> str:
@@ -552,9 +549,13 @@ class Client(ModuleCore):
             self.learn_data[session.sessionID] = []
         try:
             data = self.getModData(session=session)
+            self.fetchFailure = 0
         except Exception as e:
             self.logger.error(e)
-            return False
+            self.fetchFailure += 1
+            if self.fetchFailure > 100:
+                self.forceQuit()
+            return self.FORCE_QUIT
         if data["screen"]:
             self.processScreen(data=data, session=session)
             if self.FORCE_QUIT: return True
@@ -654,6 +655,7 @@ class Client(ModuleCore):
                 break
 
     def gameSession(self):
+        self.getConfig()
         mc_thread = threading.Thread(target=self.ptmc.start, daemon=True)
         mc_thread.start()
         sleep(0.1)
