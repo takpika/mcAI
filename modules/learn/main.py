@@ -145,52 +145,55 @@ class Learn(ModuleCore):
         return len(self.learnFramesBuffer)
 
     def check(self):
-        self.logger.debug("Checking...")
         listIDs = list(self.videoFrames.keys())
         listIDs.extend(list(self.moveFrames.keys()))
         ids = [id for id in set(listIDs) if listIDs.count(id) == 2]
         learnFrameCount = len(self.learnFramesBuffer)
 
         if len(ids) >= 10 and not self.CHECK_PROCESSING and not self.TRAINING:
-            self.CHECK_PROCESSING = True
-            counts = []
-            idsCopy = ids.copy()
-            for i in range(len(ids)):
-                id = ids[i]
-                count = len(self.moveFrames[id]["data"])
-                if count >= 2:
-                    counts.append(count)
-                    continue
-                self.videoFrames.pop(id)
-                self.moveFrames.pop(id)
-                idsCopy.remove(id)
-            ids = idsCopy.copy()
-            if len(counts) > 0:
-                for id in ids:
-                    data = self.moveFrames[id]
-                    healthData = [min(data["data"][i]["health"] * (1 if not (i + 1) % 10 == 0 else 1.25 if not (i + 1) % 100 == 0 else 1.5), 20) for i in range(len(data["data"]))]
-                    rewardEst = np.array([sum(healthData[dp:])/(len(healthData)-dp) for dp in range(len(healthData))]).reshape(len(healthData), 1) / 20
-                    for i in range(len(data["data"])):
-                        daf = self.convFrame(data["data"][i], rewardEst[i])
-                        img = self.videoFrames[id][i]
-                        self.learnFramesBuffer.append({"data": daf, "img": img})
-                        if len(self.learnFramesBuffer) > self.LEARN_LIMIT:
-                            self.learnFramesBuffer.pop(0)
-                    self.moveFrames.pop(id)
+            try:
+                self.CHECK_PROCESSING = True
+                counts = []
+                idsCopy = ids.copy()
+                for i in range(len(ids)):
+                    id = ids[i]
+                    count = len(self.moveFrames[id]["data"])
+                    if count >= 2:
+                        counts.append(count)
+                        continue
                     self.videoFrames.pop(id)
-            learnFrameCount = self.checkCount()
-            self.CHECK_FIRSTRUN = False
-            self.logger.debug("Check done, current total frames: %d/%d" % (learnFrameCount, self.LEARN_LIMIT))
-            self.CHECK_PROCESSING = False
+                    self.moveFrames.pop(id)
+                    idsCopy.remove(id)
+                ids = idsCopy.copy()
+                if len(counts) > 0:
+                    for id in ids:
+                        data = self.moveFrames[id]
+                        healthData = [min(data["data"][i]["health"] * (1 if not (i + 1) % 10 == 0 else 1.25 if not (i + 1) % 100 == 0 else 1.5), 20) for i in range(len(data["data"]))]
+                        rewardEst = np.array([sum(healthData[dp:])/(len(healthData)-dp) for dp in range(len(healthData))]).reshape(len(healthData), 1) / 20
+                        for i in range(len(data["data"])):
+                            daf = self.convFrame(data["data"][i], rewardEst[i])
+                            img = self.videoFrames[id][i]
+                            self.learnFramesBuffer.append({"data": daf, "img": img})
+                            if len(self.learnFramesBuffer) > self.LEARN_LIMIT:
+                                self.learnFramesBuffer.pop(0)
+                        self.moveFrames.pop(id)
+                        self.videoFrames.pop(id)
+                learnFrameCount = self.checkCount()
+                self.logger.debug("Check done, current total frames: %d/%d" % (learnFrameCount, self.LEARN_LIMIT))
+            finally:
+                self.CHECK_FIRSTRUN = False
+                self.CHECK_PROCESSING = False
 
         # First Run
         if self.CHECK_FIRSTRUN:
-            learnFrameCount = self.checkCount()
-            self.logger.debug("First Run, current total frames: %d" % (learnFrameCount))
-            self.CHECK_FIRSTRUN = False
-            if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
-                self.Actor.load_weights("models/model.h5")
-                self.Critic.load_weights("models/critic.h5")
+            try:
+                learnFrameCount = self.checkCount()
+                self.logger.debug("First Run, current total frames: %d" % (learnFrameCount))
+                if os.path.exists("models/model.h5") and os.path.exists("models/critic.h5"):
+                    self.Actor.load_weights("models/model.h5")
+                    self.Critic.load_weights("models/critic.h5")
+            finally:
+                self.CHECK_FIRSTRUN = False
         if learnFrameCount >= (self.LEARN_LIMIT * 0.5) and not self.TRAINING:
             self.learn()
 
@@ -200,70 +203,72 @@ class Learn(ModuleCore):
         self.TRAINING = True
         self.logger.info("Start Learning")
 
-        learnFrames = random.sample(self.learnFramesBuffer, self.LEARN_LIMIT // 4)
-        iters = len(learnFrames) // batchSize
+        try:
+            learnFrames = random.sample(self.learnFramesBuffer, self.LEARN_LIMIT // 4)
+            iters = len(learnFrames) // batchSize
 
-        thisEpochs = self.EPOCHS
+            thisEpochs = self.EPOCHS
 
-        # Critic Learning
-        for epoch in range(thisEpochs):
-            loss_history = []
-            for iter in range(iters):
-                batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
-                for frame in batchFrames:
-                    frameData = []
-                    frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
-                    frameData.append(frameImg)
-                    frameData.extend(frame["data"])
-                    self.learn_data.append(frameData)
-                    del frameImg, frameData
-                x, y, rewardEst = self.convAll()
-                x = x[:-1]
-                x.extend(y)
-                y = rewardEst
-                loss = self.Critic.train_on_batch(x, y)
-                loss_history.append(loss)
-            self.logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
+            # Critic Learning
+            for epoch in range(thisEpochs):
+                loss_history = []
+                for iter in range(iters):
+                    batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
+                    for frame in batchFrames:
+                        frameData = []
+                        frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
+                        frameData.append(frameImg)
+                        frameData.extend(frame["data"])
+                        self.learn_data.append(frameData)
+                        del frameImg, frameData
+                    x, y, rewardEst = self.convAll()
+                    x = x[:-1]
+                    x.extend(y)
+                    y = rewardEst
+                    loss = self.Critic.train_on_batch(x, y)
+                    loss_history.append(loss)
+                self.logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
 
-        # Actor Learning
-        for epoch in range(thisEpochs):
-            loss_history = []
-            for iter in range(iters):
-                batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
-                for frame in batchFrames:
-                    frameData = []
-                    frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
-                    frameData.append(frameImg)
-                    frameData.extend(frame["data"])
-                    self.learn_data.append(frameData)
-                    del frameImg, frameData
-                x, _, rewardEst = self.convAll()
-                realEst = self.Combined.predict(x, verbose=0)
-                y = np.maximum(rewardEst, realEst)
-                loss = self.Combined.train_on_batch(x, y)
-                loss_history.append(loss)
-            self.logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
-        tf.keras.backend.clear_session()
-        gc.collect()
+            # Actor Learning
+            for epoch in range(thisEpochs):
+                loss_history = []
+                for iter in range(iters):
+                    batchFrames = learnFrames[iter*batchSize:(iter+1)*batchSize]
+                    for frame in batchFrames:
+                        frameData = []
+                        frameImg = frame["img"].reshape(1, 256, 256, 3) / 255
+                        frameData.append(frameImg)
+                        frameData.extend(frame["data"])
+                        self.learn_data.append(frameData)
+                        del frameImg, frameData
+                    x, _, rewardEst = self.convAll()
+                    realEst = self.Combined.predict(x, verbose=0)
+                    y = np.maximum(rewardEst, realEst)
+                    loss = self.Combined.train_on_batch(x, y)
+                    loss_history.append(loss)
+                self.logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
+            tf.keras.backend.clear_session()
+            gc.collect()
 
-        self.MODEL_WRITING = True
-        self.Actor.save("models/model.h5")
-        self.Critic.save("models/critic.h5")
-        self.MODEL_WRITING = False
+            self.MODEL_WRITING = True
+            self.Actor.save("models/model.h5")
+            self.Critic.save("models/critic.h5")
 
-        version = {
-            "version": time.time(),
-            "count": 1
-        }
-        if os.path.exists("models/version.json"):
-            with open("models/version.json", "r") as f:
-                beforeVersion = json.load(f)
-            if "count" in beforeVersion:
-                version["count"] = beforeVersion["count"] + 1
-        with open("models/version.json", "w") as f:
-            json.dump(version, f)
-        self.TRAINING = False
-        self.logger.info("Finish Learning")
+            version = {
+                "version": time.time(),
+                "count": 1
+            }
+            if os.path.exists("models/version.json"):
+                with open("models/version.json", "r") as f:
+                    beforeVersion = json.load(f)
+                if "count" in beforeVersion:
+                    version["count"] = beforeVersion["count"] + 1
+            with open("models/version.json", "w") as f:
+                json.dump(version, f)
+        finally:
+            self.TRAINING = False
+            self.MODEL_WRITING = False
+            self.logger.info("Finish Learning")
 
     def start(self):
         server = self.ThreadedHTTPServer(("0.0.0.0", 8000), LearnHandler, self)
