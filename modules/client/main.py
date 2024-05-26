@@ -544,20 +544,20 @@ class Client(ModuleCore):
             self.logger.debug("Failed to give item: %s" % (itemName))
         return result["status"] == "ok"
 
-    def tick(self, session: GameSession):
+    def tick(self, session: GameSession) -> bool:
         if not self.ptmc.isRunning():
             self.FORCE_QUIT = True
-            return
+            return True
         if not session.sessionID in self.learn_data:
             self.learn_data[session.sessionID] = []
         try:
             data = self.getModData(session=session)
         except Exception as e:
             self.logger.error(e)
-            return
+            return False
         if data["screen"]:
             self.processScreen(data=data, session=session)
-            if self.FORCE_QUIT: return
+            if self.FORCE_QUIT: return True
         if data["playing"]:
             self.played = True
             FPS = -1
@@ -565,15 +565,15 @@ class Client(ModuleCore):
             self.image = Image.frombytes('RGB', (img.width, img.height), img.rgb)
             if data["player"]["gamemode"] != "SURVIVAL":
                 self.changeGameMode("survival")
-                return
+                return False
             if session.newbie:
                 for _ in range(10):
                     self.clearEffect(self.HOSTNAME)
                     if not self.giveEffect(self.HOSTNAME, "hunger", 240, 4):
-                        return
+                        return False
                     session.nextHunger += 120
                     if not self.giveEffect(self.HOSTNAME, "strength", 0, 999999):
-                        return
+                        return False
                     for effect in self.effects:
                         if random.random() < 0.01:
                             level = int((random.random() ** 2) * 10)
@@ -590,7 +590,7 @@ class Client(ModuleCore):
                 if self.giveEffect(self.HOSTNAME, "instant_damage", 1, 1):
                     session.newbieDamage = True
                     sleep(1)
-                return
+                return False
             if session.playStartTime == -1:
                 session.playStartTime = time()
             session.playFrameCounts += 1
@@ -612,7 +612,7 @@ class Client(ModuleCore):
             session.beforeHp = data["player"]["health"]
             if data["player"]["death"]:
                 self.processDeath(session=session)
-                return
+                return True
             if data["screen"]:
                 self.processScreen(data=data, session=session)
             else:
@@ -640,6 +640,7 @@ class Client(ModuleCore):
             self.logger.info("A message from " + data["message"][0]["author"] + " : " + data["message"][0]["message"])
             session.checkedMesID = int(data["message"][0]["id"])
         threading.Thread(target=self.register).start()
+        return False
 
     def playSession(self):
         self.get_newName()
@@ -647,8 +648,8 @@ class Client(ModuleCore):
         if os.path.exists(os.path.join(self.WORK_DIR, "model.h5")):
             self.actor.load_weights(os.path.join(self.WORK_DIR, "model.h5"))
         while True:
-            if self.FORCE_QUIT: return
-            self.tick(session=self.session)
+            if self.tick(session=self.session):
+                break
 
     def gameSession(self):
         mc_thread = threading.Thread(target=self.ptmc.start, daemon=True)
