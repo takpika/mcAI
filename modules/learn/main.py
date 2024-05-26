@@ -148,9 +148,6 @@ class Learn(ModuleCore):
         listIDs = list(self.videoFrames.keys())
         listIDs.extend(list(self.moveFrames.keys()))
         ids = [id for id in set(listIDs) if listIDs.count(id) == 2]
-        self.logger.info(ids)
-        self.logger.info(len(ids))
-        self.logger.info(f"{self.CHECK_PROCESSING} {self.TRAINING}")
         learnFrameCount = len(self.learnFramesBuffer)
 
         if len(ids) >= 10 and not self.CHECK_PROCESSING and not self.TRAINING:

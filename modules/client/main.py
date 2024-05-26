@@ -583,7 +583,9 @@ class Client(ModuleCore):
             if session.newbieDamage and not session.newbieDamageChecked:
                 if data["player"]["health"] <= 8:
                     session.newbieDamageChecked = True
+                    self.giveEffect(self.HOSTNAME, "poison", 255, 3)
                     self.giveItem(self.HOSTNAME, "golden_apple", 1)
+                    sleep(3)
                 else:
                     session.newbieDamage = False
             if data["player"]["health"] > 8 and not session.newbieDamage:
