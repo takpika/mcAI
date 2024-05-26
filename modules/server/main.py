@@ -95,7 +95,7 @@ class Server(ModuleCore):
         while not self.checkServerRunning():
             sleep(1)
         while True:
-            self.runCommand("execute at @a run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:totem_of_undying\",Count:1b},PickupDelay:0s,Tags:[\"randomFood\"],NoGravity:true}")
+            self.runCommand("execute at @a[gamemode=survival] run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:totem_of_undying\",Count:1b},PickupDelay:0s,Tags:[\"randomFood\"],NoGravity:true}")
             self.runCommand("execute at @r run spreadplayers ~ ~ 0 30 false @e[tag=randomFood]")
             sleep(60)
 
