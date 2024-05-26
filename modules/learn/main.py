@@ -145,6 +145,7 @@ class Learn(ModuleCore):
         return len(self.learnFramesBuffer)
 
     def check(self):
+        self.logger.debug("Checking...")
         listIDs = list(self.videoFrames.keys())
         listIDs.extend(list(self.moveFrames.keys()))
         ids = [id for id in set(listIDs) if listIDs.count(id) == 2]
