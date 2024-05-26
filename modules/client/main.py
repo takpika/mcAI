@@ -553,7 +553,7 @@ class Client(ModuleCore):
         except Exception as e:
             self.logger.error(e)
             self.fetchFailure += 1
-            if self.fetchFailure > 100:
+            if self.fetchFailure > 3:
                 self.forceQuit()
             return self.FORCE_QUIT
         if data["screen"]:
