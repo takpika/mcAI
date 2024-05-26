@@ -170,6 +170,7 @@ class Client(ModuleCore):
     def startRecording(self) -> str:
         threading.Thread(target=self.download_update).start()
         sessionID = json.loads(requests.get('http://%s:%d/id' % (self.CENTRAL_IP, self.PORT)).text)["info"]["id"]
+        self.logger.info("Session ID: %s" % sessionID)
         self.videoFramePos = 0
         self.learn_data[sessionID] = []
         return sessionID
