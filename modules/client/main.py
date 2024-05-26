@@ -583,6 +583,7 @@ class Client(ModuleCore):
                     self.giveEffect(self.HOSTNAME, "poison", 255, 3)
                     self.giveItem(self.HOSTNAME, "golden_apple", 1)
                     sleep(3)
+                    self.giveEffect(self.HOSTNAME, "hunger", 255, 1)
                 else:
                     session.newbieDamage = False
             if data["player"]["health"] > 8 and not session.newbieDamage:
