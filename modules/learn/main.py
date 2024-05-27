@@ -175,10 +175,11 @@ class Learn(ModuleCore):
                             daf = self.convFrame(data["data"][i], rewardEst[i])
                             img = self.videoFrames[id][i]
                             self.learnFramesBuffer.append({"data": daf, "img": img})
-                            if len(self.learnFramesBuffer) > self.LEARN_LIMIT:
-                                self.learnFramesBuffer.pop(0)
+                            self.learnFramesBuffer = sorted(self.learnFramesBuffer, key=lambda x: x["data"][-1], reverse=True)
                         self.moveFrames.pop(id)
                         self.videoFrames.pop(id)
+                if len(self.learnFramesBuffer) > self.LEARN_LIMIT:
+                    self.learnFramesBuffer = self.learnFramesBuffer[:self.LEARN_LIMIT]
                 learnFrameCount = self.checkCount()
                 self.logger.debug("Check done, current total frames: %d/%d" % (learnFrameCount, self.LEARN_LIMIT))
             finally:
