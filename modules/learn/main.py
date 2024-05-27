@@ -42,6 +42,7 @@ class Learn(ModuleCore):
         self.MODEL_WRITING = False
         self.CHECK_FIRSTRUN = True
         self.EPOCHS = self.config["epochs"]
+        self.maxEst = 0
         with open(self.config["char_file"], "r") as f:
             self.chars = json.loads(f.read())
         self.CHARS_COUNT = len(self.chars["chars"])
@@ -208,6 +209,8 @@ class Learn(ModuleCore):
             iters = len(learnFrames) // batchSize
 
             thisEpochs = self.EPOCHS
+            self.maxEst = max([max([frame["data"][-1] for frame in learnFrames]), self.maxEst])
+            self.logger.info("Max Reward: %.6f" % self.maxEst)
 
             # Critic Learning
             for epoch in range(thisEpochs):
@@ -242,8 +245,7 @@ class Learn(ModuleCore):
                         self.learn_data.append(frameData)
                         del frameImg, frameData
                     x, _, rewardEst = self.convAll()
-                    realEst = self.Combined.predict(x, verbose=0)
-                    y = np.maximum(rewardEst, realEst)
+                    y = np.array([self.maxEst for _ in range(rewardEst.shape[0])]).reshape(rewardEst.shape)
                     loss = self.Combined.train_on_batch(x, y)
                     loss_history.append(loss)
                 self.logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
