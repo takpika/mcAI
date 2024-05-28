@@ -230,6 +230,7 @@ class Learn(ModuleCore):
                     x = x[:-1]
                     x.extend(y)
                     y = rewardEst
+                    y = np.where(y > np.average(y), 1, 0)
                     loss = self.Critic.train_on_batch(x, y)
                     loss_history.append(loss)
                 self.logger.info("Critic Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
@@ -247,7 +248,7 @@ class Learn(ModuleCore):
                         self.learn_data.append(frameData)
                         del frameImg, frameData
                     x, _, rewardEst = self.convAll()
-                    y = np.array([self.maxEst for _ in range(rewardEst.shape[0])]).reshape(rewardEst.shape)
+                    y = np.ones(rewardEst.shape)
                     loss = self.Combined.train_on_batch(x, y)
                     loss_history.append(loss)
                 self.logger.info("Actor Loss: %.6f, %d epochs" % (sum(loss_history)/len(loss_history), epoch))
