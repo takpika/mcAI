@@ -218,7 +218,7 @@ class Critic:
         hid = Dense(64, activation="relu")(hid)
         hid = Dense(64, activation="relu")(hid)
         hid = Dense(64, activation="relu")(hid)
-        out = Dense(1, activation="relu")(hid)
+        out = Dense(1, activation="sigmoid")(hid)
         return Model([dataIn.input, actorIn.input], out)
     
     def make_model(self):

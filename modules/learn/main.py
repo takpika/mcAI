@@ -1,4 +1,5 @@
 import json, os, time, random, gc
+import math
 import numpy as np
 from LearnHandler import LearnHandler
 
@@ -102,7 +103,7 @@ class Learn(ModuleCore):
     def buildModel(self):
         self.Actor = Actor(WIDTH=self.WIDTH, HEIGHT=self.HEIGHT, CHARS_COUNT=self.CHARS_COUNT).buildModel()
         self.Critic = Critic(WIDTH=self.WIDTH, HEIGHT=self.HEIGHT, CHARS_COUNT=self.CHARS_COUNT).buildModel()
-        self.Critic.compile(loss="mse", optimizer="Adam")
+        self.Critic.compile(loss="binary_crossentropy", optimizer="Adam")
         self.Critic.trainable = False
         imgIn = Input(shape=(256, 256, 3))
         regIn = Input(shape=(8))
@@ -115,7 +116,7 @@ class Learn(ModuleCore):
         actorAction = self.Actor([imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn])
         valid = self.Critic([[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn]], actorAction])
         self.Combined = Model(inputs=[imgIn, [regIn, memIn, reg2In, mem2In], [nameIn, mesIn], seedIn], outputs=[valid])
-        self.Combined.compile(loss="mse", optimizer="Adam")
+        self.Combined.compile(loss="binary_crossentropy", optimizer="Adam")
 
     def convFrame(self, ld, reward):
         inpdata = []
@@ -170,7 +171,7 @@ class Learn(ModuleCore):
                     for id in ids:
                         data = self.moveFrames[id]
                         healthData = [min(data["data"][i]["health"] * (1 if not (i + 1) % 10 == 0 else 1.25 if not (i + 1) % 100 == 0 else 1.5), 20) for i in range(len(data["data"]))]
-                        rewardEst = np.array([sum(healthData[dp:])/(len(healthData)-dp) for dp in range(len(healthData))]).reshape(len(healthData), 1) / 20
+                        rewardEst = np.array([math.tanh((len(healthData)-dp)/1000) for dp in range(len(healthData))]).reshape(len(healthData), 1)
                         for i in range(len(data["data"])):
                             daf = self.convFrame(data["data"][i], rewardEst[i])
                             img = self.videoFrames[id][i]
