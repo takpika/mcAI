@@ -97,8 +97,9 @@ class Server(ModuleCore):
         while True:
             self.runCommand("execute at @a[gamemode=survival] run summon minecraft:item ~ ~100 ~ {Item:{id:\"minecraft:totem_of_undying\",Count:1b},PickupDelay:0s,Tags:[\"randomFood\"],NoGravity:true}")
             self.runCommand("execute at @r run spreadplayers ~ ~ 0 30 false @e[tag=randomFood]")
+            sleep(30)
             self.runCommand("execute at @e[tag=randomFood] run effect give @p[distance=..1] minecraft:regeneration 1 50 true")
-            sleep(60)
+            sleep(30)
 
     def startHTTPServer(self):
         server = self.ThreadedHTTPServer(("0.0.0.0", self.PORT), ServerHandler, self)
