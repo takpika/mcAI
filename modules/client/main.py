@@ -161,6 +161,7 @@ class Client(ModuleCore):
                     requests.post("http://%s:%d/" % (self.L_SERVER, self.PORT), json=sendData, headers=headers)
                 except requests.exceptions.ConnectionError:
                     self.getConfig()
+                    self.setConfig()
         self.learn_data.clear()
 
     def startRecording(self) -> str:
@@ -653,6 +654,7 @@ class Client(ModuleCore):
 
     def gameSession(self):
         self.getConfig()
+        self.setConfig()
         mc_thread = threading.Thread(target=self.ptmc.start, daemon=True)
         mc_thread.start()
         sleep(0.1)
