@@ -179,7 +179,7 @@ class Learn(ModuleCore):
                         self.moveFrames.pop(id)
                         self.videoFrames.pop(id)
                 if len(self.learnFramesBuffer) > self.LEARN_LIMIT:
-                    self.learnFramesBuffer = self.learnFramesBuffer[:self.LEARN_LIMIT]
+                    self.learnFramesBuffer = self.learnFramesBuffer[len(self.learnFramesBuffer)-self.LEARN_LIMIT:]
                 learnFrameCount = self.checkCount()
                 self.logger.debug("Check done, current total frames: %d/%d" % (learnFrameCount, self.LEARN_LIMIT))
             finally:
