@@ -1,0 +1,91 @@
+# ファイル構造
+.
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug-report.md
+│   │   ├── feature_request.md
+│   │   ├── バグレポート.md
+│   │   └── 機能追加.md
+│   └── workflows/
+│       └── image-build.yml
+├── description/: プロジェクト全体の説明を含むディレクトリ
+│   ├── description.txt: プロジェクトの概要や目的を説明するテキストファイル
+│   ├── diagram.drawio.svg: プロジェクトの構造やフローを示す図
+│   └── llm.txt: プロジェクトの全体の概要やファイル構成、学習手順などを説明するテキストファイル
+├── mcai/: 全モジュールで使用する共通のコードライブラリ
+│   ├── __init__.py
+│   ├── ai.py: AIモデル定義
+│   ├── control.py: AIモデルのコントロール部分の定義
+│   ├── image.py: AIモデルの画像処理部分の定義
+│   ├── module.py: AIモデルのテキスト処理部分の定義
+│   └── text.py: 全モジュールで使用する共通のクラス
+├── modules/
+│   ├── central/
+│   │   ├── dev/
+│   │   │   └── Dockerfile
+│   │   ├── CentralHandler.py: APIサーバーのハンドラ
+│   │   ├── Dockerfile
+│   │   ├── configure.json: 全モジュール共通設定ファイル
+│   │   ├── main.py
+│   │   ├── names.txt: プレイヤーにつける名前のリスト
+│   │   ├── requirements.txt
+│   │   └── setup.sh
+│   ├── client/: プレイヤー・推論モジュール
+│   │   ├── dev/
+│   │   │   └── Dockerfile
+│   │   ├── Dockerfile
+│   │   ├── GameSession.py: ゲームの状態管理モデル
+│   │   ├── build_mod.sh: 操作専用Modのビルドスクリプト
+│   │   ├── main.py
+│   │   ├── options.txt: Minecraftのオプション設定
+│   │   ├── pmc.py: Minecraftの起動を管理するクラス
+│   │   ├── requirements.txt
+│   │   └── setup.sh
+│   ├── learn/: 学習モジュール
+│   │   ├── dev/
+│   │   │   └── Dockerfile
+│   │   ├── Dockerfile
+│   │   ├── LearnHandler.py: APIサーバーのハンドラ
+│   │   ├── main.py
+│   │   ├── requirements.txt
+│   │   └── setup.sh
+│   ├── learn-gpu/: 学習モジュール（GPU版）
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   └── setup.sh
+│   ├── server/: Minecraftサーバーモジュール
+│   │   ├── dev/
+│   │   │   └── Dockerfile
+│   │   ├── Dockerfile
+│   │   ├── ServerHandler.py: APIサーバーのハンドラ
+│   │   ├── main.py
+│   │   ├── requirements.txt
+│   │   ├── server.properties: Minecraftのサーバー設定
+│   │   └── setup.sh
+│   └── unified/: 統合モジュール（廃止予定）
+│       └── main.py
+├── scripts/
+│   ├── change_dns.sh: VM・実機モードでのDNS変更スクリプト
+│   ├── change_host.sh: VM・実機モードでのホスト名変更スクリプト
+│   ├── chars.json: トークン化する際の文字の設定
+│   ├── configure.json: 全モジュール共通設定ファイル（Centralと同じなので、どっち使っているか不明）
+│   ├── download_optifine.py: Optifineダウンロードスクリプト
+│   └── names.txt: プレイヤーにつける名前のリスト（Centralと同じなので、どっち使っているか不明）
+├── .gitignore
+├── LICENCE
+├── README.md
+├── __init__.py
+├── docker-compose.yml
+├── install.py
+└── setup.sh: インストールスクリプト。install.pyを呼び出す
+
+# 学習手順
+1. 全モジュール起動 (Central, Server, Client, Learn)
+2. Centralに接続。設定を受信 (Server, Client, Learn)
+  1. Server, Learnの接続を待つ (Client)
+3. マインクラフトサーバー起動 (Server)
+4. マインクラフト起動, サーバー接続 (Client)
+5. 推論開始 (Client)
+6. 死亡時に全ての入出力データを送信 (Client, Learn)
+7. 一定量集まったら、学習開始 (Learn)
+8. 死亡時にモデル更新を確認。ダウンロード (Client)

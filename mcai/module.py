@@ -3,13 +3,17 @@ from http.server import HTTPServer
 from socketserver import ThreadingMixIn
 import os, json, requests, socket
 from time import sleep, time
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy as np
 
 class ModuleCore:
-    def __init__(self):
+    def __init__(self) -> None:
         self.SERV_TYPE = self.__class__.__name__.lower()
-        self.LAST_REGISTER = -1
+        self.LAST_REGISTER: int = -1
 
-    def getLogger(self):
+    def getLogger(self) -> None:
         self.logger = getLogger("%s (%s)" % (self.__class__.__name__, __name__))
         self.logger.setLevel(DEBUG)
         self.logger_handler = StreamHandler()
@@ -18,11 +22,11 @@ class ModuleCore:
         self.logger.addHandler(self.logger_handler)
 
     class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-        def __init__(self, server_address: tuple, RequestHandlerClass, parent):
+        def __init__(self, server_address: tuple, RequestHandlerClass, parent: "ModuleCore"):
             self.parent = parent
             super().__init__(server_address=server_address, RequestHandlerClass=RequestHandlerClass)
 
-    def searchCentral(self):
+    def searchCentral(self) -> None:
         if os.path.exists("central_host"):
             with open("central_host", "r") as f:
                 self.CENTRAL_IP = f.read().replace("\n","")
@@ -57,7 +61,7 @@ class ModuleCore:
                 break
         sock.close()
 
-    def register(self, ignore_time=False):
+    def register(self, ignore_time: bool =False) -> None:
         if self.LAST_REGISTER == int(time()) and not ignore_time:
             return
         self.LAST_REGISTER = int(time())
@@ -77,7 +81,7 @@ class ModuleCore:
                 self.logger.error("Register Failed")
                 exit(4)
 
-    def getConfig(self):
+    def getConfig(self) -> None:
         if self.CENTRAL_IP == None:
             return
         self.register()
@@ -94,11 +98,11 @@ class ModuleCore:
                 self.config[key] = self.config[key].replace("__HOME__", os.getenv('HOME'))
                 self.config[key] = self.config[key].replace("__WORKDIR__", os.getcwd())
 
-    def bin2Char(self, bin) -> str:
+    def bin2Char(self, bin: "np.ndarray") -> str:
         import numpy as np
         return self.chars["chars"][np.argmax(bin)]
     
-    def bin2Name(self, bin):
+    def bin2Name(self, bin: "np.ndarray") -> str:
         name = ""
         for b in bin:
             char = self.bin2Char(b)
@@ -107,7 +111,7 @@ class ModuleCore:
             break
         return name
 
-    def convChar(self, char: str):
+    def convChar(self, char: str) -> "np.ndarray":
         import numpy as np
         data = np.zeros((self.CHARS_COUNT))
         for i in range(self.CHARS_COUNT):
@@ -115,7 +119,7 @@ class ModuleCore:
                 data[i] = 1
         return data
     
-    def convName(self, name: str):
+    def convName(self, name: str) -> "list[np.ndarray]":
         remain = 6 - len(name)
         data = [self.convChar(name[i]) for i in range(len(name))]
         for i in range(remain):

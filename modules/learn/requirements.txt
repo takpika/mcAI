@@ -1,5 +1,0 @@
-tensorflow==2.15.1
-numpy==1.26.4
-psutil==5.9.8
-opencv-python==4.9.0.80
-pillow==10.3.0
